@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { styles } from './LoginPage.styles';
 import { 
   Box, 
   Paper, 
@@ -32,48 +33,30 @@ export const LoginPage = () => {
   };
 
   return (
-    <Box sx={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '80vh',
-      width: '100%',
-      px: 2
-    }}>
-      <Paper elevation={4} sx={{ 
-        maxWidth: 420, 
-        width: '100%', 
-        p: 4, 
-        borderRadius: 4,
-        background: 'rgba(22, 28, 45, 0.6)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255, 255, 255, 0.08)'
-      }}>
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <Avatar sx={{ 
-            bgcolor: 'primary.main', 
-            width: 56, 
-            height: 56, 
-            mx: 'auto', 
-            mb: 2,
-            boxShadow: '0 8px 16px rgba(99, 102, 241, 0.2)'
-          }}>
+    <Box sx={styles.pageWrapper}>
+      <Paper elevation={4} sx={styles.loginCard}>
+        
+        {/* Cabecera y Título */}
+        <Box sx={styles.headerWrapper}>
+          <Avatar sx={styles.loginAvatar}>
             <LoginIcon />
           </Avatar>
-          <Typography variant="h5" component="h2" fontWeight="700" color="text.primary">
+          <Typography variant="h5" component="h2" sx={styles.titleText}>
             Iniciar Sesión
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          <Typography variant="body2" sx={styles.subtitleText}>
             Ingresa tus credenciales para continuar
           </Typography>
         </Box>
 
+        {/* Alerta de Error */}
         {error && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+          <Alert severity="error" sx={styles.alertBox}>
             {error}
           </Alert>
         )}
 
+        {/* Formulario */}
         <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
@@ -84,6 +67,7 @@ export const LoginPage = () => {
             onChange={(e) => setUsername(e.target.value)}
             disabled={loading}
             required
+            sx={styles.inputField}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -103,6 +87,7 @@ export const LoginPage = () => {
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
             required
+            sx={styles.inputField}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -128,21 +113,14 @@ export const LoginPage = () => {
             variant="contained"
             size="large"
             disabled={loading}
-            sx={{ 
-              mt: 3, 
-              py: 1.5,
-              borderRadius: 2,
-              fontWeight: 'bold',
-              textTransform: 'none',
-              background: 'linear-gradient(135deg, #6366f1 0%, #3b82f6 100%)',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
-            }}
+            sx={styles.submitButton}
           >
             {loading ? 'Verificando...' : 'Entrar'}
           </Button>
         </form>
 
-        <Box sx={{ textAlign: 'center', mt: 3 }}>
+        {/* Credenciales Demo */}
+        <Box sx={styles.demoText}>
           <Typography variant="caption" color="text.secondary">
             Demo: <strong>admin</strong> / <strong>admin123</strong>
           </Typography>
