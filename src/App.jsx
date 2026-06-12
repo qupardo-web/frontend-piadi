@@ -35,6 +35,8 @@ import {
 } from '@mui/icons-material';
 import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { LoginPage, useAuth } from './modules/auth';
+import { LandingPage } from './modules/landing_page';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 
   (window.location.hostname === 'localhost' 
@@ -359,7 +361,14 @@ function Dashboard() {
   );
 }
 
-function MainAppContent() {
+// =========================================================================
+// COMPONENTE: RUTA PROTEGIDA (ProtectedRoute)
+// =========================================================================
+// Este componente valida si el usuario ha iniciado sesión.
+// - Si la sesión se está cargando (loading), muestra un spinner de carga.
+// - Si está autenticado, permite ver la vista hija (children).
+// - Si NO está autenticado, lo redirige automáticamente a la pantalla de /login.
+function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -370,15 +379,89 @@ function MainAppContent() {
     );
   }
 
-  return isAuthenticated ? <Dashboard /> : <LoginPage />;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
+// =========================================================================
+// COMPONENTE: RUTA PÚBLICA (PublicRoute)
+// =========================================================================
+// Evita que un usuario que ya inició sesión vuelva a ver la pantalla de login.
+// - Si ya está autenticado, lo redirige de inmediato a la raíz (/) del sitio.
+// - Si NO está autenticado, le permite ingresar sus credenciales en la vista de Login.
+function PublicRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: '#0a0f1d' }}>
+        <CircularProgress size={48} />
+      </Box>
+    );
+  }
+
+  return !isAuthenticated ? children : <Navigate to="/" replace />;
+}
+
+// =========================================================================
+// COMPONENTE PRINCIPAL: App
+// =========================================================================
+// Configura el tema, el proveedor de autenticación global y el enrutador de la aplicación.
 function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <AuthProvider>
-        <MainAppContent />
+        <Router>
+          <Routes>
+            {/* 
+              RUTA: /login
+              Es pública, pero usa el wrapper PublicRoute para redirigir 
+              a los usuarios autenticados automáticamente a la vista de inicio.
+            */}
+            <Route 
+              path="/login" 
+              element={
+                <PublicRoute>
+                  <LoginPage />
+                </PublicRoute>
+              } 
+            />
+
+            {/* 
+              RUTA: /
+              Es la ruta por defecto protegida. Muestra la nueva Landing Page/Dashboard
+              siguiendo el diseño de referencia_landing_page.png.
+            */}
+            <Route 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <LandingPage />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 
+              RUTA: /dashboard
+              Es una ruta protegida opcional que conserva la interfaz CRUD anterior
+              y el estado de conexión con PostgreSQL.
+            */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 
+              REDIFRECCIÓN: *
+              Cualquier ruta inválida o no registrada redirige al usuario automáticamente a la raíz (/).
+            */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
       </AuthProvider>
     </ThemeProvider>
   );
