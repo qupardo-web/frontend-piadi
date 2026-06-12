@@ -90,7 +90,14 @@ export const LandingPage = () => {
                 >
                   {/* [ICONOS DE MENÚ INDIVIDUALES - REEMPLAZAR AQUÍ] */}
                   {item.icon}
-                  <Typography variant="body2" sx={{ fontWeight: isSelected ? 600 : 500, noWrap: true }}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontWeight: isSelected ? 600 : 500, 
+                      noWrap: true,
+                      color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)'
+                    }}
+                  >
                     {item.text}
                   </Typography>
                 </Box>

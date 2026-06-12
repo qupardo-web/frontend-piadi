@@ -1,16 +1,15 @@
 // =========================================================================
 // ARCHIVO DE ESTILOS: LandingPage.styles.js
 // =========================================================================
-// Este archivo contiene todos los estilos visuales del componente LandingPage.
-// Usamos el sistema de estilos sx de Material UI, lo que nos permite mantener
-// acceso a las propiedades del tema y mantener limpio el archivo JSX de la vista.
+// Actualizado siguiendo las directrices exactas del UI_Kit.pdf de P.I.A.D.I.
 
 export const styles = {
   // Contenedor principal de la aplicación (flexbox horizontal)
   mainLayout: {
     display: 'flex',
     minHeight: '100vh',
-    bgcolor: '#f4f6f9', // Fondo gris claro de fondo
+    bgcolor: '#F5F5F7', // Fondo general gris claro
+    fontFamily: "'Inter', sans-serif",
   },
 
   // -------------------------------------------------------------------------
@@ -18,17 +17,17 @@ export const styles = {
   // -------------------------------------------------------------------------
   sidebar: {
     width: 260,
-    bgcolor: '#0d1b6b', // Azul marino profundo corporativo
+    bgcolor: '#1E2875', // Azul institucional oscuro
     color: '#ffffff',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
     flexShrink: 0,
-    borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRight: '1px solid #E5E7EB', // Borde suave
   },
 
   logoContainer: {
-    p: 3,
+    p: 3, // Equivalente a 24px
     display: 'flex',
     alignItems: 'center',
     gap: 1.5,
@@ -47,7 +46,8 @@ export const styles = {
   },
 
   logoTitle: {
-    fontWeight: 800,
+    fontWeight: 700,
+    fontSize: '20px',
     letterSpacing: 0.5,
     lineHeight: 1.1,
   },
@@ -55,6 +55,7 @@ export const styles = {
   logoSubtitle: {
     opacity: 0.7,
     fontWeight: 600,
+    fontSize: '12px',
     letterSpacing: 1,
   },
 
@@ -64,10 +65,10 @@ export const styles = {
   },
 
   menuContainer: {
-    px: 2,
+    px: 2, // 16px
   },
 
-  // Estilo dinámico para el botón de menú seleccionado/no seleccionado
+  // Estilo dinámico para el botón de menú
   menuItem: (isSelected) => ({
     display: 'flex',
     alignItems: 'center',
@@ -77,18 +78,17 @@ export const styles = {
     mb: 0.8,
     borderRadius: 2,
     cursor: 'pointer',
-    bgcolor: isSelected ? '#10b981' : 'transparent', // Verde esmeralda para el seleccionado
+    bgcolor: isSelected ? '#1DC2A0' : 'transparent', // Turquesa activo para seleccionados
     color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)',
     transition: 'all 0.2s ease-in-out',
     '&:hover': {
-      bgcolor: isSelected ? '#10b981' : 'rgba(255, 255, 255, 0.05)',
+      bgcolor: isSelected ? '#1DC2A0' : 'rgba(255, 255, 255, 0.05)',
       color: '#ffffff',
     },
   }),
 
-  // Sección de perfil de usuario y cierre de sesión
   bottomSection: {
-    p: 2,
+    p: 2, // 16px
   },
 
   logoutButton: {
@@ -121,7 +121,7 @@ export const styles = {
   userAvatar: {
     width: 36,
     height: 36,
-    bgcolor: '#10b981',
+    bgcolor: '#1DC2A0', // Turquesa activo para consistencia
     fontSize: '0.9rem',
   },
 
@@ -130,7 +130,7 @@ export const styles = {
   // -------------------------------------------------------------------------
   contentArea: {
     flexGrow: 1,
-    p: 4,
+    p: 4, // 32px
     display: 'flex',
     flexDirection: 'column',
     gap: 4,
@@ -138,14 +138,15 @@ export const styles = {
   },
 
   welcomeText: {
-    color: '#64748b',
+    color: '#6B7280', // Texto secundario
     fontWeight: 600,
+    fontSize: '14px', // Texto pequeño
   },
 
   panelHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: 1.5,
+    gap: 2,
     mt: 1,
   },
 
@@ -153,7 +154,7 @@ export const styles = {
     width: 44,
     height: 44,
     borderRadius: '50%',
-    bgcolor: '#0d1b6b',
+    bgcolor: '#1E2875', // Azul institucional
     color: '#ffffff',
     display: 'flex',
     alignItems: 'center',
@@ -161,32 +162,32 @@ export const styles = {
   },
 
   panelTitle: {
-    fontWeight: 800,
-    color: '#0d1b6b',
-    fontFamily: "'Outfit', sans-serif",
+    fontWeight: 700,
+    fontSize: '36px', // Título de página según UI Kit
+    color: '#1E2875',
+    fontFamily: "'Inter', sans-serif",
   },
 
   tabsContainer: {
     borderBottom: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#E5E7EB', // Borde suave
   },
 
-  // Sobrescribe el diseño de las pestañas secundarias
   tabsList: {
     '& .MuiTabs-indicator': {
-      backgroundColor: '#0d1b6b',
+      backgroundColor: '#1E2875', // Azul institucional
       height: 3,
       borderRadius: '3px 3px 0 0',
     },
     '& .MuiTab-root': {
       textTransform: 'none',
       fontWeight: 600,
-      fontSize: '0.9rem',
+      fontSize: '14px', // Labels / Textos pequeños
       minWidth: 'auto',
       px: 2,
-      color: '#64748b',
+      color: '#6B7280', // Texto secundario
       '&.Mui-selected': {
-        color: '#0d1b6b',
+        color: '#1E2875', // Azul institucional
       },
     },
   },
@@ -195,26 +196,27 @@ export const styles = {
   // ESTILOS DE LAS TARJETAS KPI (MÉTRICAS)
   // -------------------------------------------------------------------------
   kpiCardBlue: {
-    bgcolor: '#0d1b6b',
+    bgcolor: '#1E2875', // Azul institucional oscuro
     color: '#ffffff',
-    borderRadius: 4,
-    boxShadow: '0 4px 20px rgba(13, 27, 107, 0.1)',
+    borderRadius: 3,
+    boxShadow: '0 4px 20px rgba(30, 40, 117, 0.05)',
     position: 'relative',
     overflow: 'hidden',
   },
 
   kpiCardWhite: {
-    bgcolor: '#ffffff',
-    color: '#1e293b',
-    borderRadius: 4,
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
-    border: '1px solid #e2e8f0',
+    bgcolor: '#FFFFFF', // Superficie blanca
+    color: '#1F2937', // Texto principal
+    borderRadius: 3,
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.015)',
+    border: '1px solid #E5E7EB', // Borde suave
   },
 
   kpiValue: {
-    fontWeight: 800,
+    fontWeight: 600,
+    fontSize: '30px', // Encabezado principal
     mb: 1,
-    fontFamily: "'Outfit', sans-serif",
+    fontFamily: "'Inter', sans-serif",
   },
 
   kpiTrendContainer: {
@@ -240,46 +242,48 @@ export const styles = {
   },
 
   metasTitle: {
-    fontWeight: 700,
-    color: '#0d1b6b',
-    fontFamily: "'Outfit', sans-serif",
+    fontWeight: 600,
+    fontSize: '24px', // Encabezado secundario según UI Kit
+    color: '#1E2875',
+    fontFamily: "'Inter', sans-serif",
   },
 
   metasButton: {
-    bgcolor: '#0d1b6b',
+    bgcolor: '#0F4AFF', // Azul acción
     color: '#ffffff',
     textTransform: 'none',
     fontWeight: 600,
+    fontSize: '14px',
     borderRadius: 2,
-    px: 2,
-    py: 0.8,
+    px: 3,
+    py: 1,
     '&:hover': {
-      bgcolor: '#07104a',
+      bgcolor: '#0c3bc6',
     },
   },
 
   metaCard: {
-    bgcolor: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 4,
+    bgcolor: '#FFFFFF', // Superficie blanca
+    border: '1px solid #E5E7EB', // Borde suave
+    borderRadius: 3,
     boxShadow: 'none',
   },
 
   metaCardContent: {
-    p: '24px !important',
+    p: '24px !important', // Padding de 24px según composición
   },
 
   // Genera dinámicamente los estilos de los badges según el estado de la meta
   metaStatusBadge: (status) => {
     let bgcolor = '#e6f4ea'; // Completada (verde por defecto)
-    let color = '#137333';
+    let color = '#10B981'; // Éxito según UI Kit
 
     if (status === 'progreso') {
       bgcolor = '#e8f0fe'; // En progreso (azul)
-      color = '#1a73e8';
+      color = '#3B82F6'; // Progreso según UI Kit
     } else if (status === 'atencion') {
       bgcolor = '#fce8e6'; // Requiere atención (rojo)
-      color = '#c5221f';
+      color = '#EF4444'; // Peligro según UI Kit
     }
 
     return {
@@ -288,6 +292,8 @@ export const styles = {
       px: 1.5,
       py: 0.5,
       borderRadius: 1.5,
+      fontSize: '12px', // Badges y Captions
+      fontWeight: 700,
       display: 'flex',
       alignItems: 'center',
       gap: 0.5,
@@ -296,18 +302,18 @@ export const styles = {
 
   // Genera dinámicamente los estilos de la barra de progreso
   metaProgressBar: (status) => {
-    let barColor = '#10b981'; // Verde
+    let barColor = '#10B981'; // Éxito según UI Kit
 
     if (status === 'progreso') {
-      barColor = '#3b82f6'; // Azul
+      barColor = '#3B82F6'; // Progreso según UI Kit
     } else if (status === 'atencion') {
-      barColor = '#ef4444'; // Rojo
+      barColor = '#EF4444'; // Peligro según UI Kit
     }
 
     return {
       height: 8,
       borderRadius: 4,
-      bgcolor: '#e2e8f0',
+      bgcolor: '#E5E7EB', // Borde/fondo suave
       '& .MuiLinearProgress-bar': {
         bgcolor: barColor,
         borderRadius: 4,
@@ -316,29 +322,30 @@ export const styles = {
   },
 
   metaDetailButton: {
-    bgcolor: '#0d1b6b',
+    bgcolor: '#0F4AFF', // Azul acción
     color: '#ffffff',
     textTransform: 'none',
     fontWeight: 600,
+    fontSize: '14px',
     px: 3,
     borderRadius: 2,
     '&:hover': {
-      bgcolor: '#07104a',
+      bgcolor: '#0c3bc6',
     },
   },
 
-  // Botón flotante de ayuda / ayuda rápido en la esquina
+  // Botón flotante de ayuda contextual
   floatingHelpButton: {
     position: 'fixed',
     bottom: 24,
     right: 24,
-    bgcolor: '#0d1b6b',
+    bgcolor: '#1E2875', // Azul institucional
     color: '#ffffff',
     width: 50,
     height: 50,
-    boxShadow: '0 4px 12px rgba(13, 27, 107, 0.3)',
+    boxShadow: '0 4px 12px rgba(30, 40, 117, 0.2)',
     '&:hover': {
-      bgcolor: '#07104a',
+      bgcolor: '#141b4f',
     },
   },
 };
