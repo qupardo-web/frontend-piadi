@@ -3,5 +3,11 @@ dist/
 *.log
 .DS_Store
 referencia_landing_page.png
+referencia_carga_datos.png
+ventana_cargardatos_seleccionado.png
+ventana_cargardatos.png
+vista_repositorio.png
+vista_repositorio_archivos_historicos.png
+referencia_plantillapersonalizada.png
 Gemini.md
 UI_Kit.pdf

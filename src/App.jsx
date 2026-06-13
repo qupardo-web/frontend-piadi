@@ -36,6 +36,7 @@ import {
 import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { LoginPage, useAuth } from './modules/auth';
 import { LandingPage } from './modules/landing_page';
+import { CargaDatos, RepositorioArchivos } from './modules/carga_datos';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 
@@ -451,6 +452,32 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 
+              RUTA: /carga-datos
+              Ruta protegida para la vista de Carga de Datos según referencia_carga_datos.png.
+            */}
+            <Route 
+              path="/carga-datos" 
+              element={
+                <ProtectedRoute>
+                  <CargaDatos />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 
+              RUTA: /repositorio
+              Ruta protegida para la vista del Repositorio de Archivos según vista_repositorio.png.
+            */}
+            <Route 
+              path="/repositorio" 
+              element={
+                <ProtectedRoute>
+                  <RepositorioArchivos />
                 </ProtectedRoute>
               } 
             />

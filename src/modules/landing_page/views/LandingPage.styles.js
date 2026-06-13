@@ -1,33 +1,47 @@
 // =========================================================================
 // ARCHIVO DE ESTILOS: LandingPage.styles.js
 // =========================================================================
-// Actualizado siguiendo las directrices exactas del UI_Kit.pdf de P.I.A.D.I.
+// Actualizado para soportar un diseño totalmente responsivo (móvil y escritorio).
 
 export const styles = {
-  // Contenedor principal de la aplicación (flexbox horizontal)
+  // Contenedor principal: Cambia a columna en móviles y fila en escritorios
   mainLayout: {
     display: 'flex',
-    minHeight: '100vh',
-    bgcolor: '#F5F5F7', // Fondo general gris claro
+    flexDirection: { xs: 'column', md: 'row' },
+    height: '100vh', // Mantiene el layout al tamaño exacto de la pantalla (viewport)
+    maxHeight: '100vh', // Evita que crezca más allá de la pantalla
+    overflow: 'hidden', // Oculta el scrollbar del body/sitio general
+    bgcolor: '#F5F5F7',
     fontFamily: "'Inter', sans-serif",
   },
 
   // -------------------------------------------------------------------------
-  // ESTILOS DEL SIDEBAR LATERAL IZQUIERDO
+  // ESTILOS DEL SIDEBAR LATERAL (ESCRITORIO)
   // -------------------------------------------------------------------------
   sidebar: {
     width: 260,
-    bgcolor: '#1E2875', // Azul institucional oscuro
+    bgcolor: '#1E2875', // Azul institucional
+    color: '#ffffff',
+    display: { xs: 'none', md: 'flex' }, // Oculto en móviles, visible en escritorios (md y superior)
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    flexShrink: 0,
+    borderRight: '1px solid #E5E7EB',
+  },
+
+  // Contenedor del menú dentro del Drawer de Móviles
+  drawerContent: {
+    width: 260,
+    height: '100%',
+    bgcolor: '#1E2875', // Azul institucional
     color: '#ffffff',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    flexShrink: 0,
-    borderRight: '1px solid #E5E7EB', // Borde suave
   },
 
   logoContainer: {
-    p: 3, // Equivalente a 24px
+    p: 3,
     display: 'flex',
     alignItems: 'center',
     gap: 1.5,
@@ -65,10 +79,9 @@ export const styles = {
   },
 
   menuContainer: {
-    px: 2, // 16px
+    px: 2,
   },
 
-  // Estilo dinámico para el botón de menú
   menuItem: (isSelected) => ({
     display: 'flex',
     alignItems: 'center',
@@ -78,7 +91,7 @@ export const styles = {
     mb: 0.8,
     borderRadius: 2,
     cursor: 'pointer',
-    bgcolor: isSelected ? '#1DC2A0' : 'transparent', // Turquesa activo para seleccionados
+    bgcolor: isSelected ? '#1DC2A0' : 'transparent',
     color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)',
     transition: 'all 0.2s ease-in-out',
     '&:hover': {
@@ -88,7 +101,7 @@ export const styles = {
   }),
 
   bottomSection: {
-    p: 2, // 16px
+    p: 2,
   },
 
   logoutButton: {
@@ -121,8 +134,26 @@ export const styles = {
   userAvatar: {
     width: 36,
     height: 36,
-    bgcolor: '#1DC2A0', // Turquesa activo para consistencia
+    bgcolor: '#1DC2A0',
     fontSize: '0.9rem',
+  },
+
+  // -------------------------------------------------------------------------
+  // ESTILOS DE LA BARRA SUPERIOR PARA MÓVILES (APPBAR)
+  // -------------------------------------------------------------------------
+  mobileAppBar: {
+    display: { xs: 'flex', md: 'none' }, // Visible solo en móviles/tablets
+    bgcolor: '#1E2875',
+    borderBottom: '1px solid #E5E7EB',
+    boxShadow: 'none',
+    borderRadius: 0, // Evita heredar bordes redondeados del tema global de MUI
+  },
+
+  mobileToolbar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    width: '100%',
+    px: 1.5, // Reducido para aproximar al máximo los botones a los extremos izquierdo y derecho
   },
 
   // -------------------------------------------------------------------------
@@ -130,7 +161,8 @@ export const styles = {
   // -------------------------------------------------------------------------
   contentArea: {
     flexGrow: 1,
-    p: 4, // 32px
+    p: { xs: 3, md: 4 }, // Padding reducido a 24px en móvil y 32px en escritorio
+    pt: { xs: 11, md: 4 }, // Padding superior extra en móvil para no taparse por la barra fija
     display: 'flex',
     flexDirection: 'column',
     gap: 4,
@@ -138,9 +170,9 @@ export const styles = {
   },
 
   welcomeText: {
-    color: '#6B7280', // Texto secundario
+    color: '#6B7280',
     fontWeight: 600,
-    fontSize: '14px', // Texto pequeño
+    fontSize: '14px',
   },
 
   panelHeader: {
@@ -154,7 +186,7 @@ export const styles = {
     width: 44,
     height: 44,
     borderRadius: '50%',
-    bgcolor: '#1E2875', // Azul institucional
+    bgcolor: '#1E2875',
     color: '#ffffff',
     display: 'flex',
     alignItems: 'center',
@@ -163,31 +195,31 @@ export const styles = {
 
   panelTitle: {
     fontWeight: 700,
-    fontSize: '36px', // Título de página según UI Kit
+    fontSize: { xs: '28px', md: '36px' }, // Título un poco más pequeño en móviles
     color: '#1E2875',
     fontFamily: "'Inter', sans-serif",
   },
 
   tabsContainer: {
     borderBottom: 1,
-    borderColor: '#E5E7EB', // Borde suave
+    borderColor: '#E5E7EB',
   },
 
   tabsList: {
     '& .MuiTabs-indicator': {
-      backgroundColor: '#1E2875', // Azul institucional
+      backgroundColor: '#1E2875',
       height: 3,
       borderRadius: '3px 3px 0 0',
     },
     '& .MuiTab-root': {
       textTransform: 'none',
       fontWeight: 600,
-      fontSize: '14px', // Labels / Textos pequeños
+      fontSize: '14px',
       minWidth: 'auto',
       px: 2,
-      color: '#6B7280', // Texto secundario
+      color: '#6B7280',
       '&.Mui-selected': {
-        color: '#1E2875', // Azul institucional
+        color: '#1E2875',
       },
     },
   },
@@ -195,26 +227,26 @@ export const styles = {
   // -------------------------------------------------------------------------
   // ESTILOS DE LAS TARJETAS KPI (MÉTRICAS)
   // -------------------------------------------------------------------------
-  kpiCardBlue: {
-    bgcolor: '#1E2875', // Azul institucional oscuro
-    color: '#ffffff',
+  kpiCardBlue: (customBgColor, customTextColor = '#ffffff') => ({
+    bgcolor: customBgColor || '#1E2875',
+    color: customTextColor,
     borderRadius: 3,
     boxShadow: '0 4px 20px rgba(30, 40, 117, 0.05)',
     position: 'relative',
     overflow: 'hidden',
-  },
+  }),
 
   kpiCardWhite: {
-    bgcolor: '#FFFFFF', // Superficie blanca
-    color: '#1F2937', // Texto principal
+    bgcolor: '#FFFFFF',
+    color: '#1F2937',
     borderRadius: 3,
     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.015)',
-    border: '1px solid #E5E7EB', // Borde suave
+    border: '1px solid #E5E7EB',
   },
 
   kpiValue: {
     fontWeight: 600,
-    fontSize: '30px', // Encabezado principal
+    fontSize: '30px',
     mb: 1,
     fontFamily: "'Inter', sans-serif",
   },
@@ -237,19 +269,21 @@ export const styles = {
 
   metasHeader: {
     display: 'flex',
+    flexDirection: { xs: 'column', sm: 'row' }, // Stack vertical en móviles pequeños
+    alignItems: { xs: 'flex-start', sm: 'center' },
     justifyContent: 'space-between',
-    alignItems: 'center',
+    gap: 2,
   },
 
   metasTitle: {
     fontWeight: 600,
-    fontSize: '24px', // Encabezado secundario según UI Kit
+    fontSize: '24px',
     color: '#1E2875',
     fontFamily: "'Inter', sans-serif",
   },
 
   metasButton: {
-    bgcolor: '#0F4AFF', // Azul acción
+    bgcolor: '#0F4AFF',
     color: '#ffffff',
     textTransform: 'none',
     fontWeight: 600,
@@ -257,33 +291,33 @@ export const styles = {
     borderRadius: 2,
     px: 3,
     py: 1,
+    width: { xs: '100%', sm: 'auto' }, // Ancho completo en móvil
     '&:hover': {
       bgcolor: '#0c3bc6',
     },
   },
 
   metaCard: {
-    bgcolor: '#FFFFFF', // Superficie blanca
-    border: '1px solid #E5E7EB', // Borde suave
+    bgcolor: '#FFFFFF',
+    border: '1px solid #E5E7EB',
     borderRadius: 3,
     boxShadow: 'none',
   },
 
   metaCardContent: {
-    p: '24px !important', // Padding de 24px según composición
+    p: '24px !important',
   },
 
-  // Genera dinámicamente los estilos de los badges según el estado de la meta
   metaStatusBadge: (status) => {
-    let bgcolor = '#e6f4ea'; // Completada (verde por defecto)
-    let color = '#10B981'; // Éxito según UI Kit
+    let bgcolor = '#e6f4ea';
+    let color = '#10B981';
 
     if (status === 'progreso') {
-      bgcolor = '#e8f0fe'; // En progreso (azul)
-      color = '#3B82F6'; // Progreso según UI Kit
+      bgcolor = '#e8f0fe';
+      color = '#3B82F6';
     } else if (status === 'atencion') {
-      bgcolor = '#fce8e6'; // Requiere atención (rojo)
-      color = '#EF4444'; // Peligro según UI Kit
+      bgcolor = '#fce8e6';
+      color = '#EF4444';
     }
 
     return {
@@ -292,7 +326,7 @@ export const styles = {
       px: 1.5,
       py: 0.5,
       borderRadius: 1.5,
-      fontSize: '12px', // Badges y Captions
+      fontSize: '12px',
       fontWeight: 700,
       display: 'flex',
       alignItems: 'center',
@@ -300,20 +334,19 @@ export const styles = {
     };
   },
 
-  // Genera dinámicamente los estilos de la barra de progreso
   metaProgressBar: (status) => {
-    let barColor = '#10B981'; // Éxito según UI Kit
+    let barColor = '#10B981';
 
     if (status === 'progreso') {
-      barColor = '#3B82F6'; // Progreso según UI Kit
+      barColor = '#3B82F6';
     } else if (status === 'atencion') {
-      barColor = '#EF4444'; // Peligro según UI Kit
+      barColor = '#EF4444';
     }
 
     return {
       height: 8,
       borderRadius: 4,
-      bgcolor: '#E5E7EB', // Borde/fondo suave
+      bgcolor: '#E5E7EB',
       '& .MuiLinearProgress-bar': {
         bgcolor: barColor,
         borderRadius: 4,
@@ -322,28 +355,29 @@ export const styles = {
   },
 
   metaDetailButton: {
-    bgcolor: '#0F4AFF', // Azul acción
+    bgcolor: '#0F4AFF',
     color: '#ffffff',
     textTransform: 'none',
     fontWeight: 600,
     fontSize: '14px',
     px: 3,
     borderRadius: 2,
+    width: { xs: '100%', md: 'auto' }, // Ancho completo en móvil
     '&:hover': {
       bgcolor: '#0c3bc6',
     },
   },
 
-  // Botón flotante de ayuda contextual
   floatingHelpButton: {
     position: 'fixed',
     bottom: 24,
     right: 24,
-    bgcolor: '#1E2875', // Azul institucional
+    bgcolor: '#1E2875',
     color: '#ffffff',
     width: 50,
     height: 50,
     boxShadow: '0 4px 12px rgba(30, 40, 117, 0.2)',
+    zIndex: 1000,
     '&:hover': {
       bgcolor: '#141b4f',
     },
