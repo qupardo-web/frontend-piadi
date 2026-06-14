@@ -146,13 +146,20 @@ export const styles = {
     borderBottom: '1px solid #E5E7EB',
     boxShadow: 'none',
     borderRadius: 0,
+    height: '50px', // Altura fija de la AppBar
   },
 
   mobileToolbar: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    alignItems: 'center', // Centrado vertical
     width: '100%',
-    px: 1.5,
+    px: 3, // Aleja el botón del borde de la pantalla
+    height: '100%', // Toma la altura completa de la AppBar
+    minHeight: '50px',
+    '@media (min-width: 0px)': {
+      minHeight: '50px', // Fuerza altura uniforme de 50px en móviles
+    },
   },
 
   // -------------------------------------------------------------------------
@@ -183,6 +190,7 @@ export const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0, // Evita que se deforme en pantallas pequeñas
   },
 
   panelTitle: {
@@ -198,7 +206,7 @@ export const styles = {
     alignItems: 'center',
     gap: 0.8,
     color: '#6B7280',
-    fontSize: '12px',
+    fontSize: '16px',
     fontWeight: 500,
   },
 
@@ -495,8 +503,129 @@ export const styles = {
     borderRadius: 2,
     boxShadow: isActive ? '0 4px 12px rgba(15, 74, 255, 0.2)' : 'none',
     pointerEvents: isActive ? 'auto' : 'none',
+    '&.Mui-disabled': {
+      bgcolor: '#E2E8F0',
+      color: '#94A3B8',
+    },
     '&:hover': {
       bgcolor: '#0c3bc6',
     },
   }),
+
+  // Estilos responsivos móviles para la tabla de cargas recientes (diseño de tarjetas)
+  mobileCardsContainer: {
+    display: { xs: 'flex', md: 'none' },
+    flexDirection: 'column',
+    gap: 2.5,
+    mt: 1,
+  },
+
+  mobileUploadCard: {
+    bgcolor: '#FFFFFF',
+    border: '1px solid #E5E7EB',
+    borderRadius: 3,
+    p: 2.5,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    boxShadow: 'none',
+  },
+
+  mobileCardHeader: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+
+  // Nombre de archivo con truncado de texto (...) si excede el ancho de la tarjeta
+  mobileCardFilename: {
+    color: '#10B981', // Verde éxito
+    textDecoration: 'none',
+    fontWeight: 500,
+    fontSize: '14px',
+    display: 'block',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis', // Añade los puntos suspensivos
+    whiteSpace: 'nowrap', // Mantiene el texto en una sola línea
+    maxWidth: '100%',
+    fontFamily: "'Inter', sans-serif",
+    '&:hover': {
+      textDecoration: 'underline',
+    },
+  },
+
+  mobileMetadataRow: {
+    display: 'flex',
+    flexDirection: { xs: 'column', sm: 'row' },
+    alignItems: { xs: 'flex-start', sm: 'center' },
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 2,
+    mt: 0.5,
+  },
+
+  metadataItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    color: '#475569',
+    fontSize: '13px',
+  },
+
+  templatePill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.8,
+    bgcolor: '#1E2875', // Azul institucional
+    color: '#ffffff',
+    px: 1.5,
+    py: 0.5,
+    borderRadius: '20px',
+    fontSize: '11px',
+    fontWeight: 600,
+    alignSelf: { xs: 'flex-start', sm: 'auto' },
+  },
+
+  paginationContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 1.5,
+    border: '1px solid #E5E7EB',
+    borderRadius: 3,
+    p: 1.5,
+    mt: 2,
+  },
+
+  paginationArrow: {
+    color: '#475569',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    '&:hover': {
+      color: '#1E2875',
+    },
+    '&.Mui-disabled': {
+      color: '#CBD5E1',
+      cursor: 'default',
+    },
+  },
+
+  paginationDot: {
+    color: '#94A3B8',
+    fontSize: '14px',
+    userSelect: 'none',
+  },
+
+  paginationPage: (isActive) => ({
+    color: isActive ? '#1F2937' : '#94A3B8',
+    fontWeight: isActive ? 700 : 500,
+    fontSize: '14px',
+    cursor: 'pointer',
+    userSelect: 'none',
+    px: 1,
+    '&:hover': {
+      color: '#1E2875',
+    },
+  }),
 };
+

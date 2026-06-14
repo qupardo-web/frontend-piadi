@@ -297,20 +297,11 @@ export const LandingPage = () => {
           <IconButton
             color="inherit"
             aria-label="open drawer"
-            edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2 }}
+            sx={{ p: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <MenuIcon />
+            <MenuIcon sx={{ fontSize: 36 }} />
           </IconButton>
-          
-          {/* Logo en la Barra Superior Móvil */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box sx={[styles.logoBadge, { width: 28, height: 28, fontSize: '1rem' }]}>P</Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
-              PIADI ECAS
-            </Typography>
-          </Box>
         </Toolbar>
       </AppBar>
 
