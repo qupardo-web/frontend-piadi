@@ -43,6 +43,9 @@ import {
   FolderOpen as FolderIcon,
   Close as CloseIcon,
   Description as DescriptionIcon,
+  Person as PersonIcon,
+  CalendarToday as CalendarIcon,
+  ChevronLeft as ChevronLeftIcon,
 } from '@mui/icons-material';
 
 // Plantillas de carga de datos oficiales
@@ -93,11 +96,19 @@ const TEMPLATES = [
 
 // Datos de prueba para simular la tabla de cargas recientes
 const RECENT_UPLOADS = [
-  { fecha: '14-05-2026 22:00', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2026_PrimerSemestre.xlsx' },
-  { fecha: '14-05-2026 21:45', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2025_SegundoSemestre.xlsx' },
-  { fecha: '14-05-2026 20:30', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2025_PrimerSemestre.xlsx' },
+  { fecha: '14-05-2026 22:30', usuario: 'Jane Doe', plantilla: 'Caracterización Estudiante', archivo: 'Caracterizacion_Estudiantes_2026.xlsx' },
+  { fecha: '14-05-2026 22:15', usuario: 'Jane Doe', plantilla: 'Educación Continua', archivo: 'EduContinua_Matricula_2026.xlsx' },
+  { fecha: '14-05-2026 22:00', usuario: 'Jane Doe', plantilla: 'Innovación', archivo: 'Innovacion_Proyectos_2026.xlsx' },
+  // Página 2 (cuando itemsPerPage = 3)
+  { fecha: '14-05-2026 21:45', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2026_Primer_Semestre.xlsx' },
+  { fecha: '14-05-2026 21:45', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2026_Segundo_Semestre.xlsx' },
+  { fecha: '14-05-2026 21:45', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2025_Primer_Semestre.xlsx' },
+  // Página 3
   { fecha: '14-05-2026 19:15', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2024_SegundoSemestre.xlsx' },
+  { fecha: '14-05-2026 18:00', usuario: 'Jane Doe', plantilla: 'Vinculación con el Medio', archivo: 'Vinculacion_Medio_Convenios_2026.xlsx' },
+  { fecha: '14-05-2026 17:30', usuario: 'Jane Doe', plantilla: 'Rendimiento Académico', archivo: 'Rendimiento_Academico_2025.xlsx' },
 ];
+
 
 export const CargaDatos = () => {
   const navigate = useNavigate();
@@ -110,6 +121,7 @@ export const CargaDatos = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1); // Página inicial 1 por defecto
 
   // Mapeamos el menú activo a "Carga de datos"
   const activeMenu = 'Carga de datos';
@@ -166,6 +178,7 @@ export const CargaDatos = () => {
         archivo: selectedFile.name,
       };
       setUploads([newUpload, ...uploads]);
+      setCurrentPage(1); // Restablecer a la página 1 para que el usuario visualice su carga
       handleCloseDialog();
     }
   };
@@ -274,19 +287,11 @@ export const CargaDatos = () => {
           <IconButton
             color="inherit"
             aria-label="open drawer"
-            edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2 }}
+            sx={{ p: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <MenuIcon />
+            <MenuIcon sx={{ fontSize: 36 }} />
           </IconButton>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box sx={[styles.logoBadge, { width: 28, height: 28, fontSize: '1rem' }]}>P</Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
-              PIADI ECAS
-            </Typography>
-          </Box>
         </Toolbar>
       </AppBar>
 
@@ -338,11 +343,11 @@ export const CargaDatos = () => {
 
           {/* Breadcrumbs de orientación */}
           <Box sx={styles.breadcrumbsContainer}>
-            <Typography variant="caption" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/')}>
+            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/')}>
               Inicio
             </Typography>
-            <ChevronRightIcon sx={{ fontSize: '12px', opacity: 0.7 }} />
-            <Typography variant="caption" sx={{ color: '#1E2875', fontWeight: 600 }}>
+            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
+            <Typography variant="body1" sx={{ color: '#1E2875', fontWeight: 600 }}>
               Carga de datos
             </Typography>
           </Box>
@@ -381,7 +386,7 @@ export const CargaDatos = () => {
             Cargas más recientes
           </Typography>
           
-          <TableContainer sx={styles.tableContainer}>
+          <TableContainer sx={{ ...styles.tableContainer, display: { xs: 'none', md: 'block' } }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -416,6 +421,77 @@ export const CargaDatos = () => {
               </TableBody>
             </Table>
           </TableContainer>
+
+          {/* Vista móvil: Diseño de Tarjetas Responsivo */}
+          <Box sx={styles.mobileCardsContainer}>
+            {uploads.slice((currentPage - 1) * 3, currentPage * 3).map((upload, index) => (
+              <Box key={index} sx={styles.mobileUploadCard}>
+                <Box sx={styles.mobileCardHeader}>
+                  {/* Nombre de archivo estilizado con clase de truncado (textOverflow: ellipsis) */}
+                  <Box component="a" href="#" sx={styles.mobileCardFilename}>
+                    {upload.archivo}
+                  </Box>
+                </Box>
+                <Box sx={styles.mobileMetadataRow}>
+                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                    <Box sx={styles.metadataItem}>
+                      <PersonIcon sx={{ fontSize: 16, color: '#6B7280' }} />
+                      <Typography variant="body2" sx={{ fontSize: '12px', color: '#475569' }}>
+                        {upload.usuario}
+                      </Typography>
+                    </Box>
+                    <Box sx={styles.metadataItem}>
+                      <CalendarIcon sx={{ fontSize: 16, color: '#6B7280' }} />
+                      <Typography variant="body2" sx={{ fontSize: '12px', color: '#475569' }}>
+                        {upload.fecha}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={styles.templatePill}>
+                    <DescriptionIcon sx={{ fontSize: 12, color: '#ffffff' }} />
+                    <Typography variant="caption" sx={{ fontSize: '11px', fontWeight: 600, color: '#ffffff' }}>
+                      {upload.plantilla}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            ))}
+
+            {/* Paginación móvil */}
+            <Box sx={styles.paginationContainer}>
+              <IconButton 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                sx={styles.paginationArrow}
+                size="small"
+              >
+                <ChevronLeftIcon fontSize="small" />
+              </IconButton>
+              
+              <Typography sx={styles.paginationDot}>...</Typography>
+              
+              {[1, 2, 3].map((pageNum) => (
+                <Typography
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  sx={styles.paginationPage(currentPage === pageNum)}
+                >
+                  {pageNum}
+                </Typography>
+              ))}
+              
+              <Typography sx={styles.paginationDot}>...</Typography>
+              
+              <IconButton 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, 3))}
+                disabled={currentPage === 3}
+                sx={styles.paginationArrow}
+                size="small"
+              >
+                <ChevronRightIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Box>
         </Card>
 
         {/* Sección: Repositorio de Archivos */}
@@ -494,62 +570,67 @@ export const CargaDatos = () => {
             })}
           </Box>
 
-          {/* 2. Carga tu archivo (Se activa al seleccionar una plantilla) */}
-          {selectedTemplate && (
-            <Box>
-              <Typography sx={styles.sectionSubtitleDialog}>2. Carga tu archivo</Typography>
+          {/* 2. Carga tu archivo (Habilitado solo al seleccionar una plantilla de la sección anterior) */}
+          <Box sx={{ 
+            opacity: selectedTemplate ? 1 : 0.4, 
+            pointerEvents: selectedTemplate ? 'auto' : 'none',
+            transition: 'all 0.3s ease-in-out',
+            mt: 3 
+          }}>
+            <Typography sx={styles.sectionSubtitleDialog}>2. Carga tu archivo</Typography>
+            
+            <Box
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              sx={styles.dropZone(isDragActive && selectedTemplate)}
+              onClick={() => selectedTemplate && document.getElementById('dialog-file-input').click()}
+            >
+              <input
+                type="file"
+                id="dialog-file-input"
+                accept=".xlsx"
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+                disabled={!selectedTemplate}
+              />
               
-              <Box
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                sx={styles.dropZone(isDragActive)}
-                onClick={() => document.getElementById('dialog-file-input').click()}
-              >
-                <input
-                  type="file"
-                  id="dialog-file-input"
-                  accept=".xlsx"
-                  style={{ display: 'none' }}
-                  onChange={handleFileChange}
-                />
-                
-                <UploadIcon sx={[styles.dropZoneIcon, selectedFile && { color: '#10B981' }]} />
-                
-                {selectedFile ? (
-                  <Box>
-                    <Typography sx={styles.dropZoneTextPrimary} style={{ color: '#10B981' }}>
-                      Archivo seleccionado: {selectedFile.name}
-                    </Typography>
-                    <Typography sx={styles.dropZoneTextSecondary}>
-                      Tamaño: {(selectedFile.size / 1024).toFixed(1)} KB (Listo para cargar)
-                    </Typography>
-                  </Box>
-                ) : (
-                  <>
-                    <Typography sx={styles.dropZoneTextPrimary}>
-                      Arrastra tu archivo aquí
-                    </Typography>
-                    <Typography sx={styles.dropZoneTextSecondary}>
-                      o haz clic para seleccionarlo
-                    </Typography>
-                    
-                    <Button
-                      variant="contained"
-                      sx={styles.dropZoneSelectButton}
-                      component="span"
-                    >
-                      Seleccionar archivo
-                    </Button>
-                    
-                    <Typography sx={styles.dropZoneCaption}>
-                      Formato aceptado: .xlsx (Excel)
-                    </Typography>
-                  </>
-                )}
-              </Box>
+              <UploadIcon sx={[styles.dropZoneIcon, selectedFile && { color: '#10B981' }]} />
+              
+              {selectedFile ? (
+                <Box>
+                  <Typography sx={styles.dropZoneTextPrimary} style={{ color: '#10B981' }}>
+                    Archivo seleccionado: {selectedFile.name}
+                  </Typography>
+                  <Typography sx={styles.dropZoneTextSecondary}>
+                    Tamaño: {(selectedFile.size / 1024).toFixed(1)} KB (Listo para cargar)
+                  </Typography>
+                </Box>
+              ) : (
+                <>
+                  <Typography sx={styles.dropZoneTextPrimary}>
+                    Arrastra tu archivo aquí
+                  </Typography>
+                  <Typography sx={styles.dropZoneTextSecondary}>
+                    o haz clic para seleccionarlo
+                  </Typography>
+                  
+                  <Button
+                    variant="contained"
+                    sx={styles.dropZoneSelectButton}
+                    component="span"
+                    disabled={!selectedTemplate}
+                  >
+                    Seleccionar archivo
+                  </Button>
+                  
+                  <Typography sx={styles.dropZoneCaption}>
+                    Formato aceptado: .xlsx (Excel)
+                  </Typography>
+                </>
+              )}
             </Box>
-          )}
+          </Box>
         </DialogContent>
 
         <DialogActions sx={{ p: 0, mt: 3, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>

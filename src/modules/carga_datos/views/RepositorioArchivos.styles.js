@@ -146,13 +146,20 @@ export const styles = {
     borderBottom: '1px solid #E5E7EB',
     boxShadow: 'none',
     borderRadius: 0,
+    height: '50px', // Altura fija de la AppBar
   },
 
   mobileToolbar: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    alignItems: 'center', // Centrado vertical
     width: '100%',
-    px: 1.5,
+    px: 3, // Aleja el botón del borde de la pantalla
+    height: '100%', // Toma la altura completa de la AppBar
+    minHeight: '50px',
+    '@media (min-width: 0px)': {
+      minHeight: '50px', // Fuerza altura uniforme de 50px en móviles
+    },
   },
 
   // -------------------------------------------------------------------------
@@ -183,6 +190,7 @@ export const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0, // Evita que se deforme en pantallas pequeñas
   },
 
   panelTitle: {
@@ -197,7 +205,7 @@ export const styles = {
     alignItems: 'center',
     gap: 0.8,
     color: '#6B7280',
-    fontSize: '12px',
+    fontSize: '16px',
     fontWeight: 500,
   },
 
