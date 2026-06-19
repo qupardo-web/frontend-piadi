@@ -1,8 +1,8 @@
 // =========================================================================
-// ARCHIVO DE ESTILOS: CargaDatos.styles.js
+// ARCHIVO DE ESTILOS: Auditoria.styles.js
 // =========================================================================
-// Este archivo contiene los estilos de la vista Carga de Datos.
-// Alineado con el UI_Kit.pdf de P.I.A.D.I. y el diseño responsivo de la Landing Page.
+// Este archivo contiene los estilos del módulo Auditoría del Sistema.
+// Alineado con el UI_Kit.pdf de P.I.A.D.I. y el diseño responsivo del frontend.
 
 export const styles = {
   // Contenedor principal (responsivo)
@@ -146,19 +146,19 @@ export const styles = {
     borderBottom: '1px solid #E5E7EB',
     boxShadow: 'none',
     borderRadius: 0,
-    height: '50px', // Altura fija de la AppBar
+    height: '50px',
   },
 
   mobileToolbar: {
     display: 'flex',
     justifyContent: 'flex-start',
-    alignItems: 'center', // Centrado vertical
+    alignItems: 'center',
     width: '100%',
-    px: 3, // Aleja el botón del borde de la pantalla
-    height: '100%', // Toma la altura completa de la AppBar
+    px: 3,
+    height: '100%',
     minHeight: '50px',
     '@media (min-width: 0px)': {
-      minHeight: '50px', // Fuerza altura uniforme de 50px en móviles
+      minHeight: '50px',
     },
   },
 
@@ -190,7 +190,7 @@ export const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0, // Evita que se deforme en pantallas pequeñas
+    flexShrink: 0,
   },
 
   panelTitle: {
@@ -210,66 +210,188 @@ export const styles = {
     fontWeight: 500,
   },
 
-  // Alerta informativa del formato requerido
-  formatAlert: {
-    display: 'flex',
-    gap: 1.5,
-    p: 2,
+  // Tarjeta contenedora de la barra de búsquedas y filtros desplegables
+  filterCard: {
+    bgcolor: '#FFFFFF',
+    border: '1px solid #E5E7EB',
     borderRadius: 3,
-    bgcolor: '#e8f0fe', // Fondo azul claro suave
-    borderLeft: '4px solid #0F4AFF', // Borde izquierdo azul acción grueso
+    boxShadow: 'none',
+    p: 3,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2.5,
   },
 
-  alertTitle: {
-    fontWeight: 700,
-    fontSize: '14px',
-    color: '#1E2875',
+  filterRow: {
+    display: 'flex',
+    flexDirection: { xs: 'column', md: 'row' },
+    gap: 3,
+    alignItems: 'center',
+    width: '100%',
   },
 
-  alertText: {
-    fontSize: '14px',
+  filterInputContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0.8,
+    flexGrow: 1,
+    width: { xs: '100%', md: 'auto' },
+  },
+
+  filterLabel: {
+    fontSize: '13px',
+    fontWeight: 600,
     color: '#475569',
-    mt: 0.5,
   },
 
-  // Botón principal de carga
-  uploadButton: {
+  filterSelect: {
+    borderRadius: '8px',
+    bgcolor: '#ffffff',
+    height: '40px',
+    color: '#1F2937', // Fuerza el texto a ser gris oscuro (legible sobre fondo blanco)
+    '& .MuiSelect-icon': {
+      color: '#475569', // Color de flecha desplegable gris oscuro
+    },
+    '& fieldset': {
+      borderColor: '#E5E7EB',
+    },
+    '&:hover fieldset': {
+      borderColor: '#CBD5E1',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#0F4AFF',
+    },
+  },
+
+  filterDateInput: {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '8px',
+      bgcolor: '#ffffff',
+      height: '40px',
+      color: '#1F2937', // Fuerza texto a ser gris oscuro
+      '& fieldset': {
+        borderColor: '#E5E7EB',
+      },
+      '&:hover fieldset': {
+        borderColor: '#CBD5E1',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#0F4AFF',
+      },
+    },
+    '& .MuiOutlinedInput-input': {
+      color: '#1F2937', // Fuerza el valor de la fecha a ser gris oscuro
+      '&::placeholder': {
+        color: '#94A3B8',
+        opacity: 1,
+      },
+    },
+  },
+
+  // Barra de búsquedas y botones
+  actionsBar: {
+    display: 'flex',
+    flexDirection: { xs: 'column', sm: 'row' },
+    gap: 2,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+
+  searchField: {
+    flexGrow: 1,
+    width: { xs: '100%', sm: 'auto' },
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '8px',
+      bgcolor: '#ffffff',
+      color: '#1F2937', // Fuerza el texto ingresado a ser gris oscuro
+      '& fieldset': {
+        borderColor: '#E5E7EB',
+      },
+      '&:hover fieldset': {
+        borderColor: '#CBD5E1',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#0F4AFF',
+      },
+    },
+    '& .MuiOutlinedInput-input': {
+      color: '#1F2937', // Fuerza el color del texto escrito
+      '&::placeholder': {
+        color: '#64748B', // Placeholder en un gris más visible
+        opacity: 0.8,
+      },
+    },
+  },
+
+  filterButton: {
+    bgcolor: '#ffffff',
+    color: '#475569',
+    border: '1px solid #E5E7EB',
+    textTransform: 'none',
+    fontWeight: 600,
+    fontSize: '14px',
+    borderRadius: 2,
+    px: 2.5,
+    py: 1,
+    height: '40px',
+    width: { xs: '100%', sm: 'auto' },
+    '&:hover': {
+      bgcolor: '#F8FAFC',
+      borderColor: '#CBD5E1',
+    },
+  },
+
+  exportButton: {
     bgcolor: '#0F4AFF', // Azul acción
     color: '#ffffff',
     textTransform: 'none',
     fontWeight: 600,
     fontSize: '14px',
-    borderRadius: 2.5,
-    px: 3,
-    py: 1.2,
-    alignSelf: 'flex-start', // No ocupa todo el ancho
-    boxShadow: '0 4px 12px rgba(15, 74, 255, 0.2)',
+    borderRadius: 2,
+    px: 2.5,
+    py: 1,
+    height: '40px',
+    width: { xs: '100%', sm: 'auto' },
     '&:hover': {
       bgcolor: '#0c3bc6',
     },
   },
 
-  // Tarjeta de sección blanca (Cargas recientes y Repositorio)
+  // Contenedor principal de pestañas
   sectionCard: {
     bgcolor: '#FFFFFF',
     border: '1px solid #E5E7EB',
     borderRadius: 3,
     boxShadow: 'none',
     p: 3,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 3,
   },
 
-  sectionTitle: {
-    fontWeight: 600,
-    fontSize: '24px',
-    color: '#1E2875',
-    mb: 2,
-    fontFamily: "'Inter', sans-serif",
+  tabsContainer: {
+    borderBottom: '1px solid #E5E7EB',
+    mb: 1,
   },
 
-  sectionSubText: {
-    fontSize: '14px',
-    color: '#6B7280',
-    mb: 3,
+  tabsList: {
+    '& .MuiTabs-indicator': {
+      backgroundColor: '#0F4AFF', // Color azul acción para el indicador
+      height: 3,
+      borderRadius: '3px 3px 0 0',
+    },
+    '& .MuiTab-root': {
+      textTransform: 'none',
+      fontWeight: 600,
+      fontSize: '15px',
+      minWidth: 'auto',
+      px: { xs: 1.5, sm: 3 },
+      color: '#6B7280',
+      '&.Mui-selected': {
+        color: '#0F4AFF',
+      },
+    },
   },
 
   // Tabla
@@ -282,7 +404,7 @@ export const styles = {
     fontWeight: 600,
     fontSize: '14px',
     color: '#475569',
-    bgcolor: '#F5F5F7',
+    bgcolor: '#F8FAFC',
     py: 1.5,
     px: 2,
     borderBottom: '1px solid #E5E7EB',
@@ -296,41 +418,154 @@ export const styles = {
     borderBottom: '1px solid #E5E7EB',
   },
 
-  // Enlace del archivo cargado
+  // Badges de estado en base a la pestaña
+  badgeCarga: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    bgcolor: '#E6F4EA', // Verde claro
+    color: '#10B981', // Verde éxito
+    px: 1.5,
+    py: 0.5,
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+  },
+
+  badgeMetas: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    bgcolor: '#F3E8FF', // Púrpura claro
+    color: '#9333EA', // Púrpura metas
+    px: 1.5,
+    py: 0.5,
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+  },
+
+  badgeLogin: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    bgcolor: '#EFF6FF', // Azul claro
+    color: '#3B82F6', // Azul login
+    px: 1.5,
+    py: 0.5,
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+  },
+
+  badgeInicioSesion: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    bgcolor: '#E0F2FE', // Azul cielo claro
+    color: '#0284C7', // Azul cielo
+    px: 1.5,
+    py: 0.5,
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 700,
+  },
+
+  badgeCierreSesion: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    bgcolor: '#F1F5F9', // Gris claro
+    color: '#64748B', // Gris oscuro
+    px: 1.5,
+    py: 0.5,
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 700,
+  },
+
+  badgeCreacion: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    bgcolor: '#F3E8FF', // Púrpura claro
+    color: '#9333EA', // Púrpura
+    px: 1.5,
+    py: 0.5,
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 700,
+  },
+
+  badgeEdicion: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    bgcolor: '#EFF6FF', // Azul claro
+    color: '#3B82F6', // Azul
+    px: 1.5,
+    py: 0.5,
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 700,
+  },
+
+  badgeEliminacion: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    bgcolor: '#FEE2E2', // Rojo claro
+    color: '#EF4444', // Rojo
+    px: 1.5,
+    py: 0.5,
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 700,
+  },
+
+  entidadBold: {
+    fontWeight: 600,
+    fontSize: '14px',
+    color: '#1F2937',
+  },
+
+  entidadSub: {
+    fontSize: '12px',
+    color: '#6B7280',
+    mt: 0.3,
+  },
+
+  // Enlace de archivo de origen
   fileLink: {
     color: '#10B981', // Verde éxito
     textDecoration: 'none',
     fontWeight: 500,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.8,
     '&:hover': {
       textDecoration: 'underline',
     },
   },
 
-  // Badge de estado de carga exitosa
-  statusBadgeSuccess: {
+  // Contenedor responsivo móvil del enlace de archivo
+  mobileFileLink: {
+    color: '#10B981', // Verde éxito
+    textDecoration: 'none',
+    fontWeight: 600,
+    fontSize: '14px',
     display: 'flex',
     alignItems: 'center',
-    gap: 0.5,
-    color: '#10B981', // Verde éxito
-    fontWeight: 600,
-    fontSize: '14px',
+    maxWidth: '100%',
+    fontFamily: "'Inter', sans-serif",
+    '&:hover': {
+      textDecoration: 'underline',
+    },
   },
 
-  // Botón para acceder al repositorio
-  metaDetailButton: {
-    bgcolor: '#0F4AFF', // Azul acción
-    color: '#ffffff',
-    textTransform: 'none',
-    fontWeight: 600,
-    fontSize: '14px',
-    px: 3,
-    py: 1.2,
-    borderRadius: 2,
-    width: { xs: '100%', md: 'auto' }, // Ancho completo en móvil
-    boxShadow: '0 4px 12px rgba(15, 74, 255, 0.2)',
-    '&:hover': {
-      bgcolor: '#0c3bc6',
-    },
+  // Texto truncado (...) del archivo para prevenir desbordes en móviles
+  mobileFileLinkText: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis', // Puntos suspensivos
+    whiteSpace: 'nowrap', // Una sola línea
+    display: 'block',
+    maxWidth: 'calc(100% - 24px)', // Resta espacio aproximado del icono
+    ml: 1,
   },
 
   floatingHelpButton: {
@@ -348,171 +583,9 @@ export const styles = {
     },
   },
 
-  // =========================================================================
-  // ESTILOS DIÁLOGO CARGAR DATOS
-  // =========================================================================
-  dialogPaper: {
-    borderRadius: 4,
-    p: { xs: 2, md: 3 },
-    maxWidth: '850px',
-    width: '100%',
-    bgcolor: '#FFFFFF', // Forzar fondo blanco
-    color: '#1F2937',   // Forzar texto oscuro
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-  },
-  dialogTitle: {
-    fontWeight: 700,
-    fontSize: '28px',
-    color: '#1E2875',
-    p: 0,
-    mb: 1,
-    fontFamily: "'Inter', sans-serif",
-  },
-  dialogSubtitle: {
-    color: '#6B7280',
-    fontSize: '14px',
-    mb: 4,
-  },
-  sectionSubtitleDialog: {
-    fontWeight: 600,
-    fontSize: '16px',
-    color: '#1E2875',
-    mb: 2.5,
-    fontFamily: "'Inter', sans-serif",
-  },
-  templatesGrid: {
-    display: 'grid',
-    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-    gap: 2,
-    mb: 4,
-  },
-  templateCard: (isSelected) => ({
-    border: isSelected ? '2px solid #0F4AFF' : '1px solid #E5E7EB',
-    borderRadius: 3,
-    p: 2,
-    cursor: 'pointer',
-    bgcolor: isSelected ? 'rgba(15, 74, 255, 0.03)' : '#ffffff',
-    transition: 'all 0.2s ease-in-out',
-    display: 'flex',
-    gap: 1.5,
-    alignItems: 'flex-start',
-    '&:hover': {
-      borderColor: isSelected ? '#0F4AFF' : '#94A3B8',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.02)',
-    },
-  }),
-  templateCardIcon: (deptColor) => ({
-    color: deptColor,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    mt: 0.5,
-  }),
-  templateCardTitle: {
-    fontWeight: 600,
-    fontSize: '15px',
-    color: '#1E2875',
-    mb: 0.5,
-  },
-  templateCardDesc: {
-    fontSize: '12px',
-    color: '#6B7280',
-    lineHeight: 1.4,
-    mb: 1.5,
-  },
-  templateBadge: (deptColor) => ({
-    display: 'inline-block',
-    bgcolor: deptColor,
-    color: '#ffffff',
-    px: 1.2,
-    py: 0.3,
-    borderRadius: '4px',
-    fontSize: '10px',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  }),
-  dropZone: (isDragActive) => ({
-    border: '2px dashed #CBD5E1',
-    borderColor: isDragActive ? '#0F4AFF' : '#CBD5E1',
-    borderRadius: 3,
-    bgcolor: isDragActive ? 'rgba(15, 74, 255, 0.02)' : '#F8FAFC',
-    p: 4,
-    textAlign: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease-in-out',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 1.5,
-    mb: 4,
-    '&:hover': {
-      borderColor: '#0F4AFF',
-      bgcolor: 'rgba(15, 74, 255, 0.01)',
-    },
-  }),
-  dropZoneIcon: {
-    fontSize: 48,
-    color: '#94A3B8',
-  },
-  dropZoneTextPrimary: {
-    fontWeight: 600,
-    fontSize: '15px',
-    color: '#0F4AFF',
-  },
-  dropZoneTextSecondary: {
-    fontSize: '13px',
-    color: '#6B7280',
-  },
-  dropZoneSelectButton: {
-    bgcolor: '#0F4AFF',
-    color: '#ffffff',
-    textTransform: 'none',
-    fontWeight: 600,
-    fontSize: '13px',
-    borderRadius: 2,
-    px: 3,
-    py: 0.8,
-    '&:hover': {
-      bgcolor: '#0c3bc6',
-    },
-  },
-  dropZoneCaption: {
-    fontSize: '11px',
-    color: '#94A3B8',
-  },
-  dialogCancelButton: {
-    textTransform: 'none',
-    fontWeight: 600,
-    color: '#6B7280',
-    fontSize: '14px',
-    mr: 2,
-    '&:hover': {
-      bgcolor: 'rgba(0, 0, 0, 0.04)',
-    },
-  },
-  dialogSubmitButton: (isActive) => ({
-    bgcolor: isActive ? '#0F4AFF' : '#E2E8F0',
-    color: isActive ? '#ffffff' : '#94A3B8',
-    textTransform: 'none',
-    fontWeight: 600,
-    fontSize: '14px',
-    px: 4,
-    py: 1,
-    borderRadius: 2,
-    boxShadow: isActive ? '0 4px 12px rgba(15, 74, 255, 0.2)' : 'none',
-    pointerEvents: isActive ? 'auto' : 'none',
-    '&.Mui-disabled': {
-      bgcolor: '#E2E8F0',
-      color: '#94A3B8',
-    },
-    '&:hover': {
-      bgcolor: '#0c3bc6',
-    },
-  }),
-
-  // Estilos responsivos móviles para la tabla de cargas recientes (diseño de tarjetas)
+  // -------------------------------------------------------------------------
+  // DISEÑO MÓVIL CARD-BASED (RESPONSIVE)
+  // -------------------------------------------------------------------------
   mobileCardsContainer: {
     display: { xs: 'flex', md: 'none' },
     flexDirection: 'column',
@@ -520,7 +593,7 @@ export const styles = {
     mt: 1,
   },
 
-  mobileUploadCard: {
+  mobileAuditCard: {
     bgcolor: '#FFFFFF',
     border: '1px solid #E5E7EB',
     borderRadius: 3,
@@ -533,24 +606,9 @@ export const styles = {
 
   mobileCardHeader: {
     display: 'flex',
-    flexDirection: 'column',
-  },
-
-  // Nombre de archivo con truncado de texto (...) si excede el ancho de la tarjeta
-  mobileCardFilename: {
-    color: '#10B981', // Verde éxito
-    textDecoration: 'none',
-    fontWeight: 500,
-    fontSize: '14px',
-    display: 'block',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis', // Añade los puntos suspensivos
-    whiteSpace: 'nowrap', // Mantiene el texto en una sola línea
-    maxWidth: '100%',
-    fontFamily: "'Inter', sans-serif",
-    '&:hover': {
-      textDecoration: 'underline',
-    },
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 1.5,
   },
 
   mobileMetadataRow: {
@@ -699,4 +757,3 @@ export const styles = {
     fontFamily: "'Inter', sans-serif",
   },
 };
-

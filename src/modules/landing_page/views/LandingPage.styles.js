@@ -390,4 +390,75 @@ export const styles = {
       bgcolor: '#141b4f',
     },
   },
+
+  // =========================================================================
+  // ESTILOS DEL CENTRO DE AYUDA (FAQ)
+  // =========================================================================
+  helpDialogPaper: {
+    borderRadius: 4,
+    p: 3,
+    maxWidth: '650px',
+    bgcolor: '#FFFFFF',
+    color: '#1F2937',
+  },
+  helpDialogTitle: {
+    fontWeight: 700,
+    fontSize: '24px',
+    color: '#1E2875',
+    fontFamily: "'Inter', sans-serif",
+  },
+  helpDialogSubtitle: {
+    color: '#6B7280',
+    fontSize: '14px',
+    mb: 2,
+  },
+  helpAccordion: {
+    bgcolor: '#ffffff',
+    borderBottom: '1px solid #E5E7EB',
+    '&:before': {
+      display: 'none',
+    },
+    '& .MuiAccordionSummary-root': {
+      px: 1,
+      py: 1,
+      minHeight: 'auto',
+      '&.Mui-expanded': {
+        minHeight: 'auto',
+      },
+    },
+    '& .MuiAccordionSummary-content': {
+      margin: '8px 0',
+      '&.Mui-expanded': {
+        margin: '8px 0',
+      },
+    },
+    '& .MuiAccordionDetails-root': {
+      px: 1,
+      pb: 2.5,
+    },
+  },
+  helpAccordionQuestion: {
+    fontWeight: 600,
+    fontSize: '15px',
+    color: '#1F2937',
+    fontFamily: "'Inter', sans-serif",
+  },
+  helpAccordionAnswer: {
+    color: '#475569',
+    fontSize: '14px',
+    lineHeight: 1.6,
+    fontFamily: "'Inter', sans-serif",
+  },
+  helpTipContainer: {
+    border: '1px solid #1DC2A0',
+    bgcolor: '#F0FDF4', // Fondo verde menta muy claro
+    p: 2,
+    borderRadius: 3,
+    mt: 3,
+  },
+  helpTipText: {
+    color: '#1F2937',
+    fontSize: '13px',
+    fontFamily: "'Inter', sans-serif",
+  },
 };

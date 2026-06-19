@@ -37,6 +37,7 @@ import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { LoginPage, useAuth } from './modules/auth';
 import { LandingPage } from './modules/landing_page';
 import { CargaDatos, RepositorioArchivos } from './modules/carga_datos';
+import { Auditoria } from './modules/auditoria';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 
@@ -478,6 +479,19 @@ function App() {
               element={
                 <ProtectedRoute>
                   <RepositorioArchivos />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 
+              RUTA: /auditoria
+              Ruta protegida para la vista de Auditoría del Sistema según referencia_auditoria.png.
+            */}
+            <Route 
+              path="/auditoria" 
+              element={
+                <ProtectedRoute>
+                  <Auditoria />
                 </ProtectedRoute>
               } 
             />
