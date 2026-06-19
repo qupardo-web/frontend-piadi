@@ -38,6 +38,7 @@ import { LoginPage, useAuth } from './modules/auth';
 import { LandingPage } from './modules/landing_page';
 import { CargaDatos, RepositorioArchivos } from './modules/carga_datos';
 import { Auditoria } from './modules/auditoria';
+import { CentralDashboards } from './modules/central_dashboards';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 
@@ -445,11 +446,23 @@ function App() {
 
             {/* 
               RUTA: /dashboard
-              Es una ruta protegida opcional que conserva la interfaz CRUD anterior
-              y el estado de conexión con PostgreSQL.
+              Muestra la Central de Dashboards con el diseño de Central_de_dashboards.png
             */}
             <Route 
               path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <CentralDashboards />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 
+              RUTA: /dashboard-crud
+              Conserva la interfaz CRUD anterior de PostgreSQL y monitoreo técnico.
+            */}
+            <Route 
+              path="/dashboard-crud" 
               element={
                 <ProtectedRoute>
                   <Dashboard />
