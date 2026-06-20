@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext(null);
 
@@ -22,10 +23,31 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = (userData, token) => {
-    setUser(userData);
-    sessionStorage.setItem('auth_user', JSON.stringify(userData));
-    sessionStorage.setItem('auth_token', token);
+  const login = (token) => {
+    try {
+      let userData;
+      if (token && token.includes('.')) {
+        const decoded = jwtDecode(token);
+        userData = {
+          id: decoded.id,
+          username: decoded.name || decoded.email,
+          role: decoded.role
+        };
+      } else {
+        // Fallback seguro si es un token mock de desarrollo local/offline
+        userData = {
+          id: 1,
+          username: 'admin',
+          role: 'Administrador'
+        };
+      }
+
+      setUser(userData);
+      sessionStorage.setItem('auth_user', JSON.stringify(userData));
+      sessionStorage.setItem('auth_token', token);
+    } catch (error) {
+      console.error("Error decodificando el token JWT:", error);
+    }
   };
 
   const logout = () => {

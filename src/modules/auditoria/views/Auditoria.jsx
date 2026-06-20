@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './Auditoria.styles';
+import logoEcas from '../../../../logo_ECAS_white.svg';
 import {
   Box,
   Typography,
@@ -202,7 +203,12 @@ export const Auditoria = () => {
       <Box>
         {/* Logo y Cabecera del Sidebar */}
         <Box sx={styles.logoContainer}>
-          <Box sx={styles.logoBadge}>P</Box>
+          <Box 
+            component="img" 
+            src={logoEcas} 
+            alt="Logo ECAS" 
+            sx={{ width: 32, height: 32, objectFit: 'contain' }} 
+          />
           <Box>
             <Typography variant="subtitle1" sx={styles.logoTitle}>
               PIADI
@@ -336,18 +342,38 @@ export const Auditoria = () => {
         
         {/* Cabecera del Panel Principal */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Box sx={styles.panelHeader}>
-            <Box sx={styles.panelIconContainer}>
-              <AuditoriaIcon />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
+            <Box sx={styles.panelHeader}>
+              <Box sx={styles.panelIconContainer}>
+                <AuditoriaIcon />
+              </Box>
+              <Box>
+                <Typography variant="h5" sx={styles.panelTitle}>
+                  Auditoría del Sistema
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                  Registro completo de todas las acciones realizadas en el sistema
+                </Typography>
+              </Box>
             </Box>
-            <Box>
-              <Typography variant="h5" sx={styles.panelTitle}>
-                Auditoría del Sistema
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                Registro completo de todas las acciones realizadas en el sistema
-              </Typography>
-            </Box>
+            {user && (
+              <Box sx={{ 
+                bgcolor: '#ffffff', 
+                border: '1px solid #e2e8f0', 
+                borderRadius: '8px', 
+                px: 2, 
+                py: 1, 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981' }} />
+                <Typography variant="body2" sx={{ color: '#334155', fontWeight: 500 }}>
+                  Sesión activa: <span style={{ fontWeight: 700 }}>{user.username}</span> ({user.role})
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           {/* Breadcrumbs de orientación */}

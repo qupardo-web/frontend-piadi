@@ -12,7 +12,7 @@ export const useAuth = () => {
     setError(null);
     try {
       const data = await loginRequest(username, password);
-      login(data.user, data.token);
+      login(data.token);
       return true;
     } catch (err) {
       setError(err.message || 'Ocurrió un error inesperado al iniciar sesión.');
