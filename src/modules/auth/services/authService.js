@@ -42,7 +42,7 @@ export const loginRequest = async (username, password) => {
           token: 'mock-session-jwt-token-123456'
         };
       }
-      throw new Error('Usuario o contraseña incorrectos (Prueba con admin / admin123)');
+      throw new Error('Usuario o contraseña incorrectos');
     }
     throw err;
   }
