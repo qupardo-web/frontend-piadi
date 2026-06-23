@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './LandingPage.styles';
-import logoEcas from '../../../../logo_ECAS_white.svg';
+import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
   Typography,
@@ -265,7 +265,16 @@ export const LandingPage = () => {
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
             { text: 'Visualización de tablas', icon: <TablaIcon />, path: '#' },
-          ].map((item) => {
+          ].filter((item) => {
+            if (item.text === 'Auditoría' || item.text === 'Visualización de tablas') {
+              return (
+                user?.role === 'Rector' || 
+                user?.role === 'Administrador' || 
+                user?.role === 'Director de Administración'
+              );
+            }
+            return true;
+          }).map((item) => {
             const isSelected = activeMenu === item.text;
             return (
               <Box

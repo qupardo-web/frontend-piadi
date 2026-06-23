@@ -18,8 +18,8 @@ import {
   Visibility, 
   VisibilityOff
 } from '@mui/icons-material';
-import logoEcas from '../../../../logo_ECAS.svg';
-import loginBg from '../../../../fondo_login_ECAS.png';
+import logoEcas from '../../../assets/logo_ECAS.svg';
+import loginBg from '../../../assets/fondo_login_ECAS.png';
 
 // Creamos un tema claro local para asegurar que los inputs y textos del panel
 // de login se muestren correctamente (texto oscuro sobre fondo blanco).

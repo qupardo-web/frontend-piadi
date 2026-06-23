@@ -8,6 +8,26 @@ const clearStoredSession = () => {
   sessionStorage.removeItem('auth_token');
 };
 
+// Interceptor global de fetch para capturar errores 401 del servidor
+const originalFetch = window.fetch;
+window.fetch = async (...args) => {
+  try {
+    const response = await originalFetch(...args);
+    if (response.status === 401) {
+      const url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
+      // Evitamos bucles si la propia petición de login devuelve 401
+      if (url && !url.includes('/api/auth/login')) {
+        console.warn('Sesión no autorizada (401). Limpiando credenciales y redirigiendo...');
+        clearStoredSession();
+        window.location.href = '/login';
+      }
+    }
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
 const isTokenExpired = (token) => {
   if (!token || !token.includes('.')) {
     return true;
@@ -81,7 +101,7 @@ export const AuthProvider = ({ children }) => {
         // No debe utilizarse como autenticacion real en produccion.
         userData = {
           id: 1,
-          username: 'admin',
+          username: 'admin@admin.com',
           role: 'Administrador'
         };
       }

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './CargaDatos.styles';
-import logoEcas from '../../../../logo_ECAS_white.svg';
+import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
   Typography,
@@ -25,6 +25,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  LinearProgress,
+  Alert,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -114,6 +116,19 @@ const RECENT_UPLOADS = [
   { fecha: '14-05-2026 17:30', usuario: 'Jane Doe', plantilla: 'Rendimiento Académico', archivo: 'Rendimiento_Academico_2025.xlsx' },
 ];
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+const getTemplateColor = (roleName) => {
+  if (!roleName) return '#1E2875';
+  const name = roleName.toLowerCase();
+  if (name.includes('admisión') || name.includes('adcision') || name.includes('resumen')) return '#1E2875';
+  if (name.includes('estudiantiles')) return '#51158C';
+  if (name.includes('curricular') || name.includes('desarrollo')) return '#175696';
+  if (name.includes('innovación') || name.includes('innovacion')) return '#3EC9FF';
+  if (name.includes('continua')) return '#46D19F';
+  if (name.includes('vinculación') || name.includes('vinculacion') || name.includes('medio')) return '#E27800';
+  return '#1E2875';
+};
 
 export const CargaDatos = () => {
   const navigate = useNavigate();
@@ -128,6 +143,85 @@ export const CargaDatos = () => {
   const [isDragActive, setIsDragActive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1); // Página inicial 1 por defecto
   const [openHelpDialog, setOpenHelpDialog] = useState(false); // Estado para abrir el Centro de Ayuda
+  const [templates, setTemplates] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [uploadErrorDetails, setUploadErrorDetails] = useState([]);
+
+
+
+  // Carga de plantillas dinámicas desde el backend
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/plantillas`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            setTemplates(data);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Error fetching plantillas from backend, using fallbacks:', err);
+      }
+      
+      // Fallbacks estáticos si el backend está desconectado
+      const fallbackTemplates = [
+        {
+          id: 1,
+          name: 'Matrícula y Estudiantes',
+          description: 'Matrícula total, nuevos vs antiguos, distribución por sexo, edad y carrera',
+          role: { name: 'Admisión' }
+        },
+        {
+          id: 2,
+          name: 'Caracterización Estudiante',
+          description: 'Nivel socioeconómico, situación familiar, procedencia geográfica, tipo de colegio',
+          role: { name: 'Admisión' }
+        },
+        {
+          id: 3,
+          name: 'Rendimiento Académico',
+          description: 'Tasas de aprobación/reprobación, asignaturas críticas, prácticas, titulación',
+          role: { name: 'Desarrollo Curricular' }
+        },
+        {
+          id: 4,
+          name: 'Educación Continua',
+          description: 'Cursos programados y dictados, matrícula, tasa de aprobación, ingresos',
+          role: { name: 'Educación Continua' }
+        },
+        {
+          id: 5,
+          name: 'Vinculación con el Medio',
+          description: 'Convenios vigentes y nuevos, actividades VcM, participantes',
+          role: { name: 'Vinculación con el Medio' }
+        },
+        {
+          id: 6,
+          name: 'Innovación',
+          description: 'Proyectos en curso y finalizados, financiamiento externo, docentes involucrados',
+          role: { name: 'Innovación' }
+        }
+      ];
+      setTemplates(fallbackTemplates);
+    };
+
+    fetchTemplates();
+  }, []);
+
+  // Filtrado de plantillas por rol (Rector y administradores ven todas)
+  const filteredTemplates = templates.filter((tmpl) => {
+    if (
+      user?.role === 'Rector' || 
+      user?.role === 'Administrador' || 
+      user?.role === 'Director de Administración'
+    ) {
+      return true;
+    }
+    return tmpl.role?.name === user?.role;
+  });
 
   // Datos de las Preguntas Frecuentes (FAQ) del Centro de Ayuda
   const faqData = [
@@ -196,24 +290,67 @@ export const CargaDatos = () => {
     }
   };
 
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [successSummary, setSuccessSummary] = useState(null);
+
   const handleCloseDialog = () => {
     setOpenUploadDialog(false);
     setSelectedTemplate(null);
     setSelectedFile(null);
+    setUploadError('');
+    setUploadErrorDetails([]);
+    setUploading(false);
+    setUploadSuccess(false);
+    setSuccessSummary(null);
   };
 
-  const handleUploadSubmit = () => {
+  const handleUploadSubmit = async () => {
     if (selectedTemplate && selectedFile) {
-      const templateObj = TEMPLATES.find(t => t.id === selectedTemplate);
-      const newUpload = {
-        fecha: new Date().toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ''),
-        usuario: user?.username || 'Jane Doe',
-        plantilla: templateObj?.title || 'Matrícula y Estudiantes',
-        archivo: selectedFile.name,
-      };
-      setUploads([newUpload, ...uploads]);
-      setCurrentPage(1); // Restablecer a la página 1 para que el usuario visualice su carga
-      handleCloseDialog();
+      setUploading(true);
+      setUploadError('');
+      setUploadErrorDetails([]);
+      setUploadSuccess(false);
+      setSuccessSummary(null);
+
+      const formData = new FormData();
+      formData.append('archivo', selectedFile);
+
+      try {
+        const token = sessionStorage.getItem('auth_token');
+        const response = await fetch(`${API_URL}/api/plantillas/${selectedTemplate}/cargar`, {
+          method: 'POST',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          const templateObj = templates.find(t => t.id === selectedTemplate);
+          const newUpload = {
+            fecha: new Date().toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ''),
+            usuario: user?.username || 'Jane Doe',
+            plantilla: templateObj?.name || 'Matrícula y Estudiantes',
+            archivo: selectedFile.name,
+          };
+          setUploads([newUpload, ...uploads]);
+          setCurrentPage(1); // Restablecer a la página 1 para que el usuario visualice su carga
+          
+          setSuccessSummary(data.resumen || null);
+          setUploadSuccess(true);
+        } else {
+          // Si el servidor retorna errores de validación estructurados
+          setUploadError(data.message || 'Error en la estructura del archivo.');
+          if (data.errores) {
+            setUploadErrorDetails(data.errores);
+          }
+        }
+      } catch (err) {
+        console.error('Error al subir archivo:', err);
+        setUploadError('No se pudo establecer comunicación con el servidor.');
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -252,7 +389,16 @@ export const CargaDatos = () => {
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
             { text: 'Visualización de tablas', icon: <TablaIcon />, path: '#' },
-          ].map((item) => {
+          ].filter((item) => {
+            if (item.text === 'Auditoría' || item.text === 'Visualización de tablas') {
+              return (
+                user?.role === 'Rector' || 
+                user?.role === 'Administrador' || 
+                user?.role === 'Director de Administración'
+              );
+            }
+            return true;
+          }).map((item) => {
             const isSelected = activeMenu === item.text;
             return (
               <Box
@@ -430,14 +576,16 @@ export const CargaDatos = () => {
             [BOTÓN ACCIÓN PRINCIPAL: CARGAR DATOS]
             Abre el diálogo modal de selección de plantilla e importación de archivos.
             ========================================== */}
-        <Button
-          variant="contained"
-          startIcon={<UploadIcon />}
-          sx={styles.uploadButton}
-          onClick={() => setOpenUploadDialog(true)}
-        >
-          Cargar datos
-        </Button>
+        {user?.role !== 'Analista de Calidad' && (
+          <Button
+            variant="contained"
+            startIcon={<UploadIcon />}
+            sx={styles.uploadButton}
+            onClick={() => setOpenUploadDialog(true)}
+          >
+            Cargar datos
+          </Button>
+        )}
 
         {/* Sección: Cargas más Recientes */}
         <Card sx={styles.sectionCard}>
@@ -587,9 +735,14 @@ export const CargaDatos = () => {
       >
         <DialogTitle sx={{ p: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
           <Box>
-            <Typography sx={styles.dialogTitle}>Cargar datos</Typography>
+            <Typography sx={styles.dialogTitle}>
+              {uploadSuccess ? 'Carga exitosa' : 'Cargar datos'}
+            </Typography>
             <Typography sx={styles.dialogSubtitle}>
-              Selecciona una plantilla y arrastra tu archivo Excel o haz clic para seleccionarlo
+              {uploadSuccess 
+                ? 'El archivo Excel se ha validado e importado correctamente en la base de datos'
+                : 'Selecciona una plantilla y arrastra tu archivo Excel o haz clic para seleccionarlo'
+              }
             </Typography>
           </Box>
           <IconButton onClick={handleCloseDialog} sx={{ color: '#94a3b8', mt: -1 }}>
@@ -598,112 +751,209 @@ export const CargaDatos = () => {
         </DialogTitle>
 
         <DialogContent sx={{ p: 0, overflowY: 'visible' }}>
-          {/* 1. Selecciona una plantilla */}
-          <Typography sx={styles.sectionSubtitleDialog}>1. Selecciona una plantilla</Typography>
-          
-          <Box sx={styles.templatesGrid}>
-            {TEMPLATES.map((tmpl) => {
-              const isSelected = selectedTemplate === tmpl.id;
-              return (
-                <Box
-                  key={tmpl.id}
-                  onClick={() => handleTemplateSelect(tmpl.id)}
-                  sx={styles.templateCard(isSelected)}
-                >
-                  <Box sx={styles.templateCardIcon(tmpl.color)}>
-                    <DescriptionIcon fontSize="medium" />
-                  </Box>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography sx={styles.templateCardTitle}>
-                      {tmpl.title}
-                    </Typography>
-                    <Typography sx={styles.templateCardDesc}>
-                      {tmpl.desc}
-                    </Typography>
-                    <Box sx={styles.templateBadge(tmpl.color)}>
-                      {tmpl.badge}
-                    </Box>
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
+          {uploadSuccess ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4, px: 2, textAlign: 'center' }}>
+              <CheckCircleIcon sx={{ fontSize: 64, color: '#10B981', mb: 2 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1E2875', mb: 1, fontFamily: "'Inter', sans-serif" }}>
+                ¡Datos importados con éxito!
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#6B7280', mb: 4, maxWidth: '450px', fontFamily: "'Inter', sans-serif" }}>
+                El archivo <strong>{selectedFile?.name}</strong> fue verificado y cargado sin errores en el sistema.
+              </Typography>
 
-          {/* 2. Carga tu archivo (Habilitado solo al seleccionar una plantilla de la sección anterior) */}
-          <Box sx={{ 
-            opacity: selectedTemplate ? 1 : 0.4, 
-            pointerEvents: selectedTemplate ? 'auto' : 'none',
-            transition: 'all 0.3s ease-in-out',
-            mt: 3 
-          }}>
-            <Typography sx={styles.sectionSubtitleDialog}>2. Carga tu archivo</Typography>
-            
-            <Box
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              sx={styles.dropZone(isDragActive && selectedTemplate)}
-              onClick={() => selectedTemplate && document.getElementById('dialog-file-input').click()}
-            >
-              <input
-                type="file"
-                id="dialog-file-input"
-                accept=".xlsx"
-                style={{ display: 'none' }}
-                onChange={handleFileChange}
-                disabled={!selectedTemplate}
-              />
-              
-              <UploadIcon sx={[styles.dropZoneIcon, selectedFile && { color: '#10B981' }]} />
-              
-              {selectedFile ? (
-                <Box>
-                  <Typography sx={styles.dropZoneTextPrimary} style={{ color: '#10B981' }}>
-                    Archivo seleccionado: {selectedFile.name}
+              {successSummary && (
+                <Box sx={{ width: '100%', maxWidth: '500px', bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', p: 3, textAlign: 'left', mb: 1 }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#334155', mb: 2, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: "'Inter', sans-serif" }}>
+                    Resumen de registros procesados:
                   </Typography>
-                  <Typography sx={styles.dropZoneTextSecondary}>
-                    Tamaño: {(selectedFile.size / 1024).toFixed(1)} KB (Listo para cargar)
-                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '12px 24px' }}>
+                    {Object.entries(successSummary).map(([tabla, cantidad]) => (
+                      <React.Fragment key={tabla}>
+                        <Typography sx={{ fontSize: '14px', color: '#475569', fontWeight: 500, fontFamily: "'Inter', sans-serif" }}>
+                          {tabla}
+                        </Typography>
+                        <Typography sx={{ fontSize: '14px', color: '#10B981', fontWeight: 700, textAlign: 'right', fontFamily: "'Inter', sans-serif" }}>
+                          +{cantidad} filas
+                        </Typography>
+                      </React.Fragment>
+                    ))}
+                  </Box>
                 </Box>
-              ) : (
-                <>
-                  <Typography sx={styles.dropZoneTextPrimary}>
-                    Arrastra tu archivo aquí
-                  </Typography>
-                  <Typography sx={styles.dropZoneTextSecondary}>
-                    o haz clic para seleccionarlo
-                  </Typography>
-                  
-                  <Button
-                    variant="contained"
-                    sx={styles.dropZoneSelectButton}
-                    component="span"
-                    disabled={!selectedTemplate}
-                  >
-                    Seleccionar archivo
-                  </Button>
-                  
-                  <Typography sx={styles.dropZoneCaption}>
-                    Formato aceptado: .xlsx (Excel)
-                  </Typography>
-                </>
               )}
             </Box>
-          </Box>
+          ) : (
+            <>
+
+              {/* Mensaje de error general y detalles de validación */}
+              {uploadError && (
+                <Alert 
+                  severity="error" 
+                  sx={{ 
+                    mb: 3, 
+                    fontFamily: "'Inter', sans-serif",
+                    borderRadius: '8px',
+                    border: '1px solid #FCA5A5',
+                    bgcolor: '#FEF2F2',
+                    '& .MuiAlert-message': { width: '100%' }
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 600, fontSize: '15px', color: '#991B1B', mb: uploadErrorDetails.length > 0 ? 1 : 0 }}>
+                    {uploadError}
+                  </Typography>
+                  
+                  {uploadErrorDetails.length > 0 && (
+                    <Box sx={{ mt: 1, pl: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {uploadErrorDetails.map((err, idx) => (
+                        <Typography key={idx} variant="body2" sx={{ color: '#7F1D1D', fontSize: '13px', display: 'list-item', listStyleType: 'disc' }}>
+                          <strong>Hoja:</strong> {err.hoja || 'N/A'} — <strong>Campo:</strong> {err.campo || 'N/A'}: {err.mensaje}
+                        </Typography>
+                      ))}
+                    </Box>
+                  )}
+                </Alert>
+              )}
+
+              {/* 1. Selecciona una plantilla */}
+              <Typography sx={styles.sectionSubtitleDialog}>1. Selecciona una plantilla</Typography>
+              
+              <Box sx={styles.templatesGrid}>
+                {filteredTemplates.map((tmpl) => {
+                  const isSelected = selectedTemplate === tmpl.id;
+                  const tmplColor = getTemplateColor(tmpl.role?.name);
+
+                  return (
+                    <Box
+                      key={tmpl.id}
+                      onClick={() => !uploading && handleTemplateSelect(tmpl.id)}
+                      sx={[styles.templateCard(isSelected), uploading && { pointerEvents: 'none', opacity: 0.6 }]}
+                    >
+                      <Box sx={styles.templateCardIcon(tmplColor)}>
+                        <DescriptionIcon fontSize="medium" />
+                      </Box>
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography sx={styles.templateCardTitle}>
+                          {tmpl.name}
+                        </Typography>
+                        <Typography sx={styles.templateCardDesc}>
+                          {tmpl.description}
+                        </Typography>
+                        <Box sx={styles.templateBadge(tmplColor)}>
+                          {tmpl.role?.name || 'General'}
+                        </Box>
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+
+
+
+              {/* 2. Carga tu archivo (Habilitado solo al seleccionar una plantilla de la sección anterior) */}
+              <Box sx={{ 
+                opacity: (selectedTemplate && !uploading) ? 1 : 0.4, 
+                pointerEvents: (selectedTemplate && !uploading) ? 'auto' : 'none',
+                transition: 'all 0.3s ease-in-out',
+                mt: 3 
+              }}>
+                <Typography sx={styles.sectionSubtitleDialog}>2. Carga tu archivo</Typography>
+                
+                <Box
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  sx={styles.dropZone(isDragActive && selectedTemplate)}
+                  onClick={() => selectedTemplate && !uploading && document.getElementById('dialog-file-input').click()}
+                >
+                  <input
+                    type="file"
+                    id="dialog-file-input"
+                    accept=".xlsx"
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                    disabled={!selectedTemplate || uploading}
+                  />
+                  
+                  <UploadIcon sx={[styles.dropZoneIcon, selectedFile && { color: '#10B981' }]} />
+                  
+                  {selectedFile ? (
+                    <Box>
+                      <Typography sx={styles.dropZoneTextPrimary} style={{ color: '#10B981' }}>
+                        Archivo seleccionado: {selectedFile.name}
+                      </Typography>
+                      <Typography sx={styles.dropZoneTextSecondary}>
+                        Tamaño: {(selectedFile.size / 1024).toFixed(1)} KB (Listo para cargar)
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <Typography sx={styles.dropZoneTextPrimary}>
+                        Arrastra tu archivo aquí
+                      </Typography>
+                      <Typography sx={styles.dropZoneTextSecondary}>
+                        o haz clic para seleccionarlo
+                      </Typography>
+                      
+                      <Button
+                        variant="contained"
+                        sx={styles.dropZoneSelectButton}
+                        component="span"
+                        disabled={!selectedTemplate || uploading}
+                      >
+                        Seleccionar archivo
+                      </Button>
+                      
+                      <Typography sx={styles.dropZoneCaption}>
+                        Formato aceptado: .xlsx (Excel)
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Barra de progreso de validación */}
+              {uploading && (
+                <Box sx={{ width: '100%', mt: 3 }}>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500, color: '#1E2875', mb: 1, fontFamily: "'Inter', sans-serif" }}>
+                    Validando estructura del archivo Excel...
+                  </Typography>
+                  <LinearProgress sx={{ 
+                    height: 8, 
+                    borderRadius: 4, 
+                    bgcolor: '#E5E7EB',
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: '#1DC2A0'
+                    }
+                  }} />
+                </Box>
+              )}
+            </>
+          )}
         </DialogContent>
 
         <DialogActions sx={{ p: 0, mt: 3, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-          <Button onClick={handleCloseDialog} sx={styles.dialogCancelButton}>
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleUploadSubmit}
-            sx={styles.dialogSubmitButton(selectedTemplate !== null && selectedFile !== null)}
-            disabled={!selectedTemplate || !selectedFile}
-          >
-            Cargar datos
-          </Button>
+          {uploadSuccess ? (
+            <Button
+              variant="contained"
+              onClick={handleCloseDialog}
+              sx={styles.dialogSubmitButton(true)}
+            >
+              Entendido
+            </Button>
+          ) : (
+            <>
+              <Button onClick={handleCloseDialog} sx={styles.dialogCancelButton} disabled={uploading}>
+                Cancelar
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleUploadSubmit}
+                sx={styles.dialogSubmitButton(selectedTemplate !== null && selectedFile !== null && !uploading)}
+                disabled={!selectedTemplate || !selectedFile || uploading}
+              >
+                {uploading ? 'Validando...' : 'Cargar datos'}
+              </Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
 
