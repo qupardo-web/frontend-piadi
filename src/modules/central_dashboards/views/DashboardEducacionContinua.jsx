@@ -112,7 +112,8 @@ export const DashboardEducacionContinua = () => {
               return (
                 user?.role === 'Rector' || 
                 user?.role === 'Administrador' || 
-                user?.role === 'Director de Administración'
+                user?.role === 'Director de Administración' ||
+                user?.role === 'Analista de Calidad'
               );
             }
             return true;
