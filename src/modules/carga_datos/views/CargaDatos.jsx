@@ -150,6 +150,8 @@ export const CargaDatos = () => {
 
 
 
+
+
   // Carga de plantillas dinámicas desde el backend
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -340,7 +342,7 @@ export const CargaDatos = () => {
           setUploadSuccess(true);
         } else {
           // Si el servidor retorna errores de validación estructurados
-          setUploadError(data.message || 'Error en la estructura del archivo.');
+          setUploadError(data.message || data.error || 'Error en la estructura del archivo.');
           if (data.errores) {
             setUploadErrorDetails(data.errores);
           }
@@ -394,7 +396,8 @@ export const CargaDatos = () => {
               return (
                 user?.role === 'Rector' || 
                 user?.role === 'Administrador' || 
-                user?.role === 'Director de Administración'
+                user?.role === 'Director de Administración' ||
+                user?.role === 'Analista de Calidad'
               );
             }
             return true;
@@ -784,34 +787,6 @@ export const CargaDatos = () => {
           ) : (
             <>
 
-              {/* Mensaje de error general y detalles de validación */}
-              {uploadError && (
-                <Alert 
-                  severity="error" 
-                  sx={{ 
-                    mb: 3, 
-                    fontFamily: "'Inter', sans-serif",
-                    borderRadius: '8px',
-                    border: '1px solid #FCA5A5',
-                    bgcolor: '#FEF2F2',
-                    '& .MuiAlert-message': { width: '100%' }
-                  }}
-                >
-                  <Typography sx={{ fontWeight: 600, fontSize: '15px', color: '#991B1B', mb: uploadErrorDetails.length > 0 ? 1 : 0 }}>
-                    {uploadError}
-                  </Typography>
-                  
-                  {uploadErrorDetails.length > 0 && (
-                    <Box sx={{ mt: 1, pl: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      {uploadErrorDetails.map((err, idx) => (
-                        <Typography key={idx} variant="body2" sx={{ color: '#7F1D1D', fontSize: '13px', display: 'list-item', listStyleType: 'disc' }}>
-                          <strong>Hoja:</strong> {err.hoja || 'N/A'} — <strong>Campo:</strong> {err.campo || 'N/A'}: {err.mensaje}
-                        </Typography>
-                      ))}
-                    </Box>
-                  )}
-                </Alert>
-              )}
 
               {/* 1. Selecciona una plantilla */}
               <Typography sx={styles.sectionSubtitleDialog}>1. Selecciona una plantilla</Typography>
@@ -925,6 +900,35 @@ export const CargaDatos = () => {
                     }
                   }} />
                 </Box>
+              )}
+
+              {/* Mensaje de error general y detalles de validación en la parte inferior */}
+              {uploadError && (
+                <Alert 
+                  severity="error" 
+                  sx={{ 
+                    mt: 3, 
+                    fontFamily: "'Inter', sans-serif",
+                    borderRadius: '8px',
+                    border: '1px solid #FCA5A5',
+                    bgcolor: '#FEF2F2',
+                    '& .MuiAlert-message': { width: '100%' }
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 600, fontSize: '15px', color: '#991B1B', mb: uploadErrorDetails.length > 0 ? 1 : 0 }}>
+                    {uploadError}
+                  </Typography>
+                  
+                  {uploadErrorDetails.length > 0 && (
+                    <Box sx={{ mt: 1, pl: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {uploadErrorDetails.map((err, idx) => (
+                        <Typography key={idx} variant="body2" sx={{ color: '#7F1D1D', fontSize: '13px', display: 'list-item', listStyleType: 'disc' }}>
+                          <strong>Hoja:</strong> {err.hoja || 'N/A'} — <strong>Campo:</strong> {err.campo || 'N/A'}: {err.mensaje}
+                        </Typography>
+                      ))}
+                    </Box>
+                  )}
+                </Alert>
               )}
             </>
           )}
