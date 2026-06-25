@@ -53,6 +53,7 @@ import {
   CalendarToday as CalendarIcon,
   ChevronLeft as ChevronLeftIcon,
   ExpandMore as ExpandMoreIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 
 // Plantillas de carga de datos oficiales
@@ -277,6 +278,45 @@ export const CargaDatos = () => {
 
   const handleDragLeave = () => {
     setIsDragActive(false);
+  };
+
+  const handleDownloadTemplate = async (e, templateId) => {
+    e.stopPropagation(); // Evita que se seleccione la tarjeta
+    try {
+      const token = sessionStorage.getItem('auth_token');
+      const response = await fetch(`${API_URL}/api/plantillas/${templateId}/descargar`, {
+        method: 'GET',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
+
+      if (!response.ok) {
+        throw new Error('No se pudo descargar la plantilla desde el servidor');
+      }
+
+      // Obtener el nombre del archivo de la cabecera Content-Disposition
+      let filename = 'plantilla.xlsx';
+      const disposition = response.headers.get('content-disposition');
+      if (disposition && disposition.indexOf('attachment') !== -1) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(disposition);
+        if (matches != null && matches[1]) { 
+          filename = matches[1].replace(/['"]/g, '');
+        }
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error al descargar la plantilla:', err);
+      alert(err.message || 'Error al descargar la plantilla.');
+    }
   };
 
   const handleDrop = (e) => {
@@ -805,7 +845,7 @@ export const CargaDatos = () => {
                       <Box sx={styles.templateCardIcon(tmplColor)}>
                         <DescriptionIcon fontSize="medium" />
                       </Box>
-                      <Box sx={{ flexGrow: 1 }}>
+                      <Box sx={{ flexGrow: 1, pr: 4 }}>
                         <Typography sx={styles.templateCardTitle}>
                           {tmpl.name}
                         </Typography>
@@ -816,6 +856,23 @@ export const CargaDatos = () => {
                           {tmpl.role?.name || 'General'}
                         </Box>
                       </Box>
+                      <IconButton
+                        onClick={(e) => handleDownloadTemplate(e, tmpl.id)}
+                        disabled={uploading}
+                        sx={{
+                          position: 'absolute',
+                          bottom: 12,
+                          right: 12,
+                          color: tmplColor,
+                          padding: '6px',
+                          '&:hover': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                          },
+                        }}
+                        title="Descargar plantilla"
+                      >
+                        <DownloadIcon fontSize="small" />
+                      </IconButton>
                     </Box>
                   );
                 })}

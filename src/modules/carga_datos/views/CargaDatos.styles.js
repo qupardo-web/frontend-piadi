@@ -396,6 +396,7 @@ export const styles = {
     display: 'flex',
     gap: 1.5,
     alignItems: 'flex-start',
+    position: 'relative',
     '&:hover': {
       borderColor: isSelected ? '#0F4AFF' : '#94A3B8',
       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.02)',
