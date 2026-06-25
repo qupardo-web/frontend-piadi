@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './Auditoria.styles';
@@ -97,6 +97,79 @@ export const Auditoria = () => {
   const [openHelpDialog, setOpenHelpDialog] = useState(false); // Estado para abrir el Centro de Ayuda
   const itemsPerPage = 3; // Paginación móvil
 
+  const [realCargaLogs, setRealCargaLogs] = useState(null);
+  const [realSessionLogs, setRealSessionLogs] = useState(null);
+
+  useEffect(() => {
+    const token = sessionStorage.getItem('auth_token');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+    const formatDate = (iso) => {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    const fetchLogs = async (type, setter, mapFn) => {
+      try {
+        const res = await fetch(`${API_URL}/api/audit-logs?type=${type}&limit=100`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const items = json?.data?.items || [];
+        setter(items.map(mapFn));
+      } catch {
+        // mantener mock data si el backend no responde
+      }
+    };
+
+    const resolveUsuario = (item) =>
+      item.usuarioNombre || item.usuarioEmail ||
+      (item.detail?.usuarioId != null ? `#${item.detail.usuarioId}` : '-');
+
+    fetchLogs('carga', setRealCargaLogs, (item) => ({
+      fecha: formatDate(item.createdAt),
+      usuario: resolveUsuario(item),
+      rol: item.detail?.rol || '-',
+      accion: 'Carga',
+      entidad: item.detail?.entidad || '-',
+      registros: 1,
+      plantilla: item.detail?.plantilla || '-',
+      archivo: item.detail?.archivo || '-'
+    }));
+    const resolveDetalleSesion = (item) => {
+      const accion = item.detail?.accion;
+      const usuario = resolveUsuario(item);
+      const rol = item.detail?.rol || 'sin rol';
+
+      if (accion === 'LOGIN_SUCCESS') {
+        return `Inicio de sesión exitoso de ${usuario} con rol ${rol}.`;
+      }
+
+      if (accion === 'LOGIN_FAILED') {
+        return `Intento de inicio de sesión fallido para ${usuario}.`;
+      }
+
+      return item.detail?.detalles || item.detail?.detalle || '';
+    };
+    fetchLogs('session', setRealSessionLogs, (item) => ({
+      fecha: formatDate(item.createdAt),
+      usuario: resolveUsuario(item),
+      rol: item.detail?.rol || '-',
+      accion:
+        item.detail?.accion === 'LOGIN_SUCCESS'
+          ? 'Inicio sesión'
+          : item.detail?.accion === 'LOGIN_FAILED'
+            ? 'Inicio fallido'
+            : (item.detail?.accion || '-'),
+      entidad: item.detail?.entidad || 'Sistema',
+      registros: 1,
+      detalle: resolveDetalleSesion(item)
+    }));
+  }, []);
+
   // Datos de las Preguntas Frecuentes (FAQ) del Centro de Ayuda
   const faqData = [
     {
@@ -139,14 +212,10 @@ export const Auditoria = () => {
   // Obtener los logs activos en base a la pestaña seleccionada
   const getActiveLogs = () => {
     switch (activeTab) {
-      case 0:
-        return MOCK_CARGAS_LOGS;
-      case 1:
-        return MOCK_METAS_LOGS;
-      case 2:
-        return MOCK_LOGIN_LOGS;
-      default:
-        return [];
+      case 0: return realCargaLogs ?? MOCK_CARGAS_LOGS;
+      case 1: return MOCK_METAS_LOGS;
+      case 2: return realSessionLogs ?? MOCK_LOGIN_LOGS;
+      default: return [];
     }
   };
 
@@ -443,12 +512,10 @@ export const Auditoria = () => {
                     sx={styles.filterSelect}
                   >
                     <MenuItem value="Todos">Todos</MenuItem>
-                    <MenuItem value="Admisión">Admisión</MenuItem>
-                    <MenuItem value="Desarrollo Curricular">Desarrollo Curricular</MenuItem>
-                    <MenuItem value="Educación Continua">Educación Continua</MenuItem>
-                    <MenuItem value="Vinculación con el Medio">Vinculación con el Medio</MenuItem>
-                    <MenuItem value="Innovación">Innovación</MenuItem>
-                    <MenuItem value="Relaciones Estudiantiles">Relaciones Estudiantiles</MenuItem>
+                    <MenuItem value="Rector">Rector</MenuItem>
+                    <MenuItem value="Analista de Calidad">Analista de Calidad</MenuItem>
+                    <MenuItem value="Director Académico">Director Académico</MenuItem>
+                    <MenuItem value="Director de Administración">Director de Administración</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
@@ -563,6 +630,8 @@ export const Auditoria = () => {
                             ? styles.badgeEliminacion 
                             : log.accion === 'Inicio sesión'
                             ? styles.badgeInicioSesion
+                            : log.accion === 'Inicio fallido'
+                            ? styles.badgeCierreSesion
                             : log.accion === 'Cierre sesión'
                             ? styles.badgeCierreSesion
                             : styles.badgeLogin
@@ -635,6 +704,8 @@ export const Auditoria = () => {
                         ? styles.badgeEliminacion 
                         : log.accion === 'Inicio sesión'
                         ? styles.badgeInicioSesion
+                        : log.accion === 'Inicio fallido'
+                        ? styles.badgeCierreSesion
                         : log.accion === 'Cierre sesión'
                         ? styles.badgeCierreSesion
                         : styles.badgeLogin
