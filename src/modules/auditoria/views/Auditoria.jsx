@@ -111,6 +111,12 @@ export const Auditoria = () => {
       return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     };
 
+    // Intenta corregir nombres de archivo guardados con encoding incorrecto (Latin-1 como UTF-8)
+    const fixEncoding = (str) => {
+      if (!str) return str;
+      try { return decodeURIComponent(escape(str)); } catch (e) { return str; }
+    };
+
     const fetchLogs = async (type, setter, mapFn) => {
       try {
         const res = await fetch(`${API_URL}/api/audit-logs?type=${type}&limit=100`, {
@@ -125,35 +131,69 @@ export const Auditoria = () => {
       }
     };
 
-    const resolveUsuario = (item) =>
-      item.usuarioNombre || item.usuarioEmail ||
-      (item.detail?.usuarioId != null ? `#${item.detail.usuarioId}` : '-');
+    const resolveUsuario = (item) => {
+      if (item.usuarioNombre) return item.usuarioNombre;
+      if (item.usuarioEmail) return item.usuarioEmail;
+      // Registros viejos: el email puede estar dentro de detalles como JSON
+      const det = item.detail?.detalles;
+      if (det && typeof det === 'string') {
+        try {
+          const parsed = JSON.parse(det);
+          if (parsed?.usuario) return parsed.usuario;
+        } catch (e) {}
+      }
+      if (item.detail?.usuarioId != null) return `#${item.detail.usuarioId}`;
+      return '-';
+    };
 
-    fetchLogs('carga', setRealCargaLogs, (item) => ({
-      fecha: formatDate(item.createdAt),
-      usuario: resolveUsuario(item),
-      rol: item.detail?.rol || '-',
-      accion: 'Carga',
-      entidad: item.detail?.entidad || '-',
-      registros: 1,
-      plantilla: item.detail?.plantilla || '-',
-      archivo: item.detail?.archivo || '-'
-    }));
     const resolveDetalleSesion = (item) => {
       const accion = item.detail?.accion;
+      const det = item.detail?.detalles;
+
+      // Nuevo formato post-fix: string descriptivo directo (no JSON)
+      if (det && typeof det === 'string' && !det.startsWith('{')) {
+        return det;
+      }
+
       const usuario = resolveUsuario(item);
-      const rol = item.detail?.rol || 'sin rol';
+      const rol = item.detail?.rol || null;
 
       if (accion === 'LOGIN_SUCCESS') {
-        return `Inicio de sesión exitoso de ${usuario} con rol ${rol}.`;
+        if (usuario !== '-' && rol) {
+          return `Inicio de sesión exitoso de ${usuario} con rol ${rol}.`;
+        }
+        return 'Inicio de sesión exitoso.';
       }
 
       if (accion === 'LOGIN_FAILED') {
-        return `Intento de inicio de sesión fallido para ${usuario}.`;
+        if (usuario !== '-') {
+          return `Intento de inicio de sesión fallido para ${usuario}.`;
+        }
+        return 'Intento de inicio de sesión fallido.';
       }
 
-      return item.detail?.detalles || item.detail?.detalle || '';
+      return det || '';
     };
+
+    fetchLogs('carga', setRealCargaLogs, (item) => {
+      const plantillaVal = item.detail?.plantilla;
+      const plantillaDisplay = !plantillaVal
+        ? '-'
+        : /^\d+$/.test(String(plantillaVal))
+          ? `Plantilla #${plantillaVal}`
+          : plantillaVal;
+      return {
+        fecha: formatDate(item.createdAt),
+        usuario: resolveUsuario(item),
+        rol: item.detail?.rol || '-',
+        accion: 'Carga',
+        entidad: item.detail?.entidad || '-',
+        registros: 1,
+        plantilla: plantillaDisplay,
+        archivo: fixEncoding(item.detail?.archivo) || '-'
+      };
+    });
+
     fetchLogs('session', setRealSessionLogs, (item) => ({
       fecha: formatDate(item.createdAt),
       usuario: resolveUsuario(item),
