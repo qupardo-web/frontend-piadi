@@ -63,6 +63,7 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { RadarChart } from '@mui/x-charts/RadarChart';
+import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 
 // RAW DATA FOR CALCULATIONS (Years 2023 - 2026)
 const COHORTE_DATA_RAW = [
@@ -128,7 +129,7 @@ const PROGRAM_PRICING = {
 };
 
 const COHORTES_LIST = ['2023', '2024', '2025', '2026'];
-const PERIODOS_LIST = ['2023-1', '2023-2', '2024-1', '2024-2', '2025-1', '2025-2', '2026-1', '2026-2'];
+const SEMESTRES_LIST = ['1° Semestre', '2° Semestre'];
 const SEXO_LIST = ['Femenino', 'Masculino', 'No binario', 'Prefiere no responder'];
 const MESES_LIST = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const TIPOS_LIST = ['Curso', 'Diplomado', 'Seminario', 'Postítulo'];
@@ -187,21 +188,22 @@ export const DashboardEducacionContinua = () => {
   // ESTADOS DE FILTROS PERSISTENTES (SIDEBAR DERECHO)
   const [cohorteDesde, setCohorteDesde] = useState('2023');
   const [cohorteHasta, setCohorteHasta] = useState('2026');
-  const [periodoDesde, setPeriodoDesde] = useState('2023-1');
-  const [periodoHasta, setPeriodoHasta] = useState('2026-2');
-  const [rangoEdad, setRangoEdad] = useState([18, 65]);
-  const [sexoSeleccionado, setSexoSeleccionado] = useState([]);
-  const [mesInicioSeleccionado, setMesInicioSeleccionado] = useState([]);
+  const [semestresSeleccionados, setSemestresSeleccionados] = useState([]);
+  const [mesDesde, setMesDesde] = useState('Enero');
+  const [mesHasta, setMesHasta] = useState('Diciembre');
   const [tipoSeleccionado, setTipoSeleccionado] = useState([]);
   const [modalidadSeleccionada, setModalidadSeleccionada] = useState([]);
   const [areaSeleccionada, setAreaSeleccionada] = useState([]);
 
   // ESTADOS DE CONTROL DE VISTA DE GRÁFICOS
-  const [ofertaViewMode, setOfertaViewMode] = useState('area'); // 'area', 'tipo', 'modalidad'
+  const [ofertaViewMode, setOfertaViewMode] = useState('total'); // 'total', 'area', 'tipo', 'modalidad'
   const [ingresosViewMode, setIngresosViewMode] = useState('area'); // 'area', 'tipo', 'modalidad'
-  const [matriculaViewMode, setMatriculaViewMode] = useState('area'); // 'area', 'modalidad', 'tipo'
-  const [selectedYearMatricula, setSelectedYearMatricula] = useState('Todos');
+  const [matriculaViewMode, setMatriculaViewMode] = useState('total'); // 'total', 'area', 'modalidad', 'tipo'
   const [perfilViewMode, setPerfilViewMode] = useState('region'); // 'region', 'sector', 'escolaridad', 'edad', 'genero', 'tipo'
+
+  // Local states for Unique Participants
+  const [localSexoFilter, setLocalSexoFilter] = useState('Todos');
+  const [localEdadFilter, setLocalEdadFilter] = useState('Todos');
 
   // MODALES DE DETALLE
   const [activeModal, setActiveModal] = useState(null); 
@@ -215,11 +217,9 @@ export const DashboardEducacionContinua = () => {
   const handleResetFilters = () => {
     setCohorteDesde('2023');
     setCohorteHasta('2026');
-    setPeriodoDesde('2023-1');
-    setPeriodoHasta('2026-2');
-    setRangoEdad([18, 65]);
-    setSexoSeleccionado([]);
-    setMesInicioSeleccionado([]);
+    setSemestresSeleccionados([]);
+    setMesDesde('Enero');
+    setMesHasta('Diciembre');
     setTipoSeleccionado([]);
     setModalidadSeleccionada([]);
     setAreaSeleccionada([]);
@@ -255,28 +255,13 @@ export const DashboardEducacionContinua = () => {
     const rangeSize = parseInt(cohorteHasta) - parseInt(cohorteDesde) + 1;
     multiplier *= (rangeSize / 4);
 
-    if (mesInicioSeleccionado.length > 0) {
-      multiplier *= (mesInicioSeleccionado.length / 12);
-    }
+    const numMonths = MESES_LIST.indexOf(mesHasta) - MESES_LIST.indexOf(mesDesde) + 1;
+    multiplier *= (numMonths / 12);
 
     return Math.max(0.05, Math.min(1.5, multiplier));
-  }, [cohorteDesde, cohorteHasta, mesInicioSeleccionado, tipoSeleccionado, modalidadSeleccionada, areaSeleccionada]);
+  }, [cohorteDesde, cohorteHasta, mesDesde, mesHasta, tipoSeleccionado, modalidadSeleccionada, areaSeleccionada]);
 
-  const filterMultiplierGroup2 = useMemo(() => {
-    let multiplier = filterMultiplierGroup1;
-    const ageSpan = rangoEdad[1] - rangoEdad[0];
-    multiplier *= (ageSpan / 47);
-
-    if (sexoSeleccionado.length > 0) {
-      let factor = 0;
-      if (sexoSeleccionado.includes('Masculino')) factor += 0.52;
-      if (sexoSeleccionado.includes('Femenino')) factor += 0.45;
-      if (sexoSeleccionado.includes('No binario') || sexoSeleccionado.includes('Prefiere no responder')) factor += 0.03;
-      multiplier *= factor;
-    }
-
-    return Math.max(0.05, Math.min(1.5, multiplier));
-  }, [filterMultiplierGroup1, rangoEdad, sexoSeleccionado]);
+  const filterMultiplierGroup2 = filterMultiplierGroup1;
 
   // Nominal data filtered by global rules (Group 1)
   const filteredNominalGroup1 = useMemo(() => {
@@ -306,32 +291,25 @@ export const DashboardEducacionContinua = () => {
       const yr = parseInt(rowAnio);
       if (yr < parseInt(cohorteDesde) || yr > parseInt(cohorteHasta)) return false;
 
-      // Month filter
-      if (mesInicioSeleccionado.length > 0) {
-        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        const rowMes = months[idx % 12];
-        if (!mesInicioSeleccionado.includes(rowMes)) return false;
-      }
+      // Month range check
+      const rowMesIdx = idx % 12;
+      const idxDesde = MESES_LIST.indexOf(mesDesde);
+      const idxHasta = MESES_LIST.indexOf(mesHasta);
+      if (rowMesIdx < idxDesde || rowMesIdx > idxHasta) return false;
 
-      // Semester range check (by period)
-      if (periodoDesde && periodoHasta) {
+      // Semester check (by Selected Semesters)
+      if (semestresSeleccionados.length > 0) {
         const rowSemestre = (idx % 12 < 6) ? '1' : '2';
-        const rowPeriod = `${rowAnio}-${rowSemestre}`;
-        if (rowPeriod < periodoDesde || rowPeriod > periodoHasta) return false;
+        const rowSemestreText = rowSemestre === '1' ? '1° Semestre' : '2° Semestre';
+        if (!semestresSeleccionados.includes(rowSemestreText)) return false;
       }
 
       return true;
     });
-  }, [areaSeleccionada, tipoSeleccionado, modalidadSeleccionada, cohorteDesde, cohorteHasta, mesInicioSeleccionado, periodoDesde, periodoHasta]);
+  }, [areaSeleccionada, tipoSeleccionado, modalidadSeleccionada, cohorteDesde, cohorteHasta, mesDesde, mesHasta, semestresSeleccionados]);
 
   // Nominal data filtered by global + student profile (Group 2)
-  const filteredNominalGroup2 = useMemo(() => {
-    return filteredNominalGroup1.filter(item => {
-      if (sexoSeleccionado.length > 0 && !sexoSeleccionado.includes(item.genero)) return false;
-      if (item.edad < rangoEdad[0] || item.edad > rangoEdad[1]) return false;
-      return true;
-    });
-  }, [filteredNominalGroup1, sexoSeleccionado, rangoEdad]);
+  const filteredNominalGroup2 = filteredNominalGroup1;
 
   // Cohorte Filtered Data
   const filteredCohorteData = useMemo(() => {
@@ -352,8 +330,15 @@ export const DashboardEducacionContinua = () => {
       .filter(item => {
         const yr = parseInt(item.periodo.split('-')[0]);
         const inYr = yr >= parseInt(cohorteDesde) && yr <= parseInt(cohorteHasta);
-        const inPeriod = item.periodo >= periodoDesde && item.periodo <= periodoHasta;
-        return inYr && inPeriod;
+        
+        let inSemestre = true;
+        if (semestresSeleccionados.length > 0) {
+          const semVal = item.periodo.split('-')[1]; // '1' or '2'
+          const semText = semVal === '1' ? '1° Semestre' : '2° Semestre';
+          inSemestre = semestresSeleccionados.includes(semText);
+        }
+        
+        return inYr && inSemestre;
       })
       .map(item => {
         const offset = (filterMultiplierGroup1 - 1) * 3;
@@ -364,7 +349,7 @@ export const DashboardEducacionContinua = () => {
           retencion: newRet
         };
       });
-  }, [cohorteDesde, cohorteHasta, periodoDesde, periodoHasta, filterMultiplierGroup1]);
+  }, [cohorteDesde, cohorteHasta, semestresSeleccionados, filterMultiplierGroup1]);
 
   // Programas Filtered Data (Oferta de cursos programada)
   const filteredProgramasData = useMemo(() => {
@@ -387,7 +372,11 @@ export const DashboardEducacionContinua = () => {
 
   // Dynamic series based on ofertaViewMode for stacked bar chart
   const ofertaChartSeries = useMemo(() => {
-    if (ofertaViewMode === 'area') {
+    if (ofertaViewMode === 'total') {
+      return [
+        { data: filteredProgramasData.map(d => d.Auditoria + d.Contabilidad + d.Finanzas + d.IA + d.Laboral + d.Tecnologia + d.Tributaria), label: 'Total Programas', color: '#1E2875' }
+      ];
+    } else if (ofertaViewMode === 'area') {
       return [
         { data: filteredProgramasData.map(d => d.Auditoria), label: 'Auditoría', stackId: 'oferta', color: '#1e1b4b' },
         { data: filteredProgramasData.map(d => d.Contabilidad), label: 'Contabilidad', stackId: 'oferta', color: '#3b82f6' },
@@ -487,27 +476,49 @@ export const DashboardEducacionContinua = () => {
     return Array.from(map.values());
   }, [filteredNominalGroup2]);
 
+  const filteredUniqueParticipantsLocal = useMemo(() => {
+    return uniqueParticipantsData.filter(p => {
+      // Sex filter
+      if (localSexoFilter !== 'Todos' && p.genero !== localSexoFilter) {
+        return false;
+      }
+      
+      // Age group filter
+      if (localEdadFilter !== 'Todos') {
+        if (localEdadFilter === '18-35') {
+          if (p.edad < 18 || p.edad > 35) return false;
+        } else if (localEdadFilter === '36-50') {
+          if (p.edad < 36 || p.edad > 50) return false;
+        } else if (localEdadFilter === 'Más de 50') {
+          if (p.edad <= 50) return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [uniqueParticipantsData, localSexoFilter, localEdadFilter]);
+
   const uniqueParticipantsAgeDist = useMemo(() => {
     const dist = { '18-25': 0, '26-35': 0, '36-50': 0, 'Más de 50': 0 };
-    uniqueParticipantsData.forEach(p => {
+    filteredUniqueParticipantsLocal.forEach(p => {
       if (p.edad <= 25) dist['18-25']++;
       else if (p.edad <= 35) dist['26-35']++;
       else if (p.edad <= 50) dist['36-50']++;
       else dist['Más de 50']++;
     });
     return Object.keys(dist).map(key => ({ range: key, count: dist[key] }));
-  }, [uniqueParticipantsData]);
+  }, [filteredUniqueParticipantsLocal]);
 
   const recurrenceFreqDist = useMemo(() => {
     const dist = { '1 Prog': 0, '2 Prog': 0, '3 o más': 0 };
-    uniqueParticipantsData.forEach(p => {
+    filteredUniqueParticipantsLocal.forEach(p => {
       const count = p.programas.length;
       if (count === 1) dist['1 Prog']++;
       else if (count === 2) dist['2 Prog']++;
       else dist['3 o más']++;
     });
     return Object.keys(dist).map(key => ({ category: key, count: dist[key] }));
-  }, [uniqueParticipantsData]);
+  }, [filteredUniqueParticipantsLocal]);
 
   // Recurrencia Formativa Calculations
   const recurrenciaStats = useMemo(() => {
@@ -526,12 +537,10 @@ export const DashboardEducacionContinua = () => {
 
   // Radar Chart Calculations for enrollment by program
   const radarSeries = useMemo(() => {
-    const yearsToInclude = selectedYearMatricula === 'Todos' 
-      ? ['2023', '2024', '2025', '2026'].filter(yr => {
-          const y = parseInt(yr);
-          return y >= parseInt(cohorteDesde) && y <= parseInt(cohorteHasta);
-        })
-      : [selectedYearMatricula];
+    const yearsToInclude = ['2023', '2024', '2025', '2026'].filter(yr => {
+      const y = parseInt(yr);
+      return y >= parseInt(cohorteDesde) && y <= parseInt(cohorteHasta);
+    });
 
     const colorPalette = {
       '2023': '#1E2875', // Institutional Blue
@@ -545,7 +554,9 @@ export const DashboardEducacionContinua = () => {
       const total = Math.round(rawTotal * filterMultiplierGroup2);
 
       let dataPoints = [];
-      if (matriculaViewMode === 'area') {
+      if (matriculaViewMode === 'total') {
+        dataPoints = [total];
+      } else if (matriculaViewMode === 'area') {
         dataPoints = [
           Math.round(total * 0.12), // Auditoría/Riesgos
           Math.round(total * 0.15), // Contabilidad/NIIF
@@ -576,10 +587,12 @@ export const DashboardEducacionContinua = () => {
         fillArea: true,
       };
     });
-  }, [selectedYearMatricula, matriculaViewMode, filterMultiplierGroup2, cohorteDesde, cohorteHasta]);
+  }, [matriculaViewMode, filterMultiplierGroup2, cohorteDesde, cohorteHasta]);
 
   const radarMetrics = useMemo(() => {
-    if (matriculaViewMode === 'area') {
+    if (matriculaViewMode === 'total') {
+      return ['Total Matrículas'];
+    } else if (matriculaViewMode === 'area') {
       return ['Auditoría', 'Contabilidad', 'Finanzas', 'Tecnología', 'Gestión', 'Tributación', 'Otras'];
     } else if (matriculaViewMode === 'modalidad') {
       return ['Online', 'Presencial', 'Híbrido'];
@@ -588,15 +601,7 @@ export const DashboardEducacionContinua = () => {
     }
   }, [matriculaViewMode]);
 
-  const radarMax = useMemo(() => {
-    let highest = 0;
-    radarSeries.forEach(s => {
-      s.data.forEach(val => {
-        if (val > highest) highest = val;
-      });
-    });
-    return Math.max(100, Math.round(highest * 1.1));
-  }, [radarSeries]);
+
 
   // Tasa de aprobación por programa
   const aprobacionProgramasData = useMemo(() => {
@@ -722,17 +727,11 @@ export const DashboardEducacionContinua = () => {
       { id: 3, label: 'Más de 50 años', value: Math.round(total * 0.10) }
     ];
 
-    let genero = [
+    const genero = [
       { id: 0, label: 'Masculino', value: Math.round(total * 0.52) },
       { id: 1, label: 'Femenino', value: Math.round(total * 0.45) },
       { id: 2, label: 'Otro', value: Math.round(total * 0.03) }
     ];
-    if (sexoSeleccionado.length > 0) {
-      genero = genero.map(g => ({
-        ...g,
-        value: sexoSeleccionado.includes(g.label) ? total : 0
-      }));
-    }
 
     const tipo = [
       { id: 0, label: 'Particular', value: Math.round(total * 0.40) },
@@ -741,24 +740,30 @@ export const DashboardEducacionContinua = () => {
     ];
 
     return { region, sector, escolaridad, edad, genero, tipo };
-  }, [kpiStats.totalMatriculas, sexoSeleccionado]);
+  }, [kpiStats.totalMatriculas]);
 
 
   const activePeriodosText = useMemo(() => {
-    let text = `Años: ${cohorteDesde} a ${cohorteHasta} | Semestre: ${periodoDesde} a ${periodoHasta}`;
+    let text = `Años: ${cohorteDesde} a ${cohorteHasta}`;
+    if (semestresSeleccionados.length > 0) {
+      text += ` | Semestres: ${semestresSeleccionados.join(', ')}`;
+    } else {
+      text += ` | Todos los semestres`;
+    }
+    
+    text += ` | Meses: ${mesDesde} a ${mesHasta}`;
 
     const filtersActive = [];
     if (areaSeleccionada.length > 0) filtersActive.push(`Áreas: ${areaSeleccionada.join(', ')}`);
     if (modalidadSeleccionada.length > 0) filtersActive.push(`Modalidades: ${modalidadSeleccionada.join(', ')}`);
     if (tipoSeleccionado.length > 0) filtersActive.push(`Tipos: ${tipoSeleccionado.join(', ')}`);
-    if (mesInicioSeleccionado.length > 0) filtersActive.push(`Meses: ${mesInicioSeleccionado.join(', ')}`);
 
     if (filtersActive.length > 0) {
       text += ` | Filtros Activos (${filtersActive.join('; ')})`;
     }
 
     return text;
-  }, [cohorteDesde, cohorteHasta, periodoDesde, periodoHasta, areaSeleccionada, modalidadSeleccionada, tipoSeleccionado, mesInicioSeleccionado]);
+  }, [cohorteDesde, cohorteHasta, semestresSeleccionados, mesDesde, mesHasta, areaSeleccionada, modalidadSeleccionada, tipoSeleccionado]);
 
   // NAV NAVEGACIÓN IZQUIERDA
   const sidebarContent = (
@@ -789,12 +794,10 @@ export const DashboardEducacionContinua = () => {
           {[
             { text: 'Inicio', icon: <HomeIcon />, path: '/' },
             { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
-            { text: 'Metas', icon: <MetasIcon />, path: '#' },
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
-            { text: 'Visualización de tablas', icon: <TablaIcon />, path: '#' },
           ].filter((item) => {
-            if (item.text === 'Auditoría' || item.text === 'Visualización de tablas') {
+            if (item.text === 'Auditoría') {
               return (
                 user?.role === 'Rector' || 
                 user?.role === 'Administrador' || 
@@ -1235,6 +1238,7 @@ export const DashboardEducacionContinua = () => {
               </div>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <div className="card-toggle-group">
+                  <button className={`btn-toggle ${ofertaViewMode === 'total' ? 'active' : ''}`} onClick={() => setOfertaViewMode('total')}>Total</button>
                   <button className={`btn-toggle ${ofertaViewMode === 'area' ? 'active' : ''}`} onClick={() => setOfertaViewMode('area')}>Área</button>
                   <button className={`btn-toggle ${ofertaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setOfertaViewMode('tipo')}>Tipo</button>
                   <button className={`btn-toggle ${ofertaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setOfertaViewMode('modalidad')}>Modalidad</button>
@@ -1325,7 +1329,8 @@ export const DashboardEducacionContinua = () => {
                   data: dictadosSummaryData.map(d => d.tasa),
                   color: '#1E2875',
                   label: 'Tasa Ejecución %',
-                  valueFormatter: (value) => `${value}%`
+                  valueFormatter: (value) => `${value}%`,
+                  showMark: true
                 }]}
                 margin={{ top: 15, right: 15, bottom: 40, left: 45 }}
               />
@@ -1383,29 +1388,10 @@ export const DashboardEducacionContinua = () => {
                 
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
                   <div className="card-toggle-group">
+                    <button className={`btn-toggle ${matriculaViewMode === 'total' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('total')}>Total</button>
                     <button className={`btn-toggle ${matriculaViewMode === 'area' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('area')}>Área</button>
                     <button className={`btn-toggle ${matriculaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('modalidad')}>Modalidad</button>
                     <button className={`btn-toggle ${matriculaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('tipo')}>Tipo Programa</button>
-                  </div>
-
-                  <div className="card-toggle-group">
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', alignSelf: 'center', paddingLeft: '8px', paddingRight: '4px' }}>
-                      Año:
-                    </span>
-                    <button className={`btn-toggle ${selectedYearMatricula === 'Todos' ? 'active' : ''}`} onClick={() => setSelectedYearMatricula('Todos')}>Todos</button>
-                    {['2023', '2024', '2025', '2026'].map(yr => {
-                      const y = parseInt(yr);
-                      if (y < parseInt(cohorteDesde) || y > parseInt(cohorteHasta)) return null;
-                      return (
-                        <button 
-                          key={yr}
-                          className={`btn-toggle ${selectedYearMatricula === yr ? 'active' : ''}`}
-                          onClick={() => setSelectedYearMatricula(yr)}
-                        >
-                          {yr}
-                        </button>
-                      );
-                    })}
                   </div>
                 </div>
               </div>
@@ -1415,14 +1401,15 @@ export const DashboardEducacionContinua = () => {
               </button>
             </div>
 
-            <div className="chart-wrapper" style={{ height: '390px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <RadarChart
+            <div className="chart-wrapper" style={{ height: '390px' }}>
+              <BarChart
                 height={370}
+                xAxis={[{ 
+                  scaleType: 'band', 
+                  data: radarMetrics,
+                  label: matriculaViewMode === 'area' ? 'Área de programa' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo de programa')
+                }]}
                 series={radarSeries}
-                radar={{
-                  max: radarMax,
-                  metrics: radarMetrics
-                }}
                 slotProps={{
                   legend: {
                     direction: 'row',
@@ -1435,7 +1422,7 @@ export const DashboardEducacionContinua = () => {
           </div>
 
           {/* Card 6: Tasa de aprobación por programa */}
-          <div className="chart-card">
+          <div className="chart-card" style={{ gridColumn: '1 / -1', minHeight: '380px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Award size={16} style={{ color: '#a855f7' }} />
@@ -1447,35 +1434,49 @@ export const DashboardEducacionContinua = () => {
               </button>
             </div>
 
-            <div className="chart-wrapper">
+            <div className="chart-wrapper" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', padding: '8px' }}>
               {aprobacionProgramasData.length > 0 ? (
-                <BarChart
-                  layout="horizontal"
-                  yAxis={[{ 
-                    scaleType: 'band', 
-                    data: aprobacionProgramasData.map(d => d.area)
-                  }]}
-                  series={[
-                    { data: aprobacionProgramasData.map(d => d.tasa), label: 'Tasa %', color: '#a855f7', layout: 'horizontal' },
-                    { data: aprobacionProgramasData.map(d => d.promedioHistorico), label: 'Histórico %', color: '#94a3b8', layout: 'horizontal' }
-                  ]}
-                  margin={{ top: 10, right: 15, bottom: 40, left: 100 }}
-                  slotProps={{
-                    legend: {
-                      direction: 'row',
-                      position: { vertical: 'bottom', horizontal: 'middle' },
-                      labelStyle: { fontSize: '10px', fill: '#1e293b' }
-                    }
-                  }}
-                />
+                aprobacionProgramasData.map(row => (
+                  <div key={row.area} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569', marginBottom: '12px', textAlign: 'center' }}>
+                      {row.area}
+                    </span>
+                    <div style={{ width: 120, height: 120 }}>
+                      <Gauge
+                        value={row.tasa}
+                        startAngle={-110}
+                        endAngle={110}
+                        innerRadius="75%"
+                        outerRadius="100%"
+                        text={`${row.tasa}%`}
+                        sx={{
+                          [`& .${gaugeClasses.valueText}`]: {
+                            fontSize: '18px',
+                            fontWeight: '800',
+                            fill: '#1e293b'
+                          },
+                          [`& .${gaugeClasses.valueArc}`]: {
+                            fill: '#a855f7',
+                          },
+                          [`& .${gaugeClasses.referenceArc}`]: {
+                            fill: '#e2e8f0',
+                          }
+                        }}
+                      />
+                    </div>
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: '#64748b', marginTop: '4px', textAlign: 'center' }}>
+                      Histórico: {row.promedioHistorico}%
+                    </span>
+                  </div>
+                ))
               ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>No hay datos coincidentes</div>
+                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px', gridColumn: '1 / -1', textAlign: 'center' }}>No hay datos coincidentes</div>
               )}
             </div>
           </div>
 
           {/* Card 8: Perfil del participante */}
-          <div className="chart-card">
+          <div className="chart-card" style={{ gridColumn: '1 / -1' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1521,37 +1522,144 @@ export const DashboardEducacionContinua = () => {
           </div>
 
           {/* Histograms for Unique and Recurrent Participants */}
-          <div className="chart-card">
+          <div className="chart-card" style={{ minHeight: '380px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Users size={16} style={{ color: '#8b5cf6' }} />
-                <h2 className="chart-title" style={{ margin: 0 }}>Histograma: Participantes Únicos</h2>
+                <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Participantes Únicos</h2>
               </div>
             </div>
-            <div className="chart-wrapper">
-              <BarChart
-                xAxis={[{ scaleType: 'band', data: uniqueParticipantsAgeDist.map(d => d.range), label: 'Rango de Edad' }]}
-                series={[{ data: uniqueParticipantsAgeDist.map(d => d.count), color: '#8b5cf6', label: 'Cantidad Personas' }]}
-                margin={{ top: 20, right: 15, bottom: 40, left: 35 }}
-                slotProps={{ legend: { hidden: true } }}
-              />
+            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
+              {/* Controles de Filtros Internos */}
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+                <div className="card-toggle-group" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', paddingLeft: '4px', paddingRight: '4px' }}>SEXO:</span>
+                  {['Todos', 'Masculino', 'Femenino'].map(opt => (
+                    <button 
+                      key={opt} 
+                      className={`btn-toggle ${localSexoFilter === opt ? 'active' : ''}`} 
+                      onClick={() => setLocalSexoFilter(opt)}
+                      style={{ fontSize: '11px', padding: '2px 8px' }}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="card-toggle-group" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', paddingLeft: '4px', paddingRight: '4px' }}>EDAD:</span>
+                  {['Todos', '18-35', '36-50', 'Más de 50'].map(opt => (
+                    <button 
+                      key={opt} 
+                      className={`btn-toggle ${localEdadFilter === opt ? 'active' : ''}`} 
+                      onClick={() => setLocalEdadFilter(opt)}
+                      style={{ fontSize: '11px', padding: '2px 8px' }}
+                    >
+                      {opt === 'Más de 50' ? '> 50' : opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1, gap: '20px', padding: '12px 0' }}>
+                {uniqueParticipantsAgeDist.map(d => {
+                  const total = filteredUniqueParticipantsLocal.length || 1;
+                  const pct = (d.count / total) * 100;
+                  const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
+                  return (
+                    <div key={d.range} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                          {d.range} años
+                        </span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#8b5cf6' }}>
+                          {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        {Array.from({ length: 10 }).map((_, i) => (
+                          <svg 
+                            key={i} 
+                            width="18" 
+                            height="18" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="2.5" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            style={{ 
+                              color: i < filledIconsCount ? '#8b5cf6' : '#cbd5e1', 
+                              transition: 'color 0.3s ease' 
+                            }}
+                          >
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
+                Cada figura representa un 10% del total de participantes únicos ({filteredUniqueParticipantsLocal.length})
+              </div>
             </div>
           </div>
 
-          <div className="chart-card">
+          <div className="chart-card" style={{ minHeight: '380px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <RefreshCw size={16} style={{ color: '#ec4899' }} />
-                <h2 className="chart-title" style={{ margin: 0 }}>Histograma: Frecuencia de Matrículas</h2>
+                <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Frecuencia de Matrículas</h2>
               </div>
             </div>
-            <div className="chart-wrapper">
-              <BarChart
-                xAxis={[{ scaleType: 'band', data: recurrenceFreqDist.map(d => d.category), label: 'Programas cursados por persona' }]}
-                series={[{ data: recurrenceFreqDist.map(d => d.count), color: '#ec4899', label: 'Cantidad Personas' }]}
-                margin={{ top: 20, right: 15, bottom: 40, left: 35 }}
-                slotProps={{ legend: { hidden: true } }}
-              />
+            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', flexGrow: 1, gap: '24px', padding: '20px 0' }}>
+                {recurrenceFreqDist.map(d => {
+                  const total = filteredUniqueParticipantsLocal.length || 1;
+                  const pct = (d.count / total) * 100;
+                  const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
+                  return (
+                    <div key={d.category} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                          {d.category === '1 Prog' ? '1 Programa' : (d.category === '2 Prog' ? '2 Programas' : '3 o más programas')}
+                        </span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#ec4899' }}>
+                          {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        {Array.from({ length: 10 }).map((_, i) => (
+                          <svg 
+                            key={i} 
+                            width="18" 
+                            height="18" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="2.5" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            style={{ 
+                              color: i < filledIconsCount ? '#ec4899' : '#cbd5e1', 
+                              transition: 'color 0.3s ease' 
+                            }}
+                          >
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                            <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
+                Cada figura representa un 10% del total de participantes únicos ({filteredUniqueParticipantsLocal.length})
+              </div>
             </div>
           </div>
 
@@ -1607,29 +1715,58 @@ export const DashboardEducacionContinua = () => {
             </Box>
           </Box>
 
-          {/* Selector de Período Académico */}
+          {/* Selector de Semestre (Selector Múltiple) */}
           <Box sx={styles.filterSection}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
               <Typography sx={styles.filterSectionTitle}>
-                Período académico
+                Semestre
+              </Typography>
+            </Box>
+            <FormControl fullWidth size="small">
+              <InputLabel id="semestre-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
+              <Select
+                labelId="semestre-select-label"
+                multiple
+                value={semestresSeleccionados}
+                onChange={(e) => setSemestresSeleccionados(e.target.value)}
+                input={<OutlinedInput label="Seleccionar" />}
+                renderValue={(selected) => selected.join(', ')}
+                sx={styles.selectInputStyle}
+              >
+                {SEMESTRES_LIST.map((name) => (
+                  <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
+                    <Checkbox checked={semestresSeleccionados.indexOf(name) > -1} sx={styles.checkboxStyle} />
+                    <ListItemText primary={name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          {/* Selector de Mes (Rango) */}
+          <Box sx={styles.filterSection}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
+              <Typography sx={styles.filterSectionTitle}>
+                Mes
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <FormControl fullWidth size="small">
-                <InputLabel id="periodo-desde-label" sx={styles.selectLabelStyle}>Desde</InputLabel>
+                <InputLabel id="mes-desde-label" sx={styles.selectLabelStyle}>Desde</InputLabel>
                 <Select
-                  labelId="periodo-desde-label"
-                  value={periodoDesde}
+                  labelId="mes-desde-label"
+                  value={mesDesde}
                   label="Desde"
-                  onChange={(e) => setPeriodoDesde(e.target.value)}
+                  onChange={(e) => setMesDesde(e.target.value)}
                   sx={styles.selectInputStyle}
                 >
-                  {PERIODOS_LIST.map((per) => {
-                    const isDisabled = PERIODOS_LIST.indexOf(per) > PERIODOS_LIST.indexOf(periodoHasta);
+                  {MESES_LIST.map((m) => {
+                    const isDisabled = MESES_LIST.indexOf(m) > MESES_LIST.indexOf(mesHasta);
                     return (
-                      <MenuItem key={per} value={per} disabled={isDisabled}>
-                        {per}
+                      <MenuItem key={m} value={m} disabled={isDisabled}>
+                        {m}
                       </MenuItem>
                     );
                   })}
@@ -1637,108 +1774,25 @@ export const DashboardEducacionContinua = () => {
               </FormControl>
               <Typography sx={{ color: '#94A3B8' }}>—</Typography>
               <FormControl fullWidth size="small">
-                <InputLabel id="periodo-hasta-label" sx={styles.selectLabelStyle}>Hasta</InputLabel>
+                <InputLabel id="mes-hasta-label" sx={styles.selectLabelStyle}>Hasta</InputLabel>
                 <Select
-                  labelId="periodo-hasta-label"
-                  value={periodoHasta}
+                  labelId="mes-hasta-label"
+                  value={mesHasta}
                   label="Hasta"
-                  onChange={(e) => setPeriodoHasta(e.target.value)}
+                  onChange={(e) => setMesHasta(e.target.value)}
                   sx={styles.selectInputStyle}
                 >
-                  {PERIODOS_LIST.map((per) => {
-                    const isDisabled = PERIODOS_LIST.indexOf(per) < PERIODOS_LIST.indexOf(periodoDesde);
+                  {MESES_LIST.map((m) => {
+                    const isDisabled = MESES_LIST.indexOf(m) < MESES_LIST.indexOf(mesDesde);
                     return (
-                      <MenuItem key={per} value={per} disabled={isDisabled}>
-                        {per}
+                      <MenuItem key={m} value={m} disabled={isDisabled}>
+                        {m}
                       </MenuItem>
                     );
                   })}
                 </Select>
               </FormControl>
             </Box>
-          </Box>
-
-          {/* Rango de Edad (Slider) */}
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PersonIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Rango de edad
-              </Typography>
-            </Box>
-            <Box sx={{ px: 1, mt: 0.5 }}>
-              <Slider
-                value={rangoEdad}
-                onChange={(e, newValue) => setRangoEdad(newValue)}
-                valueLabelDisplay="auto"
-                min={18}
-                max={65}
-                sx={styles.ageSliderStyle}
-              />
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-                <Typography sx={styles.ageRangeLabels}>
-                  <span>{rangoEdad[0]}</span> — <span>{rangoEdad[1]}</span> años
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-
-          {/* Sexo (Selector Múltiple) */}
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <WcIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Sexo
-              </Typography>
-            </Box>
-            <FormControl fullWidth size="small">
-              <InputLabel id="sexo-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-              <Select
-                labelId="sexo-select-label"
-                multiple
-                value={sexoSeleccionado}
-                onChange={(e) => setSexoSeleccionado(e.target.value)}
-                input={<OutlinedInput label="Seleccionar" />}
-                renderValue={(selected) => selected.join(', ')}
-                sx={styles.selectInputStyle}
-              >
-                {SEXO_LIST.map((name) => (
-                  <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                    <Checkbox checked={sexoSeleccionado.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                    <ListItemText primary={name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-
-          {/* Mes de inicio (Selector Múltiple) */}
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Mes de inicio
-              </Typography>
-            </Box>
-            <FormControl fullWidth size="small">
-              <InputLabel id="mes-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-              <Select
-                labelId="mes-select-label"
-                multiple
-                value={mesInicioSeleccionado}
-                onChange={(e) => setMesInicioSeleccionado(e.target.value)}
-                input={<OutlinedInput label="Seleccionar" />}
-                renderValue={(selected) => selected.join(', ')}
-                sx={styles.selectInputStyle}
-              >
-                {MESES_LIST.map((name) => (
-                  <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                    <Checkbox checked={mesInicioSeleccionado.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                    <ListItemText primary={name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
           </Box>
 
           {/* Tipo de programa (Selector Múltiple) */}
