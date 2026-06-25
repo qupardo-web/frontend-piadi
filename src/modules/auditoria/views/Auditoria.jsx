@@ -57,31 +57,6 @@ import {
   Close as CloseIcon,
 } from '@mui/icons-material';
 
-// Datos de prueba para la pestaña "Carga de datos" (Exactamente del mockup de referencia_auditoria.png)
-const MOCK_CARGAS_LOGS = [
-  { fecha: '23-03-2026 22:20', usuario: 'Jane Doe', rol: 'Admisión', accion: 'Carga', entidad: 'Matrículas Regulares', registros: 120, plantilla: 'Matrículas regulares', archivo: 'Matriculas_2024_SegundoSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'Jane Doe', rol: 'Admisión', accion: 'Carga', entidad: 'Matrículas Regulares', registros: 300, plantilla: 'Matrículas regulares', archivo: 'Matriculas_2024_PrimerSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'John Doe', rol: 'Educación Continua', accion: 'Carga', entidad: 'Matrículas de externos', registros: 200, plantilla: 'Matrículas de externos', archivo: 'Matriculas_Cursos_2024_SegundoSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'John Doe', rol: 'Educación Continua', accion: 'Carga', entidad: 'Matrículas de externos', registros: 120, plantilla: 'Matrículas de externos', archivo: 'Matriculas_Cursos_2024_PrimerSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'Jake Doe', rol: 'Innovación', accion: 'Carga', entidad: 'Proyectos', registros: 120, plantilla: 'Proyectos', archivo: 'Proyectos_2024_PrimerSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'Jake Doe', rol: 'Innovación', accion: 'Carga', entidad: 'Proyectos', registros: 120, plantilla: 'Proyectos', archivo: 'Proyectos_2024_PrimerSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'Jim Doe', rol: 'Relaciones Estudiantiles', accion: 'Carga', entidad: 'Matrículas Regulares', registros: 120, plantilla: 'Alumnos', archivo: 'Levantamiento_Socioeconomico_2025_SegundoSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'Jim Doe', rol: 'Relaciones Estudiantiles', accion: 'Carga', entidad: 'Matrículas Regulares', registros: 120, plantilla: 'Alumnos', archivo: 'Levantamiento_Socioeconomico_2025_PrimerSemestre.xlsx' },
-];
-
-// Datos de prueba para la pestaña "Creación de metas" (Extraído de auditoria_metas.png)
-const MOCK_METAS_LOGS = [
-  { fecha: '22-03-2026 15:30', usuario: 'Jane Doe', rol: 'Admisión', accion: 'Creación', entidad: 'Meta', registros: 1, detalle: 'Total de 200 matriculados en cursos' },
-  { fecha: '22-03-2026 14:20', usuario: 'John Doe', rol: 'Educación Continua', accion: 'Edición', entidad: 'Meta', registros: 1, detalle: 'Actualización de meta: Total de 20 cursos ejecutados' },
-  { fecha: '21-03-2026 10:15', usuario: 'Jake Doe', rol: 'Innovación', accion: 'Eliminación', entidad: 'Meta', registros: 1, detalle: 'Eliminación de meta obsoleta' },
-];
-
-// Datos de prueba para la pestaña "Inicios de sesión" (Extraído de auditoria_login_filtro.png)
-const MOCK_LOGIN_LOGS = [
-  { fecha: '23-03-2026 09:00', usuario: 'Jane Doe', rol: 'Admisión', accion: 'Inicio sesión', entidad: 'Sistema', registros: 1, detalle: 'Inicio de sesión exitoso' },
-  { fecha: '23-03-2026 09:05', usuario: 'John Doe', rol: 'Educación Continua', accion: 'Inicio sesión', entidad: 'Sistema', registros: 1, detalle: 'Inicio de sesión exitoso' },
-  { fecha: '23-03-2026 18:45', usuario: 'Jane Doe', rol: 'Admisión', accion: 'Cierre sesión', entidad: 'Sistema', registros: 1, detalle: 'Cierre de sesión' },
-];
 
 export const Auditoria = () => {
   const navigate = useNavigate();
@@ -266,9 +241,9 @@ export const Auditoria = () => {
   // Obtener los logs activos en base a la pestaña seleccionada
   const getActiveLogs = () => {
     switch (activeTab) {
-      case 0: return realCargaLogs ?? MOCK_CARGAS_LOGS;
-      case 1: return MOCK_METAS_LOGS;
-      case 2: return realSessionLogs ?? MOCK_LOGIN_LOGS;
+      case 0: return realCargaLogs ?? [];
+      case 1: return []; // Pendiente: sin endpoint real para metas
+      case 2: return realSessionLogs ?? [];
       default: return [];
     }
   };
@@ -649,6 +624,13 @@ export const Auditoria = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {filteredLogs.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} sx={{ textAlign: 'center', color: '#94A3B8', py: 4, fontSize: '14px' }}>
+                      {activeTab === 1 ? 'Módulo de metas pendiente de implementación.' : 'No hay registros disponibles.'}
+                    </TableCell>
+                  </TableRow>
+                )}
                 {filteredLogs.map((log, index) => (
                   <TableRow key={index} hover>
                     {/* Fecha y hora */}

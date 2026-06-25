@@ -102,20 +102,6 @@ const TEMPLATES = [
   },
 ];
 
-// Datos de prueba para simular la tabla de cargas recientes
-const RECENT_UPLOADS = [
-  { fecha: '14-05-2026 22:30', usuario: 'Jane Doe', plantilla: 'Caracterización Estudiante', archivo: 'Caracterizacion_Estudiantes_2026.xlsx' },
-  { fecha: '14-05-2026 22:15', usuario: 'Jane Doe', plantilla: 'Educación Continua', archivo: 'EduContinua_Matricula_2026.xlsx' },
-  { fecha: '14-05-2026 22:00', usuario: 'Jane Doe', plantilla: 'Innovación', archivo: 'Innovacion_Proyectos_2026.xlsx' },
-  // Página 2 (cuando itemsPerPage = 3)
-  { fecha: '14-05-2026 21:45', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2026_Primer_Semestre.xlsx' },
-  { fecha: '14-05-2026 21:45', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2026_Segundo_Semestre.xlsx' },
-  { fecha: '14-05-2026 21:45', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2025_Primer_Semestre.xlsx' },
-  // Página 3
-  { fecha: '14-05-2026 19:15', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2024_SegundoSemestre.xlsx' },
-  { fecha: '14-05-2026 18:00', usuario: 'Jane Doe', plantilla: 'Vinculación con el Medio', archivo: 'Vinculacion_Medio_Convenios_2026.xlsx' },
-  { fecha: '14-05-2026 17:30', usuario: 'Jane Doe', plantilla: 'Rendimiento Académico', archivo: 'Rendimiento_Academico_2025.xlsx' },
-];
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -137,7 +123,7 @@ export const CargaDatos = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   
   // Estados para la carga de datos y diálogo
-  const [uploads, setUploads] = useState(RECENT_UPLOADS);
+  const [uploads, setUploads] = useState([]);
   const [openUploadDialog, setOpenUploadDialog] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -679,6 +665,13 @@ export const CargaDatos = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {uploads.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} sx={{ textAlign: 'center', color: '#94A3B8', py: 4, fontSize: '14px' }}>
+                      No hay cargas registradas.
+                    </TableCell>
+                  </TableRow>
+                )}
                 {uploads.map((upload, index) => (
                   <TableRow key={index}>
                     <TableCell sx={styles.tableBodyCell}>{upload.fecha}</TableCell>
