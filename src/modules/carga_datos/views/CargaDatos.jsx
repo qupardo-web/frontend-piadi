@@ -214,6 +214,33 @@ export const CargaDatos = () => {
     fetchTemplates();
   }, []);
 
+  // Carga el historial real de cargas desde auditoría
+  useEffect(() => {
+    const token = sessionStorage.getItem('auth_token');
+    if (!token) return;
+    const formatDate = (iso) => {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+    fetch(`${API_URL}/api/audit-logs?type=carga&limit=10`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        const items = json?.data?.items ?? [];
+        if (!items.length) return;
+        setUploads(items.map(item => ({
+          fecha: formatDate(item.createdAt),
+          usuario: item.usuarioNombre || item.usuarioEmail || (item.detail?.usuarioId != null ? `#${item.detail.usuarioId}` : '-'),
+          plantilla: item.detail?.plantilla || item.detail?.entidad || '-',
+          archivo: item.detail?.archivo || '-',
+        })));
+      })
+      .catch(() => {});
+  }, []);
+
   // Filtrado de plantillas por rol (Rector y administradores ven todas)
   const filteredTemplates = templates.filter((tmpl) => {
     if (
