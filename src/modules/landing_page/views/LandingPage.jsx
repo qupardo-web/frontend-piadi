@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './LandingPage.styles';
+import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
   Typography,
@@ -237,7 +238,12 @@ export const LandingPage = () => {
       <Box>
         {/* Logo y Cabecera del Sidebar */}
         <Box sx={styles.logoContainer}>
-          <Box sx={styles.logoBadge}>P</Box>
+          <Box 
+            component="img" 
+            src={logoEcas} 
+            alt="Logo ECAS" 
+            sx={{ width: 32, height: 32, objectFit: 'contain' }} 
+          />
           <Box>
             <Typography variant="subtitle1" sx={styles.logoTitle}>
               PIADI
@@ -259,7 +265,17 @@ export const LandingPage = () => {
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
             { text: 'Visualización de tablas', icon: <TablaIcon />, path: '#' },
-          ].map((item) => {
+          ].filter((item) => {
+            if (item.text === 'Auditoría' || item.text === 'Visualización de tablas') {
+              return (
+                user?.role === 'Rector' || 
+                user?.role === 'Administrador' || 
+                user?.role === 'Director de Administración' ||
+                user?.role === 'Analista de Calidad'
+              );
+            }
+            return true;
+          }).map((item) => {
             const isSelected = activeMenu === item.text;
             return (
               <Box
@@ -372,24 +388,44 @@ export const LandingPage = () => {
           ========================================================================= */}
       <Box sx={styles.contentArea}>
         {/* Cabecera y Bienvenida */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Typography variant="body2" sx={styles.welcomeText}>
-            Buenos días, {user?.username || 'John'} ✍️
-          </Typography>
-          
-          <Box sx={styles.panelHeader}>
-            <Box sx={styles.panelIconContainer}>
-              <HomeIcon />
-            </Box>
-            <Box>
-              <Typography variant="h5" sx={styles.panelTitle}>
-                Panel de Inicio
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#64748b' }}>
-                Aquí encontrarás un resumen de tus metas y actividades institucionales.
-              </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="body2" sx={styles.welcomeText}>
+              Buenos días, {user?.username || 'John'} ✍️
+            </Typography>
+            
+            <Box sx={styles.panelHeader}>
+              <Box sx={styles.panelIconContainer}>
+                <HomeIcon />
+              </Box>
+              <Box>
+                <Typography variant="h5" sx={styles.panelTitle}>
+                  Panel de Inicio
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748b' }}>
+                  Aquí encontrarás un resumen de tus metas y actividades institucionales.
+                </Typography>
+              </Box>
             </Box>
           </Box>
+          {user && (
+            <Box sx={{ 
+              bgcolor: '#ffffff', 
+              border: '1px solid #e2e8f0', 
+              borderRadius: '8px', 
+              px: 2, 
+              py: 1, 
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}>
+              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981' }} />
+              <Typography variant="body2" sx={{ color: '#334155', fontWeight: 500 }}>
+                Sesión activa: <span style={{ fontWeight: 700 }}>{user.username}</span> ({user.role})
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         {/* Pestañas de Navegación Secundarias */}

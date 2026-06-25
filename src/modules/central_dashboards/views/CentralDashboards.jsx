@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './CentralDashboards.styles';
+import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
   Typography,
@@ -20,6 +21,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  CircularProgress,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -44,63 +46,59 @@ import {
   Favorite as FavoriteIcon,
 } from '@mui/icons-material';
 
-// Datos de las tarjetas de dashboards según la referencia Central_de_dashboards.png
-const DASHBOARDS_LIST = [
-  {
-    id: 'admision',
-    title: 'Admisión',
-    desc: 'Gestión y seguimiento del proceso de admisión de nuevos estudiantes, desde la postulación hasta la matrícula.',
-    date: '15-04-2026',
-    color: '#1E2875',
-    icon: <PersonAddIcon />,
-  },
-  {
-    id: 'relaciones_estudiantiles',
-    title: 'Relaciones Estudiantiles',
-    desc: 'Monitoreo de la interacción y comunicación entre estudiantes, organizaciones estudiantiles y la institución.',
-    date: '15-04-2026',
-    color: '#51158C',
-    icon: <GroupIcon />,
-  },
-  {
-    id: 'desarrollo_curricular',
-    title: 'Desarrollo Curricular',
-    desc: 'Análisis del rendimiento académico, programas de estudio y mejora continua de la calidad educativa.',
-    date: '14-04-2026',
-    color: '#175696',
-    icon: <BookIcon />,
-  },
-  {
-    id: 'innovacion',
-    title: 'Innovación',
-    desc: 'Seguimiento de proyectos de innovación pedagógica, tecnologías educativas y metodologías de enseñanza.',
-    date: '14-04-2026',
-    color: '#3EC9FF',
-    icon: <LightbulbIcon />,
-  },
-  {
-    id: 'educacion_continua',
-    title: 'Educación Continua',
-    desc: 'Gestión de programas de formación continua, postgrados y educación permanente para profesionales.',
-    date: '13-04-2026',
-    color: '#46D19F',
-    icon: <SchoolIcon />,
-  },
-  {
-    id: 'vinculacion_medio',
-    title: 'Vinculación con el Medio',
-    desc: 'Seguimiento de proyectos de extensión, colaboración con la comunidad y relaciones institucionales.',
-    date: '13-04-2026',
-    color: '#E27800',
-    icon: <FavoriteIcon />,
-  },
-];
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+const getDepartmentMeta = (key) => {
+  switch (key) {
+    case 'admision':
+      return { color: '#1E2875', icon: <PersonAddIcon /> };
+    case 'relaciones_estudiantiles':
+      return { color: '#51158C', icon: <GroupIcon /> };
+    case 'desarrollo_curricular':
+      return { color: '#175696', icon: <BookIcon /> };
+    case 'innovacion':
+      return { color: '#3EC9FF', icon: <LightbulbIcon /> };
+    case 'educacion_continua':
+      return { color: '#46D19F', icon: <SchoolIcon /> };
+    case 'vinculacion_medio':
+      return { color: '#E27800', icon: <FavoriteIcon /> };
+    default:
+      return { color: '#1E2875', icon: <DashboardIcon /> };
+  }
+};
 
 export const CentralDashboards = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openHelpDialog, setOpenHelpDialog] = useState(false); // Estado para abrir el Centro de Ayuda
+
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const token = sessionStorage.getItem('auth_token');
+        const response = await fetch(`${API_URL}/api/departments`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        const result = await response.json();
+        if (result.success && Array.isArray(result.data)) {
+          setDepartments(result.data);
+        } else {
+          throw new Error('No se pudieron obtener los departamentos del servidor');
+        }
+      } catch (err) {
+        console.error('Error fetching departments:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   // Datos de las Preguntas Frecuentes (FAQ) del Centro de Ayuda
   const faqData = [
@@ -137,9 +135,11 @@ export const CentralDashboards = () => {
   };
 
   const handleOpenDashboard = (id) => {
-    // Redirige al CRUD técnico actual /dashboard-crud o similar, o al dashboard del departamento respectivo
-    // Para cumplir con los flujos de PIADI, redirigimos a la vista CRUD técnica (/dashboard-crud)
-    navigate('/dashboard-crud');
+    if (id === 'educacion_continua') {
+      navigate('/dashboard-educacion-continua');
+    } else {
+      navigate('/dashboard-crud');
+    }
   };
 
   const sidebarContent = (
@@ -147,7 +147,12 @@ export const CentralDashboards = () => {
       <Box>
         {/* Logo y Cabecera del Sidebar */}
         <Box sx={styles.logoContainer}>
-          <Box sx={styles.logoBadge}>P</Box>
+          <Box 
+            component="img" 
+            src={logoEcas} 
+            alt="Logo ECAS" 
+            sx={{ width: 32, height: 32, objectFit: 'contain' }} 
+          />
           <Box>
             <Typography variant="subtitle1" sx={styles.logoTitle}>
               PIADI
@@ -169,7 +174,17 @@ export const CentralDashboards = () => {
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
             { text: 'Visualización de tablas', icon: <TablaIcon />, path: '#' },
-          ].map((item) => {
+          ].filter((item) => {
+            if (item.text === 'Auditoría' || item.text === 'Visualización de tablas') {
+              return (
+                user?.role === 'Rector' || 
+                user?.role === 'Administrador' || 
+                user?.role === 'Director de Administración' ||
+                user?.role === 'Analista de Calidad'
+              );
+            }
+            return true;
+          }).map((item) => {
             const isSelected = activeMenu === item.text;
             return (
               <Box
@@ -271,18 +286,38 @@ export const CentralDashboards = () => {
         
         {/* Cabecera del Panel Principal */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Box sx={styles.panelHeader}>
-            <Box sx={styles.panelIconContainer}>
-              <DashboardIcon />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
+            <Box sx={styles.panelHeader}>
+              <Box sx={styles.panelIconContainer}>
+                <DashboardIcon />
+              </Box>
+              <Box>
+                <Typography variant="h5" sx={styles.panelTitle}>
+                  Central de Dashboards
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                  Accede a los dashboards de las diferentes direcciones y áreas de la institución
+                </Typography>
+              </Box>
             </Box>
-            <Box>
-              <Typography variant="h5" sx={styles.panelTitle}>
-                Central de Dashboards
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                Accede a los dashboards de las diferentes direcciones y áreas de la institución
-              </Typography>
-            </Box>
+            {user && (
+              <Box sx={{ 
+                bgcolor: '#ffffff', 
+                border: '1px solid #e2e8f0', 
+                borderRadius: '8px', 
+                px: 2, 
+                py: 1, 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981' }} />
+                <Typography variant="body2" sx={{ color: '#334155', fontWeight: 500 }}>
+                  Sesión activa: <span style={{ fontWeight: 700 }}>{user.username}</span> ({user.role})
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           {/* Breadcrumbs */}
@@ -299,39 +334,49 @@ export const CentralDashboards = () => {
 
         {/* Grilla de Dashboards (3 Columnas en Desktop) */}
         <Grid container spacing={3}>
-          {DASHBOARDS_LIST.map((dash) => (
-            <Grid item xs={12} sm={6} md={4} key={dash.id}>
-              <Card sx={styles.dashboardCard}>
-                {/* Cabecera de Color con Icono */}
-                <Box sx={styles.cardHeaderColor(dash.color)}>
-                  {dash.icon}
-                </Box>
-                {/* Cuerpo de la Tarjeta */}
-                <Box sx={styles.cardBody}>
-                  <Typography variant="h6" sx={styles.cardTitle}>
-                    {dash.title}
-                  </Typography>
-                  <Typography variant="body2" sx={styles.cardDesc}>
-                    {dash.desc}
-                  </Typography>
-                  {/* Footer de la tarjeta con fecha y botón de abrir */}
-                  <Box sx={styles.cardFooter}>
-                    <Box sx={styles.cardDateContainer}>
-                      <ClockIcon sx={{ fontSize: 16 }} />
-                      <Typography sx={styles.cardDateText}>{dash.date}</Typography>
-                    </Box>
-                    <Button 
-                      variant="contained" 
-                      sx={styles.cardButton(dash.color)}
-                      onClick={() => handleOpenDashboard(dash.id)}
-                    >
-                      Abrir &nbsp;➔
-                    </Button>
-                  </Box>
-                </Box>
-              </Card>
+          {loading ? (
+            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress sx={{ color: '#1E2875' }} />
             </Grid>
-          ))}
+          ) : error ? (
+            <Grid item xs={12} sx={{ textAlign: 'center', py: 4 }}>
+              <Typography color="error">Error al cargar departamentos: {error}</Typography>
+            </Grid>
+          ) : (
+            departments.map((dept) => {
+              const meta = getDepartmentMeta(dept.key);
+              return (
+                <Grid item xs={12} sm={6} md={4} key={dept.id}>
+                  <Card sx={styles.dashboardCard}>
+                    {/* Cabecera de Color con Icono */}
+                    <Box sx={styles.cardHeaderColor(meta.color)}>
+                      {meta.icon}
+                    </Box>
+                    {/* Cuerpo de la Tarjeta */}
+                    <Box sx={styles.cardBody}>
+                      <Typography variant="h6" sx={styles.cardTitle}>
+                        {dept.name}
+                      </Typography>
+                      <Typography variant="body2" sx={styles.cardDesc}>
+                        {dept.description}
+                      </Typography>
+                      {/* Footer de la tarjeta con botón de abrir */}
+                      <Box sx={styles.cardFooter}>
+                        <Box sx={{ flexGrow: 1 }} />
+                        <Button 
+                          variant="contained" 
+                          sx={styles.cardButton(meta.color)}
+                          onClick={() => handleOpenDashboard(dept.key)}
+                        >
+                          Abrir &nbsp;➔
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Card>
+                </Grid>
+              );
+            })
+          )}
         </Grid>
       </Box>
 

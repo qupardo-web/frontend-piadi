@@ -36,13 +36,13 @@ export const loginRequest = async (username, password) => {
       console.warn('Backend Auth endpoint offline/missing. Falling back to mock authentication.');
       
       // Simple secure fallback logic (do not use in production)
-      if (username === 'admin' && password === 'admin123') {
+      if (username === 'admin@admin.com' && password === 'admin123') {
         return {
-          user: { id: 1, username: 'admin', role: 'Administrador' },
+          user: { id: 1, username: 'admin@admin.com', role: 'Administrador' },
           token: 'mock-session-jwt-token-123456'
         };
       }
-      throw new Error('Usuario o contraseña incorrectos (Prueba con admin / admin123)');
+      throw new Error('Usuario o contraseña incorrectos');
     }
     throw err;
   }
