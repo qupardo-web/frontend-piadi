@@ -38,7 +38,7 @@ import { LoginPage, useAuth } from './modules/auth';
 import { LandingPage } from './modules/landing_page';
 import { CargaDatos, RepositorioArchivos } from './modules/carga_datos';
 import { Auditoria } from './modules/auditoria';
-import { CentralDashboards, DashboardEducacionContinua } from './modules/central_dashboards';
+import { CentralDashboards } from './modules/central_dashboards';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 
@@ -371,8 +371,8 @@ function Dashboard() {
 // - Si la sesión se está cargando (loading), muestra un spinner de carga.
 // - Si está autenticado, permite ver la vista hija (children).
 // - Si NO está autenticado, lo redirige automáticamente a la pantalla de /login.
-function ProtectedRoute({ children, allowedRoles }) {
-  const { isAuthenticated, loading, user } = useAuth();
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
     return (
@@ -382,15 +382,7 @@ function ProtectedRoute({ children, allowedRoles }) {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (allowedRoles && !allowedRoles.includes(user?.role)) {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
 // =========================================================================
@@ -453,9 +445,9 @@ function App() {
             />
 
             {/* 
-               RUTA: /dashboard
-               Muestra la Central de Dashboards con el diseño de Central_de_dashboards.png
-             */}
+              RUTA: /dashboard
+              Muestra la Central de Dashboards con el diseño de Central_de_dashboards.png
+            */}
             <Route 
               path="/dashboard" 
               element={
@@ -466,26 +458,13 @@ function App() {
             />
 
             {/* 
-               RUTA: /dashboard-educacion-continua
-               Muestra el dashboard específico de Educación Continua con filtros adherentes.
-            */}
-            <Route 
-              path="/dashboard-educacion-continua" 
-              element={
-                <ProtectedRoute>
-                  <DashboardEducacionContinua />
-                </ProtectedRoute>
-              } 
-            />
-
-            {/* 
-               RUTA: /dashboard-crud
-               Conserva la interfaz CRUD anterior de PostgreSQL y monitoreo técnico.
+              RUTA: /dashboard-crud
+              Conserva la interfaz CRUD anterior de PostgreSQL y monitoreo técnico.
             */}
             <Route 
               path="/dashboard-crud" 
               element={
-                <ProtectedRoute allowedRoles={['Rector', 'Administrador', 'Director de Administración', 'Analista de Calidad']}>
+                <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
               } 
@@ -524,7 +503,7 @@ function App() {
             <Route 
               path="/auditoria" 
               element={
-                <ProtectedRoute allowedRoles={['Rector', 'Administrador', 'Director de Administración', 'Analista de Calidad']}>
+                <ProtectedRoute>
                   <Auditoria />
                 </ProtectedRoute>
               } 
