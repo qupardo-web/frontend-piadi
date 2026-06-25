@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './DashboardEducacionContinua.styles';
+import { getDashboardSummary, getIndicatorSeries } from '../../../services/piadiApi';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
@@ -204,7 +205,58 @@ export const DashboardEducacionContinua = () => {
   const [perfilViewMode, setPerfilViewMode] = useState('region'); // 'region', 'sector', 'escolaridad', 'edad', 'genero', 'tipo'
 
   // MODALES DE DETALLE
-  const [activeModal, setActiveModal] = useState(null); 
+  const [activeModal, setActiveModal] = useState(null);
+
+  // DATOS REALES DESDE API
+  const [apiSummary, setApiSummary] = useState(null);
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiOfertaSeries, setApiOfertaSeries] = useState(null);
+  const [apiDictadosSeries, setApiDictadosSeries] = useState(null);
+  const [apiEjecucionSeries, setApiEjecucionSeries] = useState(null);
+
+  const apiParams = useMemo(() => {
+    const params = { department: 'educacion_continua' };
+    const desde = parseInt(cohorteDesde);
+    const hasta = parseInt(cohorteHasta);
+    if (desde === hasta) {
+      params.year = cohorteDesde;
+    } else {
+      params.fromYear = cohorteDesde;
+      params.toYear = cohorteHasta;
+    }
+    if (areaSeleccionada.length > 0) params.area = areaSeleccionada.join(',');
+    if (tipoSeleccionado.length > 0) params.tipo = tipoSeleccionado.join(',');
+    if (modalidadSeleccionada.length > 0) params.modalidad = modalidadSeleccionada.join(',');
+    if (sexoSeleccionado.length > 0) params.sexo = sexoSeleccionado.join(',');
+    if (mesInicioSeleccionado.length > 0) params.startMonth = mesInicioSeleccionado.join(',');
+    return params;
+  }, [cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada, sexoSeleccionado, mesInicioSeleccionado]);
+
+  useEffect(() => {
+    setApiLoading(true);
+    const seriesParams = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta };
+    Promise.all([
+      getDashboardSummary(apiParams).catch(() => null),
+      getIndicatorSeries('oferta_programada', seriesParams).catch(() => null),
+      getIndicatorSeries('cursos_dictados', seriesParams).catch(() => null),
+      getIndicatorSeries('tasa_ejecucion', seriesParams).catch(() => null),
+    ]).then(([summary, oferta, dictados, ejecucion]) => {
+      if (summary?.success && summary.data) {
+        // Formato real: data.departments[0].cards[{ indicatorKey, value, hasData }]
+        const deptData = summary.data?.departments?.find(d => d.departmentId === 'educacion_continua');
+        const cards = deptData?.cards ?? [];
+        if (cards.some(c => c.hasData)) {
+          const map = {};
+          cards.forEach(c => { map[c.indicatorKey] = c; });
+          setApiSummary(map);
+        }
+      }
+      // Serie usa data.points (no data.series)
+      if (oferta?.success) setApiOfertaSeries(oferta.data?.points?.length > 0 ? oferta.data.points : null);
+      if (dictados?.success) setApiDictadosSeries(dictados.data?.points?.length > 0 ? dictados.data.points : null);
+      if (ejecucion?.success) setApiEjecucionSeries(ejecucion.data?.points?.length > 0 ? ejecucion.data.points : null);
+    }).finally(() => setApiLoading(false));
+  }, [apiParams, cohorteDesde, cohorteHasta]);
 
   const activeMenu = 'Dashboards';
 
@@ -445,6 +497,40 @@ export const DashboardEducacionContinua = () => {
       };
     });
   }, [filteredProgramasData]);
+
+  // Series efectivas: usa datos reales si la API los entrega con el formato esperado,
+  // de lo contrario mantiene el cálculo mock existente.
+  // Series efectivas: usa datos reales si la API los entrega (data.points), de lo contrario fallback mock.
+  // Formato real de points: [{ year, period, value, label }]
+  const effectiveDictadosSeries = useMemo(() => {
+    if (apiOfertaSeries?.length > 0 && apiDictadosSeries?.length > 0) {
+      const getKey = s => String(s.year ?? s.period ?? s.label ?? '');
+      const years = [...new Set(apiOfertaSeries.map(getKey))];
+      return years.map(yr => {
+        const plan = apiOfertaSeries.find(s => getKey(s) === yr);
+        const dict = apiDictadosSeries.find(s => getKey(s) === yr);
+        const planVal = plan?.value ?? 0;
+        const dictVal = dict?.value ?? 0;
+        return {
+          cohorte: yr,
+          planificados: planVal,
+          dictados: dictVal,
+          tasa: planVal > 0 ? parseFloat(((dictVal / planVal) * 100).toFixed(1)) : 0,
+        };
+      });
+    }
+    return null;
+  }, [apiOfertaSeries, apiDictadosSeries]);
+
+  const effectiveEjecucionSeries = useMemo(() => {
+    if (apiEjecucionSeries?.length > 0) {
+      return apiEjecucionSeries.map(s => ({
+        cohorte: String(s.year ?? s.period ?? s.label ?? ''),
+        tasa: s.value ?? 0,
+      }));
+    }
+    return null;
+  }, [apiEjecucionSeries]);
 
   // Top KPIs calculations
   const kpiStats = useMemo(() => {
@@ -1183,9 +1269,14 @@ export const DashboardEducacionContinua = () => {
               <span>Matrículas Totales</span>
               <Users size={16} />
             </div>
-            <div className="kpi-value">{kpiStats.totalMatriculas.toLocaleString()}</div>
+            <div className="kpi-value">
+              {(() => {
+                const v = apiSummary?.matricula_por_programa?.value;
+                return v != null ? Number(v).toLocaleString('es-CL') : kpiStats.totalMatriculas.toLocaleString();
+              })()}
+            </div>
             <div className="kpi-trend">
-              <span>Estudiantes activos calculados</span>
+              <span>{apiSummary?.matricula_por_programa?.hasData ? 'Datos reales API' : 'Estudiantes activos calculados'}</span>
             </div>
           </div>
 
@@ -1195,21 +1286,30 @@ export const DashboardEducacionContinua = () => {
               <DollarSign size={16} style={{ color: '#10B981' }} />
             </div>
             <div className="kpi-value" style={{ color: '#047857' }}>
-              ${(totalRevenueCLP / 1000000).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M CLP
+              {(() => {
+                const v = apiSummary?.ingresos_generados?.value;
+                if (v != null) return `$${Number(v).toLocaleString('es-CL')}`;
+                return `$${(totalRevenueCLP / 1000000).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M CLP`;
+              })()}
             </div>
             <div className="kpi-trend" style={{ color: '#047857' }}>
-              <span>Valores facturados netos estimados</span>
+              <span>{apiSummary?.ingresos_generados?.hasData ? 'Valores facturados netos reales' : 'Valores facturados netos estimados'}</span>
             </div>
           </div>
 
           <div className="kpi-card" style={{ borderLeft: '4px solid #F59E0B' }}>
             <div className="kpi-header" style={{ color: '#b45309' }}>
-              <span>Recurrencia Formativa</span>
+              <span>Tasa de Ejecución</span>
               <RefreshCw size={16} style={{ color: '#F59E0B' }} />
             </div>
-            <div className="kpi-value" style={{ color: '#b45309' }}>{recurrenciaStats.tasaRecurrencia}%</div>
+            <div className="kpi-value" style={{ color: '#b45309' }}>
+              {(() => {
+                const v = apiSummary?.tasa_ejecucion?.value;
+                return v != null ? `${v}%` : `${kpiStats.avgTasaEjecucion}%`;
+              })()}
+            </div>
             <div className="kpi-trend" style={{ color: '#b45309' }}>
-              <span>{recurrenciaStats.totalRecurrentes} alumnos recurrentes</span>
+              <span>{apiSummary?.tasa_ejecucion?.hasData ? 'Datos reales API' : 'Calculado desde mock'}</span>
             </div>
           </div>
         </div>
@@ -1279,25 +1379,26 @@ export const DashboardEducacionContinua = () => {
             </div>
             
             <div className="chart-wrapper">
-              <BarChart
-                xAxis={[{ 
-                  scaleType: 'band', 
-                  data: dictadosSummaryData.map(d => d.cohorte),
-                  label: 'Año'
-                }]}
-                series={[
-                  { data: dictadosSummaryData.map(d => d.planificados), label: 'Programados', color: '#cbd5e1' },
-                  { data: dictadosSummaryData.map(d => d.dictados), label: 'Dictados', color: '#10B981' }
-                ]}
-                margin={{ top: 15, right: 15, bottom: 40, left: 40 }}
-                slotProps={{
-                  legend: {
-                    direction: 'row',
-                    position: { vertical: 'bottom', horizontal: 'middle' },
-                    labelStyle: { fontSize: '10px', fill: '#1e293b' }
-                  }
-                }}
-              />
+              {(() => {
+                const src = effectiveDictadosSeries ?? dictadosSummaryData;
+                return (
+                  <BarChart
+                    xAxis={[{ scaleType: 'band', data: src.map(d => d.cohorte), label: 'Año' }]}
+                    series={[
+                      { data: src.map(d => d.planificados), label: 'Programados', color: '#cbd5e1' },
+                      { data: src.map(d => d.dictados), label: 'Dictados', color: '#10B981' }
+                    ]}
+                    margin={{ top: 15, right: 15, bottom: 40, left: 40 }}
+                    slotProps={{
+                      legend: {
+                        direction: 'row',
+                        position: { vertical: 'bottom', horizontal: 'middle' },
+                        labelStyle: { fontSize: '10px', fill: '#1e293b' }
+                      }
+                    }}
+                  />
+                );
+              })()}
             </div>
           </div>
 
@@ -1315,20 +1416,21 @@ export const DashboardEducacionContinua = () => {
             </div>
             
             <div className="chart-wrapper">
-              <LineChart
-                xAxis={[{ 
-                  scaleType: 'point', 
-                  data: dictadosSummaryData.map(d => d.cohorte),
-                  label: 'Año'
-                }]}
-                series={[{ 
-                  data: dictadosSummaryData.map(d => d.tasa),
-                  color: '#1E2875',
-                  label: 'Tasa Ejecución %',
-                  valueFormatter: (value) => `${value}%`
-                }]}
-                margin={{ top: 15, right: 15, bottom: 40, left: 45 }}
-              />
+              {(() => {
+                const src = effectiveEjecucionSeries ?? dictadosSummaryData;
+                return (
+                  <LineChart
+                    xAxis={[{ scaleType: 'point', data: src.map(d => d.cohorte), label: 'Año' }]}
+                    series={[{
+                      data: src.map(d => d.tasa),
+                      color: '#1E2875',
+                      label: 'Tasa Ejecución %',
+                      valueFormatter: (value) => `${value}%`
+                    }]}
+                    margin={{ top: 15, right: 15, bottom: 40, left: 45 }}
+                  />
+                );
+              })()}
             </div>
           </div>
 
