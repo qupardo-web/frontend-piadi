@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './Auditoria.styles';
-import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
   Typography,
@@ -97,79 +96,6 @@ export const Auditoria = () => {
   const [openHelpDialog, setOpenHelpDialog] = useState(false); // Estado para abrir el Centro de Ayuda
   const itemsPerPage = 3; // Paginación móvil
 
-  const [realCargaLogs, setRealCargaLogs] = useState(null);
-  const [realSessionLogs, setRealSessionLogs] = useState(null);
-
-  useEffect(() => {
-    const token = sessionStorage.getItem('auth_token');
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-    const formatDate = (iso) => {
-      if (!iso) return '-';
-      const d = new Date(iso);
-      const pad = (n) => String(n).padStart(2, '0');
-      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    };
-
-    const fetchLogs = async (type, setter, mapFn) => {
-      try {
-        const res = await fetch(`${API_URL}/api/audit-logs?type=${type}&limit=100`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!res.ok) return;
-        const json = await res.json();
-        const items = json?.data?.items || [];
-        setter(items.map(mapFn));
-      } catch {
-        // mantener mock data si el backend no responde
-      }
-    };
-
-    const resolveUsuario = (item) =>
-      item.usuarioNombre || item.usuarioEmail ||
-      (item.detail?.usuarioId != null ? `#${item.detail.usuarioId}` : '-');
-
-    fetchLogs('carga', setRealCargaLogs, (item) => ({
-      fecha: formatDate(item.createdAt),
-      usuario: resolveUsuario(item),
-      rol: item.detail?.rol || '-',
-      accion: 'Carga',
-      entidad: item.detail?.entidad || '-',
-      registros: 1,
-      plantilla: item.detail?.plantilla || '-',
-      archivo: item.detail?.archivo || '-'
-    }));
-    const resolveDetalleSesion = (item) => {
-      const accion = item.detail?.accion;
-      const usuario = resolveUsuario(item);
-      const rol = item.detail?.rol || 'sin rol';
-
-      if (accion === 'LOGIN_SUCCESS') {
-        return `Inicio de sesión exitoso de ${usuario} con rol ${rol}.`;
-      }
-
-      if (accion === 'LOGIN_FAILED') {
-        return `Intento de inicio de sesión fallido para ${usuario}.`;
-      }
-
-      return item.detail?.detalles || item.detail?.detalle || '';
-    };
-    fetchLogs('session', setRealSessionLogs, (item) => ({
-      fecha: formatDate(item.createdAt),
-      usuario: resolveUsuario(item),
-      rol: item.detail?.rol || '-',
-      accion:
-        item.detail?.accion === 'LOGIN_SUCCESS'
-          ? 'Inicio sesión'
-          : item.detail?.accion === 'LOGIN_FAILED'
-            ? 'Inicio fallido'
-            : (item.detail?.accion || '-'),
-      entidad: item.detail?.entidad || 'Sistema',
-      registros: 1,
-      detalle: resolveDetalleSesion(item)
-    }));
-  }, []);
-
   // Datos de las Preguntas Frecuentes (FAQ) del Centro de Ayuda
   const faqData = [
     {
@@ -212,10 +138,14 @@ export const Auditoria = () => {
   // Obtener los logs activos en base a la pestaña seleccionada
   const getActiveLogs = () => {
     switch (activeTab) {
-      case 0: return realCargaLogs ?? MOCK_CARGAS_LOGS;
-      case 1: return MOCK_METAS_LOGS;
-      case 2: return realSessionLogs ?? MOCK_LOGIN_LOGS;
-      default: return [];
+      case 0:
+        return MOCK_CARGAS_LOGS;
+      case 1:
+        return MOCK_METAS_LOGS;
+      case 2:
+        return MOCK_LOGIN_LOGS;
+      default:
+        return [];
     }
   };
 
@@ -272,12 +202,7 @@ export const Auditoria = () => {
       <Box>
         {/* Logo y Cabecera del Sidebar */}
         <Box sx={styles.logoContainer}>
-          <Box 
-            component="img" 
-            src={logoEcas} 
-            alt="Logo ECAS" 
-            sx={{ width: 32, height: 32, objectFit: 'contain' }} 
-          />
+          <Box sx={styles.logoBadge}>P</Box>
           <Box>
             <Typography variant="subtitle1" sx={styles.logoTitle}>
               PIADI
@@ -299,17 +224,7 @@ export const Auditoria = () => {
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
             { text: 'Visualización de tablas', icon: <TablaIcon />, path: '#' },
-          ].filter((item) => {
-            if (item.text === 'Auditoría' || item.text === 'Visualización de tablas') {
-              return (
-                user?.role === 'Rector' || 
-                user?.role === 'Administrador' || 
-                user?.role === 'Director de Administración' ||
-                user?.role === 'Analista de Calidad'
-              );
-            }
-            return true;
-          }).map((item) => {
+          ].map((item) => {
             const isSelected = activeMenu === item.text;
             return (
               <Box
@@ -421,38 +336,18 @@ export const Auditoria = () => {
         
         {/* Cabecera del Panel Principal */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
-            <Box sx={styles.panelHeader}>
-              <Box sx={styles.panelIconContainer}>
-                <AuditoriaIcon />
-              </Box>
-              <Box>
-                <Typography variant="h5" sx={styles.panelTitle}>
-                  Auditoría del Sistema
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                  Registro completo de todas las acciones realizadas en el sistema
-                </Typography>
-              </Box>
+          <Box sx={styles.panelHeader}>
+            <Box sx={styles.panelIconContainer}>
+              <AuditoriaIcon />
             </Box>
-            {user && (
-              <Box sx={{ 
-                bgcolor: '#ffffff', 
-                border: '1px solid #e2e8f0', 
-                borderRadius: '8px', 
-                px: 2, 
-                py: 1, 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1
-              }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981' }} />
-                <Typography variant="body2" sx={{ color: '#334155', fontWeight: 500 }}>
-                  Sesión activa: <span style={{ fontWeight: 700 }}>{user.username}</span> ({user.role})
-                </Typography>
-              </Box>
-            )}
+            <Box>
+              <Typography variant="h5" sx={styles.panelTitle}>
+                Auditoría del Sistema
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                Registro completo de todas las acciones realizadas en el sistema
+              </Typography>
+            </Box>
           </Box>
 
           {/* Breadcrumbs de orientación */}
@@ -512,10 +407,12 @@ export const Auditoria = () => {
                     sx={styles.filterSelect}
                   >
                     <MenuItem value="Todos">Todos</MenuItem>
-                    <MenuItem value="Rector">Rector</MenuItem>
-                    <MenuItem value="Analista de Calidad">Analista de Calidad</MenuItem>
-                    <MenuItem value="Director Académico">Director Académico</MenuItem>
-                    <MenuItem value="Director de Administración">Director de Administración</MenuItem>
+                    <MenuItem value="Admisión">Admisión</MenuItem>
+                    <MenuItem value="Desarrollo Curricular">Desarrollo Curricular</MenuItem>
+                    <MenuItem value="Educación Continua">Educación Continua</MenuItem>
+                    <MenuItem value="Vinculación con el Medio">Vinculación con el Medio</MenuItem>
+                    <MenuItem value="Innovación">Innovación</MenuItem>
+                    <MenuItem value="Relaciones Estudiantiles">Relaciones Estudiantiles</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
@@ -630,8 +527,6 @@ export const Auditoria = () => {
                             ? styles.badgeEliminacion 
                             : log.accion === 'Inicio sesión'
                             ? styles.badgeInicioSesion
-                            : log.accion === 'Inicio fallido'
-                            ? styles.badgeCierreSesion
                             : log.accion === 'Cierre sesión'
                             ? styles.badgeCierreSesion
                             : styles.badgeLogin
@@ -704,8 +599,6 @@ export const Auditoria = () => {
                         ? styles.badgeEliminacion 
                         : log.accion === 'Inicio sesión'
                         ? styles.badgeInicioSesion
-                        : log.accion === 'Inicio fallido'
-                        ? styles.badgeCierreSesion
                         : log.accion === 'Cierre sesión'
                         ? styles.badgeCierreSesion
                         : styles.badgeLogin
