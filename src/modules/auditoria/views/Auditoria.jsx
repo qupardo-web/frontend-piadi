@@ -57,31 +57,6 @@ import {
   Close as CloseIcon,
 } from '@mui/icons-material';
 
-// Datos de prueba para la pestaña "Carga de datos" (Exactamente del mockup de referencia_auditoria.png)
-const MOCK_CARGAS_LOGS = [
-  { fecha: '23-03-2026 22:20', usuario: 'Jane Doe', rol: 'Admisión', accion: 'Carga', entidad: 'Matrículas Regulares', registros: 120, plantilla: 'Matrículas regulares', archivo: 'Matriculas_2024_SegundoSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'Jane Doe', rol: 'Admisión', accion: 'Carga', entidad: 'Matrículas Regulares', registros: 300, plantilla: 'Matrículas regulares', archivo: 'Matriculas_2024_PrimerSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'John Doe', rol: 'Educación Continua', accion: 'Carga', entidad: 'Matrículas de externos', registros: 200, plantilla: 'Matrículas de externos', archivo: 'Matriculas_Cursos_2024_SegundoSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'John Doe', rol: 'Educación Continua', accion: 'Carga', entidad: 'Matrículas de externos', registros: 120, plantilla: 'Matrículas de externos', archivo: 'Matriculas_Cursos_2024_PrimerSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'Jake Doe', rol: 'Innovación', accion: 'Carga', entidad: 'Proyectos', registros: 120, plantilla: 'Proyectos', archivo: 'Proyectos_2024_PrimerSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'Jake Doe', rol: 'Innovación', accion: 'Carga', entidad: 'Proyectos', registros: 120, plantilla: 'Proyectos', archivo: 'Proyectos_2024_PrimerSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'Jim Doe', rol: 'Relaciones Estudiantiles', accion: 'Carga', entidad: 'Matrículas Regulares', registros: 120, plantilla: 'Alumnos', archivo: 'Levantamiento_Socioeconomico_2025_SegundoSemestre.xlsx' },
-  { fecha: '23-03-2026 22:20', usuario: 'Jim Doe', rol: 'Relaciones Estudiantiles', accion: 'Carga', entidad: 'Matrículas Regulares', registros: 120, plantilla: 'Alumnos', archivo: 'Levantamiento_Socioeconomico_2025_PrimerSemestre.xlsx' },
-];
-
-// Datos de prueba para la pestaña "Creación de metas" (Extraído de auditoria_metas.png)
-const MOCK_METAS_LOGS = [
-  { fecha: '22-03-2026 15:30', usuario: 'Jane Doe', rol: 'Admisión', accion: 'Creación', entidad: 'Meta', registros: 1, detalle: 'Total de 200 matriculados en cursos' },
-  { fecha: '22-03-2026 14:20', usuario: 'John Doe', rol: 'Educación Continua', accion: 'Edición', entidad: 'Meta', registros: 1, detalle: 'Actualización de meta: Total de 20 cursos ejecutados' },
-  { fecha: '21-03-2026 10:15', usuario: 'Jake Doe', rol: 'Innovación', accion: 'Eliminación', entidad: 'Meta', registros: 1, detalle: 'Eliminación de meta obsoleta' },
-];
-
-// Datos de prueba para la pestaña "Inicios de sesión" (Extraído de auditoria_login_filtro.png)
-const MOCK_LOGIN_LOGS = [
-  { fecha: '23-03-2026 09:00', usuario: 'Jane Doe', rol: 'Admisión', accion: 'Inicio sesión', entidad: 'Sistema', registros: 1, detalle: 'Inicio de sesión exitoso' },
-  { fecha: '23-03-2026 09:05', usuario: 'John Doe', rol: 'Educación Continua', accion: 'Inicio sesión', entidad: 'Sistema', registros: 1, detalle: 'Inicio de sesión exitoso' },
-  { fecha: '23-03-2026 18:45', usuario: 'Jane Doe', rol: 'Admisión', accion: 'Cierre sesión', entidad: 'Sistema', registros: 1, detalle: 'Cierre de sesión' },
-];
 
 export const Auditoria = () => {
   const navigate = useNavigate();
@@ -111,6 +86,12 @@ export const Auditoria = () => {
       return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     };
 
+    // Intenta corregir nombres de archivo guardados con encoding incorrecto (Latin-1 como UTF-8)
+    const fixEncoding = (str) => {
+      if (!str) return str;
+      try { return decodeURIComponent(escape(str)); } catch (e) { return str; }
+    };
+
     const fetchLogs = async (type, setter, mapFn) => {
       try {
         const res = await fetch(`${API_URL}/api/audit-logs?type=${type}&limit=100`, {
@@ -125,35 +106,81 @@ export const Auditoria = () => {
       }
     };
 
-    const resolveUsuario = (item) =>
-      item.usuarioNombre || item.usuarioEmail ||
-      (item.detail?.usuarioId != null ? `#${item.detail.usuarioId}` : '-');
+    const resolveUsuario = (item) => {
+      if (item.usuarioNombre) return item.usuarioNombre;
+      if (item.usuarioEmail) return item.usuarioEmail;
+      const det = item.detail?.detalles;
+      if (det && typeof det === 'string') {
+        try {
+          const parsed = JSON.parse(det);
+          if (parsed?.usuario) return parsed.usuario;
+        } catch (e) {
+          // String plano: extraer email si está mencionado (p.ej. LOGIN_FAILED)
+          const m = det.match(/[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}/);
+          if (m) return m[0];
+        }
+      }
+      if (item.detail?.usuarioId != null) return `#${item.detail.usuarioId}`;
+      return '-';
+    };
 
-    fetchLogs('carga', setRealCargaLogs, (item) => ({
-      fecha: formatDate(item.createdAt),
-      usuario: resolveUsuario(item),
-      rol: item.detail?.rol || '-',
-      accion: 'Carga',
-      entidad: item.detail?.entidad || '-',
-      registros: 1,
-      plantilla: item.detail?.plantilla || '-',
-      archivo: item.detail?.archivo || '-'
-    }));
     const resolveDetalleSesion = (item) => {
       const accion = item.detail?.accion;
+      const det = item.detail?.detalles;
+
+      // Nuevo formato post-fix: string descriptivo directo (no JSON)
+      if (det && typeof det === 'string' && !det.startsWith('{')) {
+        return det;
+      }
+
       const usuario = resolveUsuario(item);
-      const rol = item.detail?.rol || 'sin rol';
+      const rol = item.detail?.rol || null;
 
       if (accion === 'LOGIN_SUCCESS') {
-        return `Inicio de sesión exitoso de ${usuario} con rol ${rol}.`;
+        if (usuario !== '-' && rol) {
+          return `Inicio de sesión exitoso de ${usuario} con rol ${rol}.`;
+        }
+        return 'Inicio de sesión exitoso.';
       }
 
       if (accion === 'LOGIN_FAILED') {
-        return `Intento de inicio de sesión fallido para ${usuario}.`;
+        if (usuario !== '-') {
+          return `Intento de inicio de sesión fallido para ${usuario}.`;
+        }
+        return 'Intento de inicio de sesión fallido.';
       }
 
-      return item.detail?.detalles || item.detail?.detalle || '';
+      if (accion === 'LOGOUT_SUCCESS') {
+        const rol = item.detail?.rol || null;
+        if (usuario !== '-' && rol) {
+          return `Cierre de sesión de ${usuario} con rol ${rol}.`;
+        }
+        if (usuario !== '-') return `Cierre de sesión de ${usuario}.`;
+        return 'Cierre de sesión.';
+      }
+
+      return det || '';
     };
+
+    fetchLogs('carga', setRealCargaLogs, (item) => {
+      const plantillaVal = item.detail?.plantilla;
+      const plantillaDisplay = !plantillaVal
+        ? '-'
+        : /^\d+$/.test(String(plantillaVal))
+          ? `Plantilla #${plantillaVal}`
+          : plantillaVal;
+      return {
+        fecha: formatDate(item.createdAt),
+        usuario: resolveUsuario(item),
+        rol: item.detail?.rol || '-',
+        accion: 'Carga',
+        entidad: item.detail?.entidad || '-',
+        registros: 1,
+        plantilla: plantillaDisplay,
+        archivo: fixEncoding(item.detail?.archivo) || '-'
+      };
+    });
+
     fetchLogs('session', setRealSessionLogs, (item) => ({
       fecha: formatDate(item.createdAt),
       usuario: resolveUsuario(item),
@@ -163,7 +190,9 @@ export const Auditoria = () => {
           ? 'Inicio sesión'
           : item.detail?.accion === 'LOGIN_FAILED'
             ? 'Inicio fallido'
-            : (item.detail?.accion || '-'),
+            : item.detail?.accion === 'LOGOUT_SUCCESS'
+              ? 'Cierre sesión'
+              : (item.detail?.accion || '-'),
       entidad: item.detail?.entidad || 'Sistema',
       registros: 1,
       detalle: resolveDetalleSesion(item)
@@ -212,8 +241,9 @@ export const Auditoria = () => {
   // Obtener los logs activos en base a la pestaña seleccionada
   const getActiveLogs = () => {
     switch (activeTab) {
-      case 0: return realCargaLogs ?? MOCK_CARGAS_LOGS;
-      case 1: return realSessionLogs ?? MOCK_LOGIN_LOGS;
+      case 0: return realCargaLogs ?? [];
+      case 1: return []; // Pendiente: sin endpoint real para metas
+      case 2: return realSessionLogs ?? [];
       default: return [];
     }
   };
@@ -591,6 +621,13 @@ export const Auditoria = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {filteredLogs.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} sx={{ textAlign: 'center', color: '#94A3B8', py: 4, fontSize: '14px' }}>
+                      {activeTab === 1 ? 'Módulo de metas pendiente de implementación.' : 'No hay registros disponibles.'}
+                    </TableCell>
+                  </TableRow>
+                )}
                 {filteredLogs.map((log, index) => (
                   <TableRow key={index} hover>
                     {/* Fecha y hora */}

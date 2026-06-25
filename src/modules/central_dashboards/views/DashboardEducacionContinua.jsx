@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './DashboardEducacionContinua.styles';
+import { getDashboardSummary, getIndicatorSeries } from '../../../services/piadiApi';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
@@ -63,7 +64,6 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { RadarChart } from '@mui/x-charts/RadarChart';
-import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 
 // RAW DATA FOR CALCULATIONS (Years 2023 - 2026)
 const COHORTE_DATA_RAW = [
@@ -206,7 +206,58 @@ export const DashboardEducacionContinua = () => {
   const [localEdadFilter, setLocalEdadFilter] = useState('Todos');
 
   // MODALES DE DETALLE
-  const [activeModal, setActiveModal] = useState(null); 
+  const [activeModal, setActiveModal] = useState(null);
+
+  // DATOS REALES DESDE API
+  const [apiSummary, setApiSummary] = useState(null);
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiOfertaSeries, setApiOfertaSeries] = useState(null);
+  const [apiDictadosSeries, setApiDictadosSeries] = useState(null);
+  const [apiEjecucionSeries, setApiEjecucionSeries] = useState(null);
+
+  const apiParams = useMemo(() => {
+    const params = { department: 'educacion_continua' };
+    const desde = parseInt(cohorteDesde);
+    const hasta = parseInt(cohorteHasta);
+    if (desde === hasta) {
+      params.year = cohorteDesde;
+    } else {
+      params.fromYear = cohorteDesde;
+      params.toYear = cohorteHasta;
+    }
+    if (areaSeleccionada.length > 0) params.area = areaSeleccionada.join(',');
+    if (tipoSeleccionado.length > 0) params.tipo = tipoSeleccionado.join(',');
+    if (modalidadSeleccionada.length > 0) params.modalidad = modalidadSeleccionada.join(',');
+    if (sexoSeleccionado.length > 0) params.sexo = sexoSeleccionado.join(',');
+    if (mesInicioSeleccionado.length > 0) params.startMonth = mesInicioSeleccionado.join(',');
+    return params;
+  }, [cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada, sexoSeleccionado, mesInicioSeleccionado]);
+
+  useEffect(() => {
+    setApiLoading(true);
+    const seriesParams = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta };
+    Promise.all([
+      getDashboardSummary(apiParams).catch(() => null),
+      getIndicatorSeries('oferta_programada', seriesParams).catch(() => null),
+      getIndicatorSeries('cursos_dictados', seriesParams).catch(() => null),
+      getIndicatorSeries('tasa_ejecucion', seriesParams).catch(() => null),
+    ]).then(([summary, oferta, dictados, ejecucion]) => {
+      if (summary?.success && summary.data) {
+        // Formato real: data.departments[0].cards[{ indicatorKey, value, hasData }]
+        const deptData = summary.data?.departments?.find(d => d.departmentId === 'educacion_continua');
+        const cards = deptData?.cards ?? [];
+        if (cards.some(c => c.hasData)) {
+          const map = {};
+          cards.forEach(c => { map[c.indicatorKey] = c; });
+          setApiSummary(map);
+        }
+      }
+      // Serie usa data.points (no data.series)
+      if (oferta?.success) setApiOfertaSeries(oferta.data?.points?.length > 0 ? oferta.data.points : null);
+      if (dictados?.success) setApiDictadosSeries(dictados.data?.points?.length > 0 ? dictados.data.points : null);
+      if (ejecucion?.success) setApiEjecucionSeries(ejecucion.data?.points?.length > 0 ? ejecucion.data.points : null);
+    }).finally(() => setApiLoading(false));
+  }, [apiParams, cohorteDesde, cohorteHasta]);
 
   const activeMenu = 'Dashboards';
 
@@ -225,232 +276,85 @@ export const DashboardEducacionContinua = () => {
     setAreaSeleccionada([]);
   };
 
-  // --- LÓGICA DE CÁLCULO DINÁMICA (REPORTE INTERACTIVO) ---
-  
-  const filterMultiplierGroup1 = useMemo(() => {
-    let multiplier = 1.0;
+  // --- LÓGICA DE DATOS REALES (sin multiplicadores mock) ---
 
-    if (modalidadSeleccionada.length > 0) {
-      // Scale based on selected modalities
-      let factor = 0;
-      if (modalidadSeleccionada.includes('Online')) factor += 0.55;
-      if (modalidadSeleccionada.includes('Presencial')) factor += 0.25;
-      if (modalidadSeleccionada.includes('Semipresencial') || modalidadSeleccionada.includes('Híbrida')) factor += 0.20;
-      multiplier *= factor;
-    }
+  // Datos nominales — sin endpoint real, retornan vacíos
+  const filteredNominalGroup1 = useMemo(() => [], []);
+  const filteredNominalGroup2 = useMemo(() => [], []);
+  const filteredCohorteData = useMemo(() => [], []);
+  const filteredRetencionData = useMemo(() => [], []);
 
-    if (tipoSeleccionado.length > 0) {
-      let factor = 0;
-      if (tipoSeleccionado.includes('Curso')) factor += 0.45;
-      if (tipoSeleccionado.includes('Diplomado')) factor += 0.40;
-      if (tipoSeleccionado.includes('Seminario') || tipoSeleccionado.includes('Postítulo')) factor += 0.15;
-      multiplier *= factor;
-    }
-
-    if (areaSeleccionada.length > 0) {
-      multiplier *= (areaSeleccionada.length / AREAS_LIST.length);
-    }
-
-    // Temporal ranges
-    const rangeSize = parseInt(cohorteHasta) - parseInt(cohorteDesde) + 1;
-    multiplier *= (rangeSize / 4);
-
-    const numMonths = MESES_LIST.indexOf(mesHasta) - MESES_LIST.indexOf(mesDesde) + 1;
-    multiplier *= (numMonths / 12);
-
-    return Math.max(0.05, Math.min(1.5, multiplier));
-  }, [cohorteDesde, cohorteHasta, mesDesde, mesHasta, tipoSeleccionado, modalidadSeleccionada, areaSeleccionada]);
-
-  const filterMultiplierGroup2 = filterMultiplierGroup1;
-
-  // Nominal data filtered by global rules (Group 1)
-  const filteredNominalGroup1 = useMemo(() => {
-    return NOMINAL_REGISTRATIONS.filter((item, idx) => {
-      // Area filter
-      if (areaSeleccionada.length > 0 && !areaSeleccionada.includes(item.area)) return false;
-      
-      // Tipo filter
-      if (tipoSeleccionado.length > 0) {
-        const itemTipo = item.programa.includes('Diplomado') ? 'Diplomado' : 'Curso';
-        if (!tipoSeleccionado.includes(itemTipo)) return false;
-      }
-
-      // Modalidad filter
-      if (modalidadSeleccionada.length > 0) {
-        let itemModalidad = 'Presencial';
-        if (item.programa.includes('IA') || item.programa.includes('Finanzas') || item.programa.includes('Auditoría')) {
-          itemModalidad = 'Online';
-        } else if (item.programa.includes('NIIF') || item.programa.includes('Fullstack') || item.programa.includes('Tributaria')) {
-          itemModalidad = 'Híbrida';
-        }
-        if (!modalidadSeleccionada.includes(itemModalidad)) return false;
-      }
-
-      // Year range filter
-      const rowAnio = ['2023', '2024', '2025', '2026'][idx % 4];
-      const yr = parseInt(rowAnio);
-      if (yr < parseInt(cohorteDesde) || yr > parseInt(cohorteHasta)) return false;
-
-      // Month range check
-      const rowMesIdx = idx % 12;
-      const idxDesde = MESES_LIST.indexOf(mesDesde);
-      const idxHasta = MESES_LIST.indexOf(mesHasta);
-      if (rowMesIdx < idxDesde || rowMesIdx > idxHasta) return false;
-
-      // Semester check (by Selected Semesters)
-      if (semestresSeleccionados.length > 0) {
-        const rowSemestre = (idx % 12 < 6) ? '1' : '2';
-        const rowSemestreText = rowSemestre === '1' ? '1° Semestre' : '2° Semestre';
-        if (!semestresSeleccionados.includes(rowSemestreText)) return false;
-      }
-
-      return true;
-    });
-  }, [areaSeleccionada, tipoSeleccionado, modalidadSeleccionada, cohorteDesde, cohorteHasta, mesDesde, mesHasta, semestresSeleccionados]);
-
-  // Nominal data filtered by global + student profile (Group 2)
-  const filteredNominalGroup2 = filteredNominalGroup1;
-
-  // Cohorte Filtered Data
-  const filteredCohorteData = useMemo(() => {
-    return COHORTE_DATA_RAW
-      .filter(item => {
-        const yr = parseInt(item.cohorte);
-        return yr >= parseInt(cohorteDesde) && yr <= parseInt(cohorteHasta);
-      })
-      .map(item => ({
-        cohorte: item.cohorte,
-        matriculas: Math.round(item.matriculas * filterMultiplierGroup2)
-      }));
-  }, [cohorteDesde, cohorteHasta, filterMultiplierGroup2]);
-
-  // Retención Filtered Data
-  const filteredRetencionData = useMemo(() => {
-    return RETENCION_DATA_RAW
-      .filter(item => {
-        const yr = parseInt(item.periodo.split('-')[0]);
-        const inYr = yr >= parseInt(cohorteDesde) && yr <= parseInt(cohorteHasta);
-        
-        let inSemestre = true;
-        if (semestresSeleccionados.length > 0) {
-          const semVal = item.periodo.split('-')[1]; // '1' or '2'
-          const semText = semVal === '1' ? '1° Semestre' : '2° Semestre';
-          inSemestre = semestresSeleccionados.includes(semText);
-        }
-        
-        return inYr && inSemestre;
-      })
-      .map(item => {
-        const offset = (filterMultiplierGroup1 - 1) * 3;
-        let newRet = parseFloat((item.retencion + offset).toFixed(1));
-        newRet = Math.max(50, Math.min(100, newRet));
-        return {
-          periodo: item.periodo,
-          retencion: newRet
-        };
-      });
-  }, [cohorteDesde, cohorteHasta, semestresSeleccionados, filterMultiplierGroup1]);
-
-  // Programas Filtered Data (Oferta de cursos programada)
+  // Oferta programada — usa datos reales de API, filtrada por año seleccionado
   const filteredProgramasData = useMemo(() => {
-    return PROGRAMAS_DATA_RAW
-      .filter(item => {
-        const yr = parseInt(item.cohorte);
+    if (!apiOfertaSeries?.length) return [];
+    return apiOfertaSeries
+      .filter(s => {
+        const yr = parseInt(s.year ?? s.period ?? 0);
         return yr >= parseInt(cohorteDesde) && yr <= parseInt(cohorteHasta);
       })
-      .map(item => ({
-        cohorte: item.cohorte,
-        Auditoria: Math.round(item.Auditoria * filterMultiplierGroup1),
-        Contabilidad: Math.round(item.Contabilidad * filterMultiplierGroup1),
-        Finanzas: Math.round(item.Finanzas * filterMultiplierGroup1),
-        IA: Math.round(item.IA * filterMultiplierGroup1),
-        Laboral: Math.round(item.Laboral * filterMultiplierGroup1),
-        Tecnologia: Math.round(item.Tecnologia * filterMultiplierGroup1),
-        Tributaria: Math.round(item.Tributaria * filterMultiplierGroup1)
+      .map(s => ({
+        cohorte: String(s.year ?? s.period ?? s.label ?? ''),
+        total: s.value ?? 0,
       }));
-  }, [cohorteDesde, cohorteHasta, filterMultiplierGroup1]);
+  }, [apiOfertaSeries, cohorteDesde, cohorteHasta]);
 
-  // Dynamic series based on ofertaViewMode for stacked bar chart
+  // Serie de oferta programada — total real de API (sin desglose por área/tipo/modalidad)
   const ofertaChartSeries = useMemo(() => {
     if (ofertaViewMode === 'total') {
       return [
         { data: filteredProgramasData.map(d => d.Auditoria + d.Contabilidad + d.Finanzas + d.IA + d.Laboral + d.Tecnologia + d.Tributaria), label: 'Total Programas', color: '#1E2875' }
       ];
-    } else if (ofertaViewMode === 'area') {
-      return [
-        { data: filteredProgramasData.map(d => d.Auditoria), label: 'Auditoría', stackId: 'oferta', color: '#1e1b4b' },
-        { data: filteredProgramasData.map(d => d.Contabilidad), label: 'Contabilidad', stackId: 'oferta', color: '#3b82f6' },
-        { data: filteredProgramasData.map(d => d.Finanzas), label: 'Finanzas', stackId: 'oferta', color: '#6366f1' },
-        { data: filteredProgramasData.map(d => d.IA), label: 'IA/Tecnología', stackId: 'oferta', color: '#a855f7' },
-        { data: filteredProgramasData.map(d => d.Laboral), label: 'Laboral/Gestión', stackId: 'oferta', color: '#ec4899' },
-        { data: filteredProgramasData.map(d => d.Tecnologia), label: 'Tecnología', stackId: 'oferta', color: '#0d9488' },
-        { data: filteredProgramasData.map(d => d.Tributaria), label: 'Tributaria', stackId: 'oferta', color: '#f59e0b' }
-      ];
-    } else if (ofertaViewMode === 'tipo') {
-      return [
-        { data: filteredProgramasData.map(d => {
-            const tot = d.Auditoria + d.Contabilidad + d.Finanzas + d.IA + d.Laboral + d.Tecnologia + d.Tributaria;
-            return Math.round(tot * 0.45);
-          }), label: 'Curso', stackId: 'oferta', color: '#3b82f6' },
-        { data: filteredProgramasData.map(d => {
-            const tot = d.Auditoria + d.Contabilidad + d.Finanzas + d.IA + d.Laboral + d.Tecnologia + d.Tributaria;
-            return Math.round(tot * 0.40);
-          }), label: 'Diplomado', stackId: 'oferta', color: '#a855f7' },
-        { data: filteredProgramasData.map(d => {
-            const tot = d.Auditoria + d.Contabilidad + d.Finanzas + d.IA + d.Laboral + d.Tecnologia + d.Tributaria;
-            return Math.round(tot * 0.15);
-          }), label: 'Seminario/Taller', stackId: 'oferta', color: '#ec4899' }
-      ];
-    } else { // modalidad
-      return [
-        { data: filteredProgramasData.map(d => {
-            const tot = d.Auditoria + d.Contabilidad + d.Finanzas + d.IA + d.Laboral + d.Tecnologia + d.Tributaria;
-            return Math.round(tot * 0.55);
-          }), label: 'Online', stackId: 'oferta', color: '#0d9488' },
-        { data: filteredProgramasData.map(d => {
-            const tot = d.Auditoria + d.Contabilidad + d.Finanzas + d.IA + d.Laboral + d.Tecnologia + d.Tributaria;
-            return Math.round(tot * 0.20);
-          }), label: 'Híbrido', stackId: 'oferta', color: '#6366f1' },
-        { data: filteredProgramasData.map(d => {
-            const tot = d.Auditoria + d.Contabilidad + d.Finanzas + d.IA + d.Laboral + d.Tecnologia + d.Tributaria;
-            return Math.round(tot * 0.25);
-          }), label: 'Presencial', stackId: 'oferta', color: '#f59e0b' }
-      ];
-    }
-  }, [ofertaViewMode, filteredProgramasData]);
-
-  // Effectively delivered courses summary data
-  const dictadosSummaryData = useMemo(() => {
-    return filteredProgramasData.map((row, index) => {
-      const planificados = row.Auditoria + row.Contabilidad + row.Finanzas + row.IA + row.Laboral + row.Tecnologia + row.Tributaria;
-      const rates = [0.81, 0.83, 0.80, 0.84];
-      const selectedRate = rates[index % rates.length];
-      const dictados = Math.round(planificados * selectedRate);
-      return {
-        cohorte: row.cohorte,
-        planificados,
-        dictados,
-        tasa: planificados > 0 ? parseFloat(((dictados / planificados) * 100).toFixed(1)) : 0
-      };
-    });
+    } else if (!filteredProgramasData.length) return [];
+    return [{
+      data: filteredProgramasData.map(d => d.total),
+      label: 'Total programado',
+      color: '#1E2875',
+    }];
   }, [filteredProgramasData]);
 
-  // Top KPIs calculations
-  const kpiStats = useMemo(() => {
-    const totalMatriculas = filteredCohorteData.reduce((acc, curr) => acc + curr.matriculas, 0);
-    const totalRetencion = filteredRetencionData.reduce((acc, curr) => acc + curr.retencion, 0);
-    const avgRetencion = filteredRetencionData.length > 0 ? parseFloat((totalRetencion / filteredRetencionData.length).toFixed(1)) : 0;
-    
-    const totalPlanificados = dictadosSummaryData.reduce((acc, curr) => acc + curr.planificados, 0);
-    const totalDictados = dictadosSummaryData.reduce((acc, curr) => acc + curr.dictados, 0);
-    const avgTasaEjecucion = totalPlanificados > 0 ? parseFloat(((totalDictados / totalPlanificados) * 100).toFixed(1)) : 0;
+  // dictadosSummaryData eliminado — se usan datos reales de effectiveDictadosSeries
+  const dictadosSummaryData = useMemo(() => [], []);
 
-    return {
-      totalMatriculas,
-      avgRetencion,
-      avgTasaEjecucion
-    };
-  }, [filteredCohorteData, filteredRetencionData, dictadosSummaryData]);
+  // Series efectivas: usa datos reales si la API los entrega con el formato esperado,
+  // de lo contrario mantiene el cálculo mock existente.
+  // Series efectivas: usa datos reales si la API los entrega (data.points), de lo contrario fallback mock.
+  // Formato real de points: [{ year, period, value, label }]
+  const effectiveDictadosSeries = useMemo(() => {
+    if (apiOfertaSeries?.length > 0 && apiDictadosSeries?.length > 0) {
+      const getKey = s => String(s.year ?? s.period ?? s.label ?? '');
+      const years = [...new Set(apiOfertaSeries.map(getKey))];
+      return years.map(yr => {
+        const plan = apiOfertaSeries.find(s => getKey(s) === yr);
+        const dict = apiDictadosSeries.find(s => getKey(s) === yr);
+        const planVal = plan?.value ?? 0;
+        const dictVal = dict?.value ?? 0;
+        return {
+          cohorte: yr,
+          planificados: planVal,
+          dictados: dictVal,
+          tasa: planVal > 0 ? parseFloat(((dictVal / planVal) * 100).toFixed(1)) : 0,
+        };
+      });
+    }
+    return null;
+  }, [apiOfertaSeries, apiDictadosSeries]);
+
+  const effectiveEjecucionSeries = useMemo(() => {
+    if (apiEjecucionSeries?.length > 0) {
+      return apiEjecucionSeries.map(s => ({
+        cohorte: String(s.year ?? s.period ?? s.label ?? ''),
+        tasa: s.value ?? 0,
+      }));
+    }
+    return null;
+  }, [apiEjecucionSeries]);
+
+  // KPIs desde API real — sin cálculo desde datos mock
+  const kpiStats = useMemo(() => ({
+    totalMatriculas: apiSummary?.matricula_por_programa?.value ?? 0,
+    avgRetencion: 0,
+    avgTasaEjecucion: apiSummary?.tasa_ejecucion?.value ?? 0,
+  }), [apiSummary]);
 
   // Deduplicated base: Participantes Únicos (Group 2)
   const uniqueParticipantsData = useMemo(() => {
@@ -499,6 +403,7 @@ export const DashboardEducacionContinua = () => {
   }, [uniqueParticipantsData, localSexoFilter, localEdadFilter]);
 
   const uniqueParticipantsAgeDist = useMemo(() => {
+    if (!uniqueParticipantsData.length) return [];
     const dist = { '18-25': 0, '26-35': 0, '36-50': 0, 'Más de 50': 0 };
     filteredUniqueParticipantsLocal.forEach(p => {
       if (p.edad <= 25) dist['18-25']++;
@@ -510,6 +415,7 @@ export const DashboardEducacionContinua = () => {
   }, [filteredUniqueParticipantsLocal]);
 
   const recurrenceFreqDist = useMemo(() => {
+    if (!uniqueParticipantsData.length) return [];
     const dist = { '1 Prog': 0, '2 Prog': 0, '3 o más': 0 };
     filteredUniqueParticipantsLocal.forEach(p => {
       const count = p.programas.length;
@@ -535,59 +441,8 @@ export const DashboardEducacionContinua = () => {
     };
   }, [uniqueParticipantsData]);
 
-  // Radar Chart Calculations for enrollment by program
-  const radarSeries = useMemo(() => {
-    const yearsToInclude = ['2023', '2024', '2025', '2026'].filter(yr => {
-      const y = parseInt(yr);
-      return y >= parseInt(cohorteDesde) && y <= parseInt(cohorteHasta);
-    });
-
-    const colorPalette = {
-      '2023': '#1E2875', // Institutional Blue
-      '2024': '#3b82f6', 
-      '2025': '#a855f7', 
-      '2026': '#46D19F'  // Mint green
-    };
-
-    return yearsToInclude.map(yr => {
-      const rawTotal = COHORTE_DATA_RAW.find(c => c.cohorte === yr)?.matriculas || 2000;
-      const total = Math.round(rawTotal * filterMultiplierGroup2);
-
-      let dataPoints = [];
-      if (matriculaViewMode === 'total') {
-        dataPoints = [total];
-      } else if (matriculaViewMode === 'area') {
-        dataPoints = [
-          Math.round(total * 0.12), // Auditoría/Riesgos
-          Math.round(total * 0.15), // Contabilidad/NIIF
-          Math.round(total * 0.11), // Finanzas
-          Math.round(total * 0.20), // IA/Transf. Digital
-          Math.round(total * 0.09), // Laboral
-          Math.round(total * 0.18), // Tecnología
-          Math.round(total * 0.15)  // Tributaria
-        ];
-      } else if (matriculaViewMode === 'modalidad') {
-        dataPoints = [
-          Math.round(total * 0.55), // Online
-          Math.round(total * 0.25), // Presencial
-          Math.round(total * 0.20)  // Híbrido
-        ];
-      } else {
-        dataPoints = [
-          Math.round(total * 0.45), // Curso
-          Math.round(total * 0.40), // Diplomado
-          Math.round(total * 0.15)  // Taller
-        ];
-      }
-
-      return {
-        label: `Matrículas ${yr}`,
-        data: dataPoints,
-        color: colorPalette[yr] || '#1E2875',
-        fillArea: true,
-      };
-    });
-  }, [matriculaViewMode, filterMultiplierGroup2, cohorteDesde, cohorteHasta]);
+  // Radar Chart — sin datos reales por área/tipo, retorna vacío
+  const radarSeries = useMemo(() => [], [selectedYearMatricula, matriculaViewMode, cohorteDesde, cohorteHasta]);
 
   const radarMetrics = useMemo(() => {
     if (matriculaViewMode === 'total') {
@@ -603,8 +458,9 @@ export const DashboardEducacionContinua = () => {
 
 
 
-  // Tasa de aprobación por programa
+  // Tasa de aprobación — requiere datos nominales reales (sin endpoint aún)
   const aprobacionProgramasData = useMemo(() => {
+    if (!filteredNominalGroup2.length) return [];
     const baseRates = {
       'Auditoría': 92.4,
       'Contabilidad': 89.5,
@@ -695,52 +551,8 @@ export const DashboardEducacionContinua = () => {
     return ingresosGeneradosData.reduce((acc, curr) => acc + curr.ingresosCLP, 0);
   }, [ingresosGeneradosData]);
 
-  // Participant Profile analysis dataset (Region, Sector, Escolaridad, Edad, Género, Tipo)
-  const perfilParticipantesData = useMemo(() => {
-    const total = kpiStats.totalMatriculas;
-
-    const region = [
-      { id: 0, label: 'RM (Metropolitana)', value: Math.round(total * 0.65) },
-      { id: 1, label: 'Valparaíso', value: Math.round(total * 0.15) },
-      { id: 2, label: 'Biobío', value: Math.round(total * 0.10) },
-      { id: 3, label: 'Otras Regiones', value: Math.round(total * 0.10) }
-    ];
-
-    const sector = [
-      { id: 0, label: 'Privado', value: Math.round(total * 0.50) },
-      { id: 1, label: 'Público', value: Math.round(total * 0.30) },
-      { id: 2, label: 'Independiente', value: Math.round(total * 0.12) },
-      { id: 3, label: 'Academia', value: Math.round(total * 0.08) }
-    ];
-
-    const escolaridad = [
-      { id: 0, label: 'Postgrado', value: Math.round(total * 0.25) },
-      { id: 1, label: 'Universitario', value: Math.round(total * 0.55) },
-      { id: 2, label: 'Técnico Profesional', value: Math.round(total * 0.15) },
-      { id: 3, label: 'Otros / Licenciatura', value: Math.round(total * 0.05) }
-    ];
-
-    const edad = [
-      { id: 0, label: '18 - 25 años', value: Math.round(total * 0.15) },
-      { id: 1, label: '26 - 35 años', value: Math.round(total * 0.45) },
-      { id: 2, label: '36 - 50 años', value: Math.round(total * 0.30) },
-      { id: 3, label: 'Más de 50 años', value: Math.round(total * 0.10) }
-    ];
-
-    const genero = [
-      { id: 0, label: 'Masculino', value: Math.round(total * 0.52) },
-      { id: 1, label: 'Femenino', value: Math.round(total * 0.45) },
-      { id: 2, label: 'Otro', value: Math.round(total * 0.03) }
-    ];
-
-    const tipo = [
-      { id: 0, label: 'Particular', value: Math.round(total * 0.40) },
-      { id: 1, label: 'Empresa / Corporativo', value: Math.round(total * 0.45) },
-      { id: 2, label: 'Beca / Convenio', value: Math.round(total * 0.15) }
-    ];
-
-    return { region, sector, escolaridad, edad, genero, tipo };
-  }, [kpiStats.totalMatriculas]);
+  // Perfil del participante — sin datos reales por dimensión (sin endpoint), retorna null
+  const perfilParticipantesData = null;
 
 
   const activePeriodosText = useMemo(() => {
@@ -1186,9 +998,13 @@ export const DashboardEducacionContinua = () => {
               <span>Matrículas Totales</span>
               <Users size={16} />
             </div>
-            <div className="kpi-value">{kpiStats.totalMatriculas.toLocaleString()}</div>
+            <div className="kpi-value">
+              {apiSummary?.matricula_por_programa?.value != null
+                ? Number(apiSummary.matricula_por_programa.value).toLocaleString('es-CL')
+                : apiLoading ? '...' : '—'}
+            </div>
             <div className="kpi-trend">
-              <span>Estudiantes activos calculados</span>
+              <span>{apiSummary?.matricula_por_programa?.hasData ? 'Datos reales API' : 'Sin datos disponibles'}</span>
             </div>
           </div>
 
@@ -1198,21 +1014,27 @@ export const DashboardEducacionContinua = () => {
               <DollarSign size={16} style={{ color: '#10B981' }} />
             </div>
             <div className="kpi-value" style={{ color: '#047857' }}>
-              ${(totalRevenueCLP / 1000000).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M CLP
+              {apiSummary?.ingresos_generados?.value != null
+                ? `$${Number(apiSummary.ingresos_generados.value).toLocaleString('es-CL')}`
+                : apiLoading ? '...' : '—'}
             </div>
             <div className="kpi-trend" style={{ color: '#047857' }}>
-              <span>Valores facturados netos estimados</span>
+              <span>{apiSummary?.ingresos_generados?.hasData ? 'Valores facturados netos reales' : 'Sin datos disponibles'}</span>
             </div>
           </div>
 
           <div className="kpi-card" style={{ borderLeft: '4px solid #F59E0B' }}>
             <div className="kpi-header" style={{ color: '#b45309' }}>
-              <span>Recurrencia Formativa</span>
+              <span>Tasa de Ejecución</span>
               <RefreshCw size={16} style={{ color: '#F59E0B' }} />
             </div>
-            <div className="kpi-value" style={{ color: '#b45309' }}>{recurrenciaStats.tasaRecurrencia}%</div>
+            <div className="kpi-value" style={{ color: '#b45309' }}>
+              {apiSummary?.tasa_ejecucion?.value != null
+                ? `${apiSummary.tasa_ejecucion.value}%`
+                : apiLoading ? '...' : '—'}
+            </div>
             <div className="kpi-trend" style={{ color: '#b45309' }}>
-              <span>{recurrenciaStats.totalRecurrentes} alumnos recurrentes</span>
+              <span>{apiSummary?.tasa_ejecucion?.hasData ? 'Datos reales API' : 'Sin datos disponibles'}</span>
             </div>
           </div>
         </div>
@@ -1250,22 +1072,26 @@ export const DashboardEducacionContinua = () => {
             </div>
             
             <div className="chart-wrapper">
-              <BarChart
-                xAxis={[{ 
-                  scaleType: 'band', 
-                  data: filteredProgramasData.map(d => d.cohorte),
-                  label: 'Año'
-                }]}
-                series={ofertaChartSeries}
-                margin={{ top: 15, right: 15, bottom: 60, left: 40 }}
-                slotProps={{
-                  legend: {
-                    direction: 'row',
-                    position: { vertical: 'bottom', horizontal: 'middle' },
-                    labelStyle: { fontSize: '11px', fill: '#1e293b' }
-                  }
-                }}
-              />
+              {filteredProgramasData.length > 0 ? (
+                <BarChart
+                  xAxis={[{
+                    scaleType: 'band',
+                    data: filteredProgramasData.map(d => d.cohorte),
+                    label: 'Año'
+                  }]}
+                  series={ofertaChartSeries}
+                  margin={{ top: 15, right: 15, bottom: 60, left: 40 }}
+                  slotProps={{
+                    legend: {
+                      direction: 'row',
+                      position: { vertical: 'bottom', horizontal: 'middle' },
+                      labelStyle: { fontSize: '11px', fill: '#1e293b' }
+                    }
+                  }}
+                />
+              ) : (
+                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
+              )}
             </div>
           </div>
 
@@ -1283,25 +1109,25 @@ export const DashboardEducacionContinua = () => {
             </div>
             
             <div className="chart-wrapper">
-              <BarChart
-                xAxis={[{ 
-                  scaleType: 'band', 
-                  data: dictadosSummaryData.map(d => d.cohorte),
-                  label: 'Año'
-                }]}
-                series={[
-                  { data: dictadosSummaryData.map(d => d.planificados), label: 'Programados', color: '#cbd5e1' },
-                  { data: dictadosSummaryData.map(d => d.dictados), label: 'Dictados', color: '#10B981' }
-                ]}
-                margin={{ top: 15, right: 15, bottom: 40, left: 40 }}
-                slotProps={{
-                  legend: {
-                    direction: 'row',
-                    position: { vertical: 'bottom', horizontal: 'middle' },
-                    labelStyle: { fontSize: '10px', fill: '#1e293b' }
-                  }
-                }}
-              />
+              {effectiveDictadosSeries ? (
+                <BarChart
+                  xAxis={[{ scaleType: 'band', data: effectiveDictadosSeries.map(d => d.cohorte), label: 'Año' }]}
+                  series={[
+                    { data: effectiveDictadosSeries.map(d => d.planificados), label: 'Programados', color: '#cbd5e1' },
+                    { data: effectiveDictadosSeries.map(d => d.dictados), label: 'Dictados', color: '#10B981' }
+                  ]}
+                  margin={{ top: 15, right: 15, bottom: 40, left: 40 }}
+                  slotProps={{
+                    legend: {
+                      direction: 'row',
+                      position: { vertical: 'bottom', horizontal: 'middle' },
+                      labelStyle: { fontSize: '10px', fill: '#1e293b' }
+                    }
+                  }}
+                />
+              ) : (
+                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
+              )}
             </div>
           </div>
 
@@ -1499,25 +1325,29 @@ export const DashboardEducacionContinua = () => {
             </div>
 
             <div className="chart-wrapper" style={{ marginTop: '8px' }}>
-              <PieChart
-                series={[
-                  {
-                    data: perfilParticipantesData[perfilViewMode],
-                    innerRadius: 20,
-                    outerRadius: 85,
-                    paddingAngle: 3,
-                    cornerRadius: 4,
-                  },
-                ]}
-                height={220}
-                slotProps={{
-                  legend: {
-                    direction: 'column',
-                    position: { vertical: 'middle', horizontal: 'right' },
-                    labelStyle: { fontSize: '10px', fill: '#1e293b' }
-                  }
-                }}
-              />
+              {perfilParticipantesData ? (
+                <PieChart
+                  series={[
+                    {
+                      data: perfilParticipantesData[perfilViewMode],
+                      innerRadius: 20,
+                      outerRadius: 85,
+                      paddingAngle: 3,
+                      cornerRadius: 4,
+                    },
+                  ]}
+                  height={220}
+                  slotProps={{
+                    legend: {
+                      direction: 'column',
+                      position: { vertical: 'middle', horizontal: 'right' },
+                      labelStyle: { fontSize: '10px', fill: '#1e293b' }
+                    }
+                  }}
+                />
+              ) : (
+                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
+              )}
             </div>
           </div>
 
@@ -1917,13 +1747,15 @@ export const DashboardEducacionContinua = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredProgramasData.map(row => (
+                    {filteredProgramasData.length > 0 ? filteredProgramasData.map(row => (
                       <tr key={row.cohorte}>
                         <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
                         <td>Todas las áreas activas</td>
-                        <td>{(row.Auditoria + row.Contabilidad + row.Finanzas + row.IA + row.Laboral + row.Tecnologia + row.Tributaria).toLocaleString()}</td>
+                        <td>{row.total.toLocaleString()}</td>
                       </tr>
-                    ))}
+                    )) : (
+                      <tr><td colSpan={3} style={{ color: '#64748b', padding: '12px' }}>Sin datos disponibles</td></tr>
+                    )}
                   </tbody>
                 </table>
               </>
@@ -2037,13 +1869,15 @@ export const DashboardEducacionContinua = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {aprobacionProgramasData.map(row => (
+                    {aprobacionProgramasData.length > 0 ? aprobacionProgramasData.map(row => (
                       <tr key={row.area}>
                         <td style={{ fontWeight: 600 }}>{row.area}</td>
                         <td style={{ fontWeight: 700, color: '#a855f7' }}>{row.tasa}%</td>
                         <td>{row.promedioHistorico}%</td>
                       </tr>
-                    ))}
+                    )) : (
+                      <tr><td colSpan={3} style={{ color: '#64748b', padding: '12px' }}>Sin datos disponibles</td></tr>
+                    )}
                   </tbody>
                 </table>
               </>
@@ -2060,7 +1894,7 @@ export const DashboardEducacionContinua = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {perfilParticipantesData[perfilViewMode].map(row => {
+                    {perfilParticipantesData ? perfilParticipantesData[perfilViewMode].map(row => {
                       const total = perfilParticipantesData[perfilViewMode].reduce((acc, curr) => acc + curr.value, 0);
                       const pct = total > 0 ? ((row.value / total) * 100).toFixed(1) : 0;
                       return (
@@ -2069,7 +1903,9 @@ export const DashboardEducacionContinua = () => {
                           <td>{pct}% ({row.value.toLocaleString()} alumnos)</td>
                         </tr>
                       );
-                    })}
+                    }) : (
+                      <tr><td colSpan={2} style={{ color: '#64748b', padding: '12px' }}>Sin datos disponibles</td></tr>
+                    )}
                   </tbody>
                 </table>
               </>
