@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './LandingPage.styles';
+import { getDashboardSummary } from '../../../services/piadiApi';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
@@ -152,12 +153,7 @@ const TAB_DATA = {
 // Mapeo de colores específicos por departamento según el requerimiento.
 const DEPARTMENT_COLORS = {
   0: '#1E2875', // Resumen (Azul institucional)
-  1: '#1E2875', // Admisión (Predeterminado)
-  2: '#51158C', // Relaciones Estudiantiles (Púrpura)
-  3: '#175696', // Desarrollo Curricular (Azul medio)
-  4: '#3EC9FF', // Innovación (Celeste)
-  5: '#46D19F', // Educación Continua (Turquesa claro)
-  6: '#E27800', // Vinculación con el Medio (Naranja)
+  1: '#46D19F', // Educación Continua (Turquesa claro)
 };
 
 export const LandingPage = () => {
@@ -169,6 +165,22 @@ export const LandingPage = () => {
   // Estado para controlar la apertura del menú lateral en móviles
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openHelpDialog, setOpenHelpDialog] = useState(false); // Estado para abrir el Centro de Ayuda
+  const [ecApiData, setEcApiData] = useState(null);
+
+  useEffect(() => {
+    getDashboardSummary({ department: 'educacion_continua', year: 2026 })
+      .then(res => {
+        if (!res?.success || !res.data) return;
+        // Formato real: data.departments[0].cards[{ indicatorKey, value, hasData }]
+        const deptData = res.data?.departments?.find(d => d.departmentId === 'educacion_continua');
+        const cards = deptData?.cards ?? [];
+        if (!cards.some(c => c.hasData)) return; // sin datos reales, mantener mock
+        const map = {};
+        cards.forEach(c => { map[c.indicatorKey] = c; });
+        setEcApiData(map);
+      })
+      .catch(() => {});
+  }, []);
 
   // Datos de las Preguntas Frecuentes (FAQ) del Centro de Ayuda
   const faqData = [
@@ -206,8 +218,31 @@ export const LandingPage = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  // Obtiene los datos del departamento seleccionado según la pestaña activa
-  const currentData = TAB_DATA[activeTab] || TAB_DATA[0];
+  // Obtiene los datos del departamento seleccionado según la pestaña activa.
+  // Tab 0 = Resumen (mock, pendiente endpoint real). Tab 1 = Educación Continua (solo datos reales).
+  const currentData = (() => {
+    if (activeTab === 1) {
+      const get = (key) => ecApiData?.[key]?.value;
+      const oferta = get('oferta_programada');
+      const dictados = get('cursos_dictados');
+      const ejecucion = get('tasa_ejecucion');
+      const matricula = get('matricula_por_programa');
+      const aprobacion = get('tasa_aprobacion');
+      const ingresos = get('ingresos_generados');
+      return {
+        kpis: [
+          { title: 'Oferta programada', value: oferta != null ? String(oferta) : 'Sin datos', trend: '↑', trendDesc: 'programas 2026', isBlue: true },
+          { title: 'Cursos dictados', value: dictados != null ? String(dictados) : 'Sin datos', trend: '↑', trendDesc: 'ejecutados 2026', isBlue: false },
+          { title: 'Tasa de ejecución', value: ejecucion != null ? `${ejecucion}%` : 'Sin datos', trend: '↑', trendDesc: 'cursos ejecutados', isBlue: false },
+          { title: 'Matrícula total', value: matricula != null ? Number(matricula).toLocaleString('es-CL') : 'Sin datos', trend: '↑', trendDesc: 'participantes 2026', isBlue: true },
+          { title: 'Tasa de aprobación', value: aprobacion != null ? `${aprobacion}%` : 'Sin datos', trend: '↑', trendDesc: 'aprobados del total', isBlue: false },
+          { title: 'Ingresos netos', value: ingresos != null ? `$${Number(ingresos).toLocaleString('es-CL')}` : 'Sin datos', trend: '↑', trendDesc: 'CLP facturados', isBlue: false },
+        ],
+        goals: []
+      };
+    }
+    return TAB_DATA[0]; // Resumen — pendiente de endpoint real
+  })();
   
   // Obtiene el color de fondo personalizado para este departamento
   const deptColor = DEPARTMENT_COLORS[activeTab] || '#1E2875';
@@ -438,12 +473,7 @@ export const LandingPage = () => {
             sx={styles.tabsList}
           >
             <Tab label="Resumen" />
-            <Tab label="Admisión" />
-            <Tab label="Relaciones Estudiantiles" />
-            <Tab label="Desarrollo Curricular" />
-            <Tab label="Innovación" />
             <Tab label="Educación Continua" />
-            <Tab label="Vinculación con el Medio" />
           </Tabs>
         </Box>
 
@@ -524,7 +554,7 @@ export const LandingPage = () => {
                   Metas Prioritarias
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Seguimiento de objetivos clave ordenados por prioridad ({activeTab === 0 ? 'General' : activeTab === 1 ? 'Admisión' : activeTab === 2 ? 'Relaciones Estudiantiles' : activeTab === 3 ? 'Desarrollo Curricular' : activeTab === 4 ? 'Innovación' : activeTab === 5 ? 'Educación Continua' : 'Vinculación con el Medio'})
+                  Seguimiento de objetivos clave ordenados por prioridad ({activeTab === 0 ? 'General' : 'Educación Continua'})
                 </Typography>
               </Box>
             </Box>

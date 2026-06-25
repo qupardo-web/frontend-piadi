@@ -102,20 +102,6 @@ const TEMPLATES = [
   },
 ];
 
-// Datos de prueba para simular la tabla de cargas recientes
-const RECENT_UPLOADS = [
-  { fecha: '14-05-2026 22:30', usuario: 'Jane Doe', plantilla: 'Caracterización Estudiante', archivo: 'Caracterizacion_Estudiantes_2026.xlsx' },
-  { fecha: '14-05-2026 22:15', usuario: 'Jane Doe', plantilla: 'Educación Continua', archivo: 'EduContinua_Matricula_2026.xlsx' },
-  { fecha: '14-05-2026 22:00', usuario: 'Jane Doe', plantilla: 'Innovación', archivo: 'Innovacion_Proyectos_2026.xlsx' },
-  // Página 2 (cuando itemsPerPage = 3)
-  { fecha: '14-05-2026 21:45', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2026_Primer_Semestre.xlsx' },
-  { fecha: '14-05-2026 21:45', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2026_Segundo_Semestre.xlsx' },
-  { fecha: '14-05-2026 21:45', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2025_Primer_Semestre.xlsx' },
-  // Página 3
-  { fecha: '14-05-2026 19:15', usuario: 'Jane Doe', plantilla: 'Matrícula y Estudiantes', archivo: 'Matriculas_2024_SegundoSemestre.xlsx' },
-  { fecha: '14-05-2026 18:00', usuario: 'Jane Doe', plantilla: 'Vinculación con el Medio', archivo: 'Vinculacion_Medio_Convenios_2026.xlsx' },
-  { fecha: '14-05-2026 17:30', usuario: 'Jane Doe', plantilla: 'Rendimiento Académico', archivo: 'Rendimiento_Academico_2025.xlsx' },
-];
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -137,7 +123,7 @@ export const CargaDatos = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   
   // Estados para la carga de datos y diálogo
-  const [uploads, setUploads] = useState(RECENT_UPLOADS);
+  const [uploads, setUploads] = useState([]);
   const [openUploadDialog, setOpenUploadDialog] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -213,6 +199,37 @@ export const CargaDatos = () => {
 
     fetchTemplates();
   }, []);
+
+  // Carga el historial real de cargas desde auditoría (re-ejecuta cuando templates carga)
+  useEffect(() => {
+    const token = sessionStorage.getItem('auth_token');
+    if (!token) return;
+    const formatDate = (iso) => {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+    fetch(`${API_URL}/api/audit-logs?type=carga&limit=10`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        const items = json?.data?.items ?? [];
+        if (!items.length) return;
+        setUploads(items.map(item => {
+          const plantillaId = item.detail?.plantilla;
+          const tmpl = templates.find(t => String(t.id) === String(plantillaId));
+          return {
+            fecha: formatDate(item.createdAt),
+            usuario: item.usuarioNombre || item.usuarioEmail || (item.detail?.usuarioId != null ? `#${item.detail.usuarioId}` : '-'),
+            plantilla: tmpl?.name || item.detail?.entidad || plantillaId || '-',
+            archivo: item.detail?.archivo || '-',
+          };
+        }));
+      })
+      .catch(() => {});
+  }, [templates]);
 
   // Filtrado de plantillas por rol (Rector y administradores ven todas)
   const filteredTemplates = templates.filter((tmpl) => {
@@ -648,6 +665,13 @@ export const CargaDatos = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {uploads.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} sx={{ textAlign: 'center', color: '#94A3B8', py: 4, fontSize: '14px' }}>
+                      No hay cargas registradas.
+                    </TableCell>
+                  </TableRow>
+                )}
                 {uploads.map((upload, index) => (
                   <TableRow key={index}>
                     <TableCell sx={styles.tableBodyCell}>{upload.fecha}</TableCell>

@@ -117,6 +117,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    const token = sessionStorage.getItem('auth_token');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    if (token) {
+      fetch(`${API_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      }).catch(() => {});
+    }
     setUser(null);
     clearStoredSession();
   };
