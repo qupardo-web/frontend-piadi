@@ -214,7 +214,7 @@ export const CargaDatos = () => {
     fetchTemplates();
   }, []);
 
-  // Carga el historial real de cargas desde auditoría
+  // Carga el historial real de cargas desde auditoría (re-ejecuta cuando templates carga)
   useEffect(() => {
     const token = sessionStorage.getItem('auth_token');
     if (!token) return;
@@ -231,15 +231,19 @@ export const CargaDatos = () => {
       .then(json => {
         const items = json?.data?.items ?? [];
         if (!items.length) return;
-        setUploads(items.map(item => ({
-          fecha: formatDate(item.createdAt),
-          usuario: item.usuarioNombre || item.usuarioEmail || (item.detail?.usuarioId != null ? `#${item.detail.usuarioId}` : '-'),
-          plantilla: item.detail?.plantilla || item.detail?.entidad || '-',
-          archivo: item.detail?.archivo || '-',
-        })));
+        setUploads(items.map(item => {
+          const plantillaId = item.detail?.plantilla;
+          const tmpl = templates.find(t => String(t.id) === String(plantillaId));
+          return {
+            fecha: formatDate(item.createdAt),
+            usuario: item.usuarioNombre || item.usuarioEmail || (item.detail?.usuarioId != null ? `#${item.detail.usuarioId}` : '-'),
+            plantilla: tmpl?.name || item.detail?.entidad || plantillaId || '-',
+            archivo: item.detail?.archivo || '-',
+          };
+        }));
       })
       .catch(() => {});
-  }, []);
+  }, [templates]);
 
   // Filtrado de plantillas por rol (Rector y administradores ven todas)
   const filteredTemplates = templates.filter((tmpl) => {
