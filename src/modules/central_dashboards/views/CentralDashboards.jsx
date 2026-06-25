@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './CentralDashboards.styles';
@@ -21,6 +21,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  CircularProgress,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -45,63 +46,59 @@ import {
   Favorite as FavoriteIcon,
 } from '@mui/icons-material';
 
-// Datos de las tarjetas de dashboards según la referencia Central_de_dashboards.png
-const DASHBOARDS_LIST = [
-  {
-    id: 'admision',
-    title: 'Admisión',
-    desc: 'Gestión y seguimiento del proceso de admisión de nuevos estudiantes, desde la postulación hasta la matrícula.',
-    date: '15-04-2026',
-    color: '#1E2875',
-    icon: <PersonAddIcon />,
-  },
-  {
-    id: 'relaciones_estudiantiles',
-    title: 'Relaciones Estudiantiles',
-    desc: 'Monitoreo de la interacción y comunicación entre estudiantes, organizaciones estudiantiles y la institución.',
-    date: '15-04-2026',
-    color: '#51158C',
-    icon: <GroupIcon />,
-  },
-  {
-    id: 'desarrollo_curricular',
-    title: 'Desarrollo Curricular',
-    desc: 'Análisis del rendimiento académico, programas de estudio y mejora continua de la calidad educativa.',
-    date: '14-04-2026',
-    color: '#175696',
-    icon: <BookIcon />,
-  },
-  {
-    id: 'innovacion',
-    title: 'Innovación',
-    desc: 'Seguimiento de proyectos de innovación pedagógica, tecnologías educativas y metodologías de enseñanza.',
-    date: '14-04-2026',
-    color: '#3EC9FF',
-    icon: <LightbulbIcon />,
-  },
-  {
-    id: 'educacion_continua',
-    title: 'Educación Continua',
-    desc: 'Gestión de programas de formación continua, postgrados y educación permanente para profesionales.',
-    date: '13-04-2026',
-    color: '#46D19F',
-    icon: <SchoolIcon />,
-  },
-  {
-    id: 'vinculacion_medio',
-    title: 'Vinculación con el Medio',
-    desc: 'Seguimiento de proyectos de extensión, colaboración con la comunidad y relaciones institucionales.',
-    date: '13-04-2026',
-    color: '#E27800',
-    icon: <FavoriteIcon />,
-  },
-];
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+const getDepartmentMeta = (key) => {
+  switch (key) {
+    case 'admision':
+      return { color: '#1E2875', icon: <PersonAddIcon /> };
+    case 'relaciones_estudiantiles':
+      return { color: '#51158C', icon: <GroupIcon /> };
+    case 'desarrollo_curricular':
+      return { color: '#175696', icon: <BookIcon /> };
+    case 'innovacion':
+      return { color: '#3EC9FF', icon: <LightbulbIcon /> };
+    case 'educacion_continua':
+      return { color: '#46D19F', icon: <SchoolIcon /> };
+    case 'vinculacion_medio':
+      return { color: '#E27800', icon: <FavoriteIcon /> };
+    default:
+      return { color: '#1E2875', icon: <DashboardIcon /> };
+  }
+};
 
 export const CentralDashboards = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openHelpDialog, setOpenHelpDialog] = useState(false); // Estado para abrir el Centro de Ayuda
+
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const token = sessionStorage.getItem('auth_token');
+        const response = await fetch(`${API_URL}/api/departments`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        const result = await response.json();
+        if (result.success && Array.isArray(result.data)) {
+          setDepartments(result.data);
+        } else {
+          throw new Error('No se pudieron obtener los departamentos del servidor');
+        }
+      } catch (err) {
+        console.error('Error fetching departments:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   // Datos de las Preguntas Frecuentes (FAQ) del Centro de Ayuda
   const faqData = [
@@ -337,39 +334,49 @@ export const CentralDashboards = () => {
 
         {/* Grilla de Dashboards (3 Columnas en Desktop) */}
         <Grid container spacing={3}>
-          {DASHBOARDS_LIST.map((dash) => (
-            <Grid item xs={12} sm={6} md={4} key={dash.id}>
-              <Card sx={styles.dashboardCard}>
-                {/* Cabecera de Color con Icono */}
-                <Box sx={styles.cardHeaderColor(dash.color)}>
-                  {dash.icon}
-                </Box>
-                {/* Cuerpo de la Tarjeta */}
-                <Box sx={styles.cardBody}>
-                  <Typography variant="h6" sx={styles.cardTitle}>
-                    {dash.title}
-                  </Typography>
-                  <Typography variant="body2" sx={styles.cardDesc}>
-                    {dash.desc}
-                  </Typography>
-                  {/* Footer de la tarjeta con fecha y botón de abrir */}
-                  <Box sx={styles.cardFooter}>
-                    <Box sx={styles.cardDateContainer}>
-                      <ClockIcon sx={{ fontSize: 16 }} />
-                      <Typography sx={styles.cardDateText}>{dash.date}</Typography>
-                    </Box>
-                    <Button 
-                      variant="contained" 
-                      sx={styles.cardButton(dash.color)}
-                      onClick={() => handleOpenDashboard(dash.id)}
-                    >
-                      Abrir &nbsp;➔
-                    </Button>
-                  </Box>
-                </Box>
-              </Card>
+          {loading ? (
+            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress sx={{ color: '#1E2875' }} />
             </Grid>
-          ))}
+          ) : error ? (
+            <Grid item xs={12} sx={{ textAlign: 'center', py: 4 }}>
+              <Typography color="error">Error al cargar departamentos: {error}</Typography>
+            </Grid>
+          ) : (
+            departments.map((dept) => {
+              const meta = getDepartmentMeta(dept.key);
+              return (
+                <Grid item xs={12} sm={6} md={4} key={dept.id}>
+                  <Card sx={styles.dashboardCard}>
+                    {/* Cabecera de Color con Icono */}
+                    <Box sx={styles.cardHeaderColor(meta.color)}>
+                      {meta.icon}
+                    </Box>
+                    {/* Cuerpo de la Tarjeta */}
+                    <Box sx={styles.cardBody}>
+                      <Typography variant="h6" sx={styles.cardTitle}>
+                        {dept.name}
+                      </Typography>
+                      <Typography variant="body2" sx={styles.cardDesc}>
+                        {dept.description}
+                      </Typography>
+                      {/* Footer de la tarjeta con botón de abrir */}
+                      <Box sx={styles.cardFooter}>
+                        <Box sx={{ flexGrow: 1 }} />
+                        <Button 
+                          variant="contained" 
+                          sx={styles.cardButton(meta.color)}
+                          onClick={() => handleOpenDashboard(dept.key)}
+                        >
+                          Abrir &nbsp;➔
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Card>
+                </Grid>
+              );
+            })
+          )}
         </Grid>
       </Box>
 
