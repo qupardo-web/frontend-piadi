@@ -64,6 +64,7 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { RadarChart } from '@mui/x-charts/RadarChart';
+import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 
 // RAW DATA FOR CALCULATIONS (Years 2023 - 2026)
 const COHORTE_DATA_RAW = [
@@ -228,10 +229,8 @@ export const DashboardEducacionContinua = () => {
     if (areaSeleccionada.length > 0) params.area = areaSeleccionada.join(',');
     if (tipoSeleccionado.length > 0) params.tipo = tipoSeleccionado.join(',');
     if (modalidadSeleccionada.length > 0) params.modalidad = modalidadSeleccionada.join(',');
-    if (sexoSeleccionado.length > 0) params.sexo = sexoSeleccionado.join(',');
-    if (mesInicioSeleccionado.length > 0) params.startMonth = mesInicioSeleccionado.join(',');
     return params;
-  }, [cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada, sexoSeleccionado, mesInicioSeleccionado]);
+  }, [cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada]);
 
   useEffect(() => {
     setApiLoading(true);
@@ -442,7 +441,7 @@ export const DashboardEducacionContinua = () => {
   }, [uniqueParticipantsData]);
 
   // Radar Chart — sin datos reales por área/tipo, retorna vacío
-  const radarSeries = useMemo(() => [], [selectedYearMatricula, matriculaViewMode, cohorteDesde, cohorteHasta]);
+  const radarSeries = useMemo(() => [], [matriculaViewMode, cohorteDesde, cohorteHasta]);
 
   const radarMetrics = useMemo(() => {
     if (matriculaViewMode === 'total') {
@@ -1102,7 +1101,7 @@ export const DashboardEducacionContinua = () => {
                 <CheckCircle size={16} style={{ color: '#10B981' }} />
                 <h2 className="chart-title" style={{ margin: 0 }}>Cursos efectivamente dictados</h2>
               </div>
-              <button className="btn-details">
+              <button className="btn-details" onClick={() => setActiveModal('dictados')}>
                 <Maximize2 size={12} />
                 <span>Detalles</span>
               </button>
@@ -1138,28 +1137,32 @@ export const DashboardEducacionContinua = () => {
                 <Percent size={16} style={{ color: '#1E2875' }} />
                 <h2 className="chart-title" style={{ margin: 0 }}>Tasa de ejecución (%)</h2>
               </div>
-              <button className="btn-details">
+              <button className="btn-details" onClick={() => setActiveModal('tasa')}>
                 <Maximize2 size={12} />
                 <span>Detalles</span>
               </button>
             </div>
             
             <div className="chart-wrapper">
-              <LineChart
-                xAxis={[{ 
-                  scaleType: 'point', 
-                  data: dictadosSummaryData.map(d => d.cohorte),
-                  label: 'Año'
-                }]}
-                series={[{ 
-                  data: dictadosSummaryData.map(d => d.tasa),
-                  color: '#1E2875',
-                  label: 'Tasa Ejecución %',
-                  valueFormatter: (value) => `${value}%`,
-                  showMark: true
-                }]}
-                margin={{ top: 15, right: 15, bottom: 40, left: 45 }}
-              />
+              {effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0 ? (
+                <LineChart
+                  xAxis={[{ 
+                    scaleType: 'point', 
+                    data: effectiveEjecucionSeries.map(d => d.cohorte),
+                    label: 'Año'
+                  }]}
+                  series={[{ 
+                    data: effectiveEjecucionSeries.map(d => d.tasa),
+                    color: '#1E2875',
+                    label: 'Tasa Ejecución %',
+                    valueFormatter: (value) => `${value}%`,
+                    showMark: true
+                  }]}
+                  margin={{ top: 15, right: 15, bottom: 40, left: 45 }}
+                />
+              ) : (
+                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
+              )}
             </div>
           </div>
 
@@ -1774,14 +1777,20 @@ export const DashboardEducacionContinua = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {dictadosSummaryData.map(row => (
-                      <tr key={row.cohorte}>
-                        <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
-                        <td>{row.planificados}</td>
-                        <td>{row.dictados}</td>
-                        <td style={{ fontWeight: 700, color: '#10B981' }}>{row.tasa}%</td>
+                    {effectiveDictadosSeries && effectiveDictadosSeries.length > 0 ? (
+                      effectiveDictadosSeries.map(row => (
+                        <tr key={row.cohorte}>
+                          <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
+                          <td>{row.planificados}</td>
+                          <td>{row.dictados}</td>
+                          <td style={{ fontWeight: 700, color: '#10B981' }}>{row.tasa}%</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} style={{ color: '#64748b', padding: '12px', textAlign: 'center' }}>Sin datos disponibles</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </>
@@ -1799,13 +1808,19 @@ export const DashboardEducacionContinua = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {dictadosSummaryData.map(row => (
-                      <tr key={row.cohorte}>
-                        <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
-                        <td style={{ fontWeight: 700, color: '#1E2875' }}>{row.tasa}%</td>
-                        <td>{row.tasa >= 80 ? 'Excelente (>=80%)' : 'En revisión'}</td>
+                    {effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0 ? (
+                      effectiveEjecucionSeries.map(row => (
+                        <tr key={row.cohorte}>
+                          <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
+                          <td style={{ fontWeight: 700, color: '#1E2875' }}>{row.tasa}%</td>
+                          <td>{row.tasa >= 80 ? 'Excelente (>=80%)' : 'En revisión'}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3} style={{ color: '#64748b', padding: '12px', textAlign: 'center' }}>Sin datos disponibles</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </>
