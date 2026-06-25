@@ -64,11 +64,73 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { RadarChart } from '@mui/x-charts/RadarChart';
+import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 
+// RAW DATA FOR CALCULATIONS (Years 2023 - 2026)
+const COHORTE_DATA_RAW = [
+  { cohorte: '2023', matriculas: 2280 },
+  { cohorte: '2024', matriculas: 2420 },
+  { cohorte: '2025', matriculas: 2550 },
+  { cohorte: '2026', matriculas: 1920 }
+];
 
+const RETENCION_DATA_RAW = [
+  { periodo: '2023-1', retencion: 87.9 },
+  { periodo: '2023-2', retencion: 87.3 },
+  { periodo: '2024-1', retencion: 88.8 },
+  { periodo: '2024-2', retencion: 89.2 },
+  { periodo: '2025-1', retencion: 89.9 },
+  { periodo: '2025-2', retencion: 90.3 },
+  { periodo: '2026-1', retencion: 90.8 },
+  { periodo: '2026-2', retencion: 91.5 }
+];
+
+const PROGRAMAS_DATA_RAW = [
+  { cohorte: '2023', Auditoria: 18, Contabilidad: 20, Finanzas: 16, IA: 18, Laboral: 12, Tecnologia: 24, Tributaria: 22 },
+  { cohorte: '2024', Auditoria: 20, Contabilidad: 22, Finanzas: 18, IA: 25, Laboral: 14, Tecnologia: 28, Tributaria: 25 },
+  { cohorte: '2025', Auditoria: 22, Contabilidad: 25, Finanzas: 20, IA: 32, Laboral: 15, Tecnologia: 35, Tributaria: 28 },
+  { cohorte: '2026', Auditoria: 17, Contabilidad: 19, Finanzas: 15, IA: 24, Laboral: 11, Tecnologia: 26, Tributaria: 21 }
+];
+
+const NOMINAL_REGISTRATIONS = [
+  { rut: '18.421.954-K', nombre: 'Eduardo Valenzuela', area: 'Tecnología', programa: 'Diplomado en IA Aplicada', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1800000, edad: 29, region: 'Valparaíso', sector: 'Privado', genero: 'Masculino', cargo: 'Ingeniero de Datos', escolaridad: 'Universitario' },
+  { rut: '15.682.411-9', nombre: 'María José Rojas', area: 'Contabilidad', programa: 'Curso Avanzado NIIF 16', aprobacion: 'Aprobado', pago: 'Particular (Tarjeta)', monto: 950000, edad: 42, region: 'Metropolitana', sector: 'Privado', genero: 'Femenino', cargo: 'Contador Auditor', escolaridad: 'Postgrado' },
+  { rut: '18.421.954-K', nombre: 'Eduardo Valenzuela', area: 'Tecnología', programa: 'Taller de Python', aprobacion: 'Aprobado', pago: 'Particular (Transf.)', monto: 1500000, edad: 29, region: 'Valparaíso', sector: 'Privado', genero: 'Masculino', cargo: 'Ingeniero de Datos', escolaridad: 'Universitario' },
+  { rut: '12.873.990-2', nombre: 'Carlos Guzmán', area: 'Auditoría', programa: 'Diplomado en Auditoría Interna', aprobacion: 'Aprobado', pago: 'Beca Institucional', monto: 1200000, edad: 54, region: 'Biobío', sector: 'Público', genero: 'Masculino', cargo: 'Auditor Interno Jefatura', escolaridad: 'Postgrado' },
+  { rut: '19.012.334-5', nombre: 'Camila Sepúlveda', area: 'Tecnología', programa: 'Diplomado en IA Aplicada', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1800000, edad: 24, region: 'Metropolitana', sector: 'Privado', genero: 'Femenino', cargo: 'Analista de Business Intelligence', escolaridad: 'Universitario' },
+  { rut: '17.345.678-9', nombre: 'Roberto Muñoz', area: 'Tributación', programa: 'Reforma Tributaria 2026', aprobacion: 'Reprobado', pago: 'Particular (Tarjeta)', monto: 1100000, edad: 36, region: 'Metropolitana', sector: 'Independiente', genero: 'Masculino', cargo: 'Asesor Tributario', escolaridad: 'Universitario' },
+  { rut: '15.682.411-9', nombre: 'María José Rojas', area: 'Finanzas', programa: 'Diplomado en Finanzas', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1400000, edad: 42, region: 'Metropolitana', sector: 'Privado', genero: 'Femenino', cargo: 'Contador Auditor', escolaridad: 'Postgrado' },
+  { rut: '11.234.567-8', nombre: 'Ana María Silva', area: 'Gestión', programa: 'Taller de Legislación Laboral', aprobacion: 'Aprobado', pago: 'Particular (Tarjeta)', monto: 850000, edad: 58, region: 'Valparaíso', sector: 'Academia', genero: 'Femenino', cargo: 'Docente de Leyes', escolaridad: 'Postgrado' },
+  { rut: '20.123.456-7', nombre: 'Ignacio Fuentes', area: 'Tecnología', programa: 'Curso Fullstack Web Dev', aprobacion: 'Aprobado', pago: 'Particular (Tarjeta)', monto: 1500000, edad: 22, region: 'Metropolitana', sector: 'Academia', genero: 'Masculino', cargo: 'Estudiante de TI', escolaridad: 'Técnico Profesional' },
+  { rut: '16.789.012-3', nombre: 'Francisca Oyarzún', area: 'Tributación', programa: 'Reforma Tributaria 2026', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1100000, edad: 34, region: 'Biobío', sector: 'Público', genero: 'Femenino', cargo: 'Analista de Impuestos', escolaridad: 'Universitario' },
+  { rut: '17.345.678-9', nombre: 'Roberto Muñoz', area: 'Finanzas', programa: 'Valoración de Empresas', aprobacion: 'Aprobado', pago: 'Particular (Transf.)', monto: 1400000, edad: 36, region: 'Metropolitana', sector: 'Independiente', genero: 'Masculino', cargo: 'Asesor Tributario', escolaridad: 'Universitario' },
+  { rut: '14.987.654-3', nombre: 'Gonzalo Pardo', area: 'Contabilidad', programa: 'Curso Avanzado NIIF 16', aprobacion: 'Aprobado', pago: 'Sence (Empresa)', monto: 950000, edad: 46, region: 'Metropolitana', sector: 'Privado', genero: 'Masculino', cargo: 'Subgerente de Contabilidad', escolaridad: 'Postgrado' },
+  { rut: '14.987.654-3', nombre: 'Gonzalo Pardo', area: 'Finanzas', programa: 'Diplomado en Finanzas', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1400000, edad: 46, region: 'Metropolitana', sector: 'Privado', genero: 'Masculino', cargo: 'Subgerente de Contabilidad', escolaridad: 'Postgrado' },
+  { rut: '18.112.233-4', nombre: 'Valeria Toledo', area: 'Gestión', programa: 'Taller de Legislación Laboral', aprobacion: 'Aprobado', pago: 'Beca Parcial', monto: 850000, edad: 31, region: 'Araucanía', sector: 'Privado', genero: 'Femenino', cargo: 'Generalista de RRHH', escolaridad: 'Universitario' },
+  { rut: '18.112.233-4', nombre: 'Valeria Toledo', area: 'Tecnología', programa: 'Diplomado en IA Aplicada', aprobacion: 'Aprobado', pago: 'Sence (Empresa)', monto: 1800000, edad: 31, region: 'Araucanía', sector: 'Privado', genero: 'Femenino', cargo: 'Generalista de RRHH', escolaridad: 'Universitario' },
+  { rut: '13.445.556-7', nombre: 'Daniela Cáceres', area: 'Auditoría', programa: 'Diplomado en Auditoría Interna', aprobacion: 'Reprobado', pago: 'Particular (Tarjeta)', monto: 1200000, edad: 51, region: 'Metropolitana', sector: 'Privado', genero: 'Femenino', cargo: 'Contralor Corporativo', escolaridad: 'Postgrado' },
+  { rut: '10.556.778-9', nombre: 'Andrés Benavente', area: 'Tributación', programa: 'Reforma Tributaria 2026', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1100000, edad: 61, region: 'Coquimbo', sector: 'Público', genero: 'Masculino', cargo: 'Fiscalizador SII', escolaridad: 'Postgrado' },
+  { rut: '10.556.778-9', nombre: 'Andrés Benavente', area: 'Auditoría', programa: 'Diplomado en Auditoría Interna', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1200000, edad: 61, region: 'Coquimbo', sector: 'Público', genero: 'Masculino', cargo: 'Fiscalizador SII', escolaridad: 'Postgrado' },
+  { rut: '16.122.344-5', nombre: 'Patricio Soto', area: 'Tecnología', programa: 'Curso Fullstack Web Dev', aprobacion: 'Aprobado', pago: 'Particular (Tarjeta)', monto: 1500000, edad: 38, region: 'Metropolitana', sector: 'Privado', genero: 'Masculino', cargo: 'Jefe de Proyectos TI', escolaridad: 'Universitario' },
+  { rut: '15.990.887-2', nombre: 'Claudia Vargas', area: 'Contabilidad', programa: 'Curso Avanzado NIIF 16', aprobacion: 'Aprobado', pago: 'Sence (Empresa)', monto: 950000, edad: 44, region: 'Antofagasta', sector: 'Privado', genero: 'Femenino', cargo: 'Contadora Principal Minera', escolaridad: 'Técnico Profesional' },
+  { rut: '15.990.887-2', nombre: 'Claudia Vargas', area: 'Tributación', programa: 'Reforma Tributaria 2026', aprobacion: 'Aprobado', pago: 'Sence (Empresa)', monto: 1100000, edad: 44, region: 'Antofagasta', sector: 'Privado', genero: 'Femenino', cargo: 'Contadora Principal Minera', escolaridad: 'Técnico Profesional' },
+  { rut: '19.445.667-K', nombre: 'Martín Silva', area: 'Tecnología', programa: 'Taller de Python', aprobacion: 'Aprobado', pago: 'Beca 100%', monto: 1500000, edad: 25, region: 'Valparaíso', sector: 'Academia', genero: 'Masculino', cargo: 'Ayudante de Investigación', escolaridad: 'Universitario' },
+  { rut: '12.334.445-6', nombre: 'Mónica Gidi', area: 'Finanzas', programa: 'Valoración de Empresas', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1400000, edad: 55, region: 'Metropolitana', sector: 'Privado', genero: 'Femenino', cargo: 'Directora de Finanzas', escolaridad: 'Postgrado' },
+  { rut: '17.889.001-2', nombre: 'Álvaro Espinoza', area: 'Tecnología', programa: 'Diplomado en IA Aplicada', aprobacion: 'Aprobado', pago: 'Particular (Transf.)', monto: 1800000, edad: 33, region: 'Metropolitana', sector: 'Privado', genero: 'Masculino', cargo: 'Consultor TI Sénior', escolaridad: 'Postgrado' },
+  { rut: '17.889.001-2', nombre: 'Álvaro Espinoza', area: 'Tecnología', programa: 'Taller de Python', aprobacion: 'Aprobado', pago: 'Particular (Tarjeta)', monto: 1500000, edad: 33, region: 'Metropolitana', sector: 'Privado', genero: 'Masculino', cargo: 'Consultor TI Sénior', escolaridad: 'Postgrado' }
+];
+
+const PROGRAM_PRICING = {
+  'Auditoría': { valorLista: 1500000, descuento: 0.20, neto: 1200000 },
+  'Contabilidad': { valorLista: 1187500, descuento: 0.20, neto: 950000 },
+  'Finanzas': { valorLista: 1750000, descuento: 0.20, neto: 1400000 },
+  'Tecnología': { valorLista: 2250000, descuento: 0.20, neto: 1800000 }, 
+  'Gestión': { valorLista: 1062500, descuento: 0.20, neto: 850000 },
+  'Tributación': { valorLista: 1375000, descuento: 0.20, neto: 1100000 }
+};
 
 const COHORTES_LIST = ['2023', '2024', '2025', '2026'];
-const PERIODOS_LIST = ['2023-1', '2023-2', '2024-1', '2024-2', '2025-1', '2025-2', '2026-1', '2026-2'];
+const SEMESTRES_LIST = ['1° Semestre', '2° Semestre'];
 const SEXO_LIST = ['Femenino', 'Masculino', 'No binario', 'Prefiere no responder'];
 const MESES_LIST = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const TIPOS_LIST = ['Curso', 'Diplomado', 'Seminario', 'Postítulo'];
@@ -127,21 +189,22 @@ export const DashboardEducacionContinua = () => {
   // ESTADOS DE FILTROS PERSISTENTES (SIDEBAR DERECHO)
   const [cohorteDesde, setCohorteDesde] = useState('2023');
   const [cohorteHasta, setCohorteHasta] = useState('2026');
-  const [periodoDesde, setPeriodoDesde] = useState('2023-1');
-  const [periodoHasta, setPeriodoHasta] = useState('2026-2');
-  const [rangoEdad, setRangoEdad] = useState([18, 65]);
-  const [sexoSeleccionado, setSexoSeleccionado] = useState([]);
-  const [mesInicioSeleccionado, setMesInicioSeleccionado] = useState([]);
+  const [semestresSeleccionados, setSemestresSeleccionados] = useState([]);
+  const [mesDesde, setMesDesde] = useState('Enero');
+  const [mesHasta, setMesHasta] = useState('Diciembre');
   const [tipoSeleccionado, setTipoSeleccionado] = useState([]);
   const [modalidadSeleccionada, setModalidadSeleccionada] = useState([]);
   const [areaSeleccionada, setAreaSeleccionada] = useState([]);
 
   // ESTADOS DE CONTROL DE VISTA DE GRÁFICOS
-  const [ofertaViewMode, setOfertaViewMode] = useState('area'); // 'area', 'tipo', 'modalidad'
+  const [ofertaViewMode, setOfertaViewMode] = useState('total'); // 'total', 'area', 'tipo', 'modalidad'
   const [ingresosViewMode, setIngresosViewMode] = useState('area'); // 'area', 'tipo', 'modalidad'
-  const [matriculaViewMode, setMatriculaViewMode] = useState('area'); // 'area', 'modalidad', 'tipo'
-  const [selectedYearMatricula, setSelectedYearMatricula] = useState('Todos');
+  const [matriculaViewMode, setMatriculaViewMode] = useState('total'); // 'total', 'area', 'modalidad', 'tipo'
   const [perfilViewMode, setPerfilViewMode] = useState('region'); // 'region', 'sector', 'escolaridad', 'edad', 'genero', 'tipo'
+
+  // Local states for Unique Participants
+  const [localSexoFilter, setLocalSexoFilter] = useState('Todos');
+  const [localEdadFilter, setLocalEdadFilter] = useState('Todos');
 
   // MODALES DE DETALLE
   const [activeModal, setActiveModal] = useState(null);
@@ -166,10 +229,8 @@ export const DashboardEducacionContinua = () => {
     if (areaSeleccionada.length > 0) params.area = areaSeleccionada.join(',');
     if (tipoSeleccionado.length > 0) params.tipo = tipoSeleccionado.join(',');
     if (modalidadSeleccionada.length > 0) params.modalidad = modalidadSeleccionada.join(',');
-    if (sexoSeleccionado.length > 0) params.sexo = sexoSeleccionado.join(',');
-    if (mesInicioSeleccionado.length > 0) params.startMonth = mesInicioSeleccionado.join(',');
     return params;
-  }, [cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada, sexoSeleccionado, mesInicioSeleccionado]);
+  }, [cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada]);
 
   useEffect(() => {
     setApiLoading(true);
@@ -206,11 +267,9 @@ export const DashboardEducacionContinua = () => {
   const handleResetFilters = () => {
     setCohorteDesde('2023');
     setCohorteHasta('2026');
-    setPeriodoDesde('2023-1');
-    setPeriodoHasta('2026-2');
-    setRangoEdad([18, 65]);
-    setSexoSeleccionado([]);
-    setMesInicioSeleccionado([]);
+    setSemestresSeleccionados([]);
+    setMesDesde('Enero');
+    setMesHasta('Diciembre');
     setTipoSeleccionado([]);
     setModalidadSeleccionada([]);
     setAreaSeleccionada([]);
@@ -240,7 +299,11 @@ export const DashboardEducacionContinua = () => {
 
   // Serie de oferta programada — total real de API (sin desglose por área/tipo/modalidad)
   const ofertaChartSeries = useMemo(() => {
-    if (!filteredProgramasData.length) return [];
+    if (ofertaViewMode === 'total') {
+      return [
+        { data: filteredProgramasData.map(d => d.Auditoria + d.Contabilidad + d.Finanzas + d.IA + d.Laboral + d.Tecnologia + d.Tributaria), label: 'Total Programas', color: '#1E2875' }
+      ];
+    } else if (!filteredProgramasData.length) return [];
     return [{
       data: filteredProgramasData.map(d => d.total),
       label: 'Total programado',
@@ -316,29 +379,51 @@ export const DashboardEducacionContinua = () => {
     return Array.from(map.values());
   }, [filteredNominalGroup2]);
 
+  const filteredUniqueParticipantsLocal = useMemo(() => {
+    return uniqueParticipantsData.filter(p => {
+      // Sex filter
+      if (localSexoFilter !== 'Todos' && p.genero !== localSexoFilter) {
+        return false;
+      }
+      
+      // Age group filter
+      if (localEdadFilter !== 'Todos') {
+        if (localEdadFilter === '18-35') {
+          if (p.edad < 18 || p.edad > 35) return false;
+        } else if (localEdadFilter === '36-50') {
+          if (p.edad < 36 || p.edad > 50) return false;
+        } else if (localEdadFilter === 'Más de 50') {
+          if (p.edad <= 50) return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [uniqueParticipantsData, localSexoFilter, localEdadFilter]);
+
   const uniqueParticipantsAgeDist = useMemo(() => {
     if (!uniqueParticipantsData.length) return [];
     const dist = { '18-25': 0, '26-35': 0, '36-50': 0, 'Más de 50': 0 };
-    uniqueParticipantsData.forEach(p => {
+    filteredUniqueParticipantsLocal.forEach(p => {
       if (p.edad <= 25) dist['18-25']++;
       else if (p.edad <= 35) dist['26-35']++;
       else if (p.edad <= 50) dist['36-50']++;
       else dist['Más de 50']++;
     });
     return Object.keys(dist).map(key => ({ range: key, count: dist[key] }));
-  }, [uniqueParticipantsData]);
+  }, [filteredUniqueParticipantsLocal]);
 
   const recurrenceFreqDist = useMemo(() => {
     if (!uniqueParticipantsData.length) return [];
     const dist = { '1 Prog': 0, '2 Prog': 0, '3 o más': 0 };
-    uniqueParticipantsData.forEach(p => {
+    filteredUniqueParticipantsLocal.forEach(p => {
       const count = p.programas.length;
       if (count === 1) dist['1 Prog']++;
       else if (count === 2) dist['2 Prog']++;
       else dist['3 o más']++;
     });
     return Object.keys(dist).map(key => ({ category: key, count: dist[key] }));
-  }, [uniqueParticipantsData]);
+  }, [filteredUniqueParticipantsLocal]);
 
   // Recurrencia Formativa Calculations
   const recurrenciaStats = useMemo(() => {
@@ -356,10 +441,12 @@ export const DashboardEducacionContinua = () => {
   }, [uniqueParticipantsData]);
 
   // Radar Chart — sin datos reales por área/tipo, retorna vacío
-  const radarSeries = useMemo(() => [], [selectedYearMatricula, matriculaViewMode, cohorteDesde, cohorteHasta]);
+  const radarSeries = useMemo(() => [], [matriculaViewMode, cohorteDesde, cohorteHasta]);
 
   const radarMetrics = useMemo(() => {
-    if (matriculaViewMode === 'area') {
+    if (matriculaViewMode === 'total') {
+      return ['Total Matrículas'];
+    } else if (matriculaViewMode === 'area') {
       return ['Auditoría', 'Contabilidad', 'Finanzas', 'Tecnología', 'Gestión', 'Tributación', 'Otras'];
     } else if (matriculaViewMode === 'modalidad') {
       return ['Online', 'Presencial', 'Híbrido'];
@@ -368,15 +455,7 @@ export const DashboardEducacionContinua = () => {
     }
   }, [matriculaViewMode]);
 
-  const radarMax = useMemo(() => {
-    let highest = 0;
-    radarSeries.forEach(s => {
-      s.data.forEach(val => {
-        if (val > highest) highest = val;
-      });
-    });
-    return Math.max(100, Math.round(highest * 1.1));
-  }, [radarSeries]);
+
 
   // Tasa de aprobación — requiere datos nominales reales (sin endpoint aún)
   const aprobacionProgramasData = useMemo(() => {
@@ -476,20 +555,26 @@ export const DashboardEducacionContinua = () => {
 
 
   const activePeriodosText = useMemo(() => {
-    let text = `Años: ${cohorteDesde} a ${cohorteHasta} | Semestre: ${periodoDesde} a ${periodoHasta}`;
+    let text = `Años: ${cohorteDesde} a ${cohorteHasta}`;
+    if (semestresSeleccionados.length > 0) {
+      text += ` | Semestres: ${semestresSeleccionados.join(', ')}`;
+    } else {
+      text += ` | Todos los semestres`;
+    }
+    
+    text += ` | Meses: ${mesDesde} a ${mesHasta}`;
 
     const filtersActive = [];
     if (areaSeleccionada.length > 0) filtersActive.push(`Áreas: ${areaSeleccionada.join(', ')}`);
     if (modalidadSeleccionada.length > 0) filtersActive.push(`Modalidades: ${modalidadSeleccionada.join(', ')}`);
     if (tipoSeleccionado.length > 0) filtersActive.push(`Tipos: ${tipoSeleccionado.join(', ')}`);
-    if (mesInicioSeleccionado.length > 0) filtersActive.push(`Meses: ${mesInicioSeleccionado.join(', ')}`);
 
     if (filtersActive.length > 0) {
       text += ` | Filtros Activos (${filtersActive.join('; ')})`;
     }
 
     return text;
-  }, [cohorteDesde, cohorteHasta, periodoDesde, periodoHasta, areaSeleccionada, modalidadSeleccionada, tipoSeleccionado, mesInicioSeleccionado]);
+  }, [cohorteDesde, cohorteHasta, semestresSeleccionados, mesDesde, mesHasta, areaSeleccionada, modalidadSeleccionada, tipoSeleccionado]);
 
   // NAV NAVEGACIÓN IZQUIERDA
   const sidebarContent = (
@@ -520,12 +605,10 @@ export const DashboardEducacionContinua = () => {
           {[
             { text: 'Inicio', icon: <HomeIcon />, path: '/' },
             { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
-            { text: 'Metas', icon: <MetasIcon />, path: '#' },
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
-            { text: 'Visualización de tablas', icon: <TablaIcon />, path: '#' },
           ].filter((item) => {
-            if (item.text === 'Auditoría' || item.text === 'Visualización de tablas') {
+            if (item.text === 'Auditoría') {
               return (
                 user?.role === 'Rector' || 
                 user?.role === 'Administrador' || 
@@ -976,6 +1059,7 @@ export const DashboardEducacionContinua = () => {
               </div>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <div className="card-toggle-group">
+                  <button className={`btn-toggle ${ofertaViewMode === 'total' ? 'active' : ''}`} onClick={() => setOfertaViewMode('total')}>Total</button>
                   <button className={`btn-toggle ${ofertaViewMode === 'area' ? 'active' : ''}`} onClick={() => setOfertaViewMode('area')}>Área</button>
                   <button className={`btn-toggle ${ofertaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setOfertaViewMode('tipo')}>Tipo</button>
                   <button className={`btn-toggle ${ofertaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setOfertaViewMode('modalidad')}>Modalidad</button>
@@ -1017,7 +1101,7 @@ export const DashboardEducacionContinua = () => {
                 <CheckCircle size={16} style={{ color: '#10B981' }} />
                 <h2 className="chart-title" style={{ margin: 0 }}>Cursos efectivamente dictados</h2>
               </div>
-              <button className="btn-details">
+              <button className="btn-details" onClick={() => setActiveModal('dictados')}>
                 <Maximize2 size={12} />
                 <span>Detalles</span>
               </button>
@@ -1053,21 +1137,26 @@ export const DashboardEducacionContinua = () => {
                 <Percent size={16} style={{ color: '#1E2875' }} />
                 <h2 className="chart-title" style={{ margin: 0 }}>Tasa de ejecución (%)</h2>
               </div>
-              <button className="btn-details">
+              <button className="btn-details" onClick={() => setActiveModal('tasa')}>
                 <Maximize2 size={12} />
                 <span>Detalles</span>
               </button>
             </div>
             
             <div className="chart-wrapper">
-              {effectiveEjecucionSeries ? (
+              {effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0 ? (
                 <LineChart
-                  xAxis={[{ scaleType: 'point', data: effectiveEjecucionSeries.map(d => d.cohorte), label: 'Año' }]}
-                  series={[{
+                  xAxis={[{ 
+                    scaleType: 'point', 
+                    data: effectiveEjecucionSeries.map(d => d.cohorte),
+                    label: 'Año'
+                  }]}
+                  series={[{ 
                     data: effectiveEjecucionSeries.map(d => d.tasa),
                     color: '#1E2875',
                     label: 'Tasa Ejecución %',
-                    valueFormatter: (value) => `${value}%`
+                    valueFormatter: (value) => `${value}%`,
+                    showMark: true
                   }]}
                   margin={{ top: 15, right: 15, bottom: 40, left: 45 }}
                 />
@@ -1128,29 +1217,10 @@ export const DashboardEducacionContinua = () => {
                 
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
                   <div className="card-toggle-group">
+                    <button className={`btn-toggle ${matriculaViewMode === 'total' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('total')}>Total</button>
                     <button className={`btn-toggle ${matriculaViewMode === 'area' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('area')}>Área</button>
                     <button className={`btn-toggle ${matriculaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('modalidad')}>Modalidad</button>
                     <button className={`btn-toggle ${matriculaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('tipo')}>Tipo Programa</button>
-                  </div>
-
-                  <div className="card-toggle-group">
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', alignSelf: 'center', paddingLeft: '8px', paddingRight: '4px' }}>
-                      Año:
-                    </span>
-                    <button className={`btn-toggle ${selectedYearMatricula === 'Todos' ? 'active' : ''}`} onClick={() => setSelectedYearMatricula('Todos')}>Todos</button>
-                    {['2023', '2024', '2025', '2026'].map(yr => {
-                      const y = parseInt(yr);
-                      if (y < parseInt(cohorteDesde) || y > parseInt(cohorteHasta)) return null;
-                      return (
-                        <button 
-                          key={yr}
-                          className={`btn-toggle ${selectedYearMatricula === yr ? 'active' : ''}`}
-                          onClick={() => setSelectedYearMatricula(yr)}
-                        >
-                          {yr}
-                        </button>
-                      );
-                    })}
                   </div>
                 </div>
               </div>
@@ -1160,31 +1230,28 @@ export const DashboardEducacionContinua = () => {
               </button>
             </div>
 
-            <div className="chart-wrapper" style={{ height: '390px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              {radarSeries.length > 0 ? (
-                <RadarChart
-                  height={370}
-                  series={radarSeries}
-                  radar={{
-                    max: radarMax,
-                    metrics: radarMetrics
-                  }}
-                  slotProps={{
-                    legend: {
-                      direction: 'row',
-                      position: { vertical: 'bottom', horizontal: 'middle' },
-                      labelStyle: { fontSize: '11px', fill: '#1e293b' }
-                    }
-                  }}
-                />
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
-              )}
+            <div className="chart-wrapper" style={{ height: '390px' }}>
+              <BarChart
+                height={370}
+                xAxis={[{ 
+                  scaleType: 'band', 
+                  data: radarMetrics,
+                  label: matriculaViewMode === 'area' ? 'Área de programa' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo de programa')
+                }]}
+                series={radarSeries}
+                slotProps={{
+                  legend: {
+                    direction: 'row',
+                    position: { vertical: 'bottom', horizontal: 'middle' },
+                    labelStyle: { fontSize: '11px', fill: '#1e293b' }
+                  }
+                }}
+              />
             </div>
           </div>
 
           {/* Card 6: Tasa de aprobación por programa */}
-          <div className="chart-card">
+          <div className="chart-card" style={{ gridColumn: '1 / -1', minHeight: '380px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Award size={16} style={{ color: '#a855f7' }} />
@@ -1196,35 +1263,49 @@ export const DashboardEducacionContinua = () => {
               </button>
             </div>
 
-            <div className="chart-wrapper">
+            <div className="chart-wrapper" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', padding: '8px' }}>
               {aprobacionProgramasData.length > 0 ? (
-                <BarChart
-                  layout="horizontal"
-                  yAxis={[{ 
-                    scaleType: 'band', 
-                    data: aprobacionProgramasData.map(d => d.area)
-                  }]}
-                  series={[
-                    { data: aprobacionProgramasData.map(d => d.tasa), label: 'Tasa %', color: '#a855f7', layout: 'horizontal' },
-                    { data: aprobacionProgramasData.map(d => d.promedioHistorico), label: 'Histórico %', color: '#94a3b8', layout: 'horizontal' }
-                  ]}
-                  margin={{ top: 10, right: 15, bottom: 40, left: 100 }}
-                  slotProps={{
-                    legend: {
-                      direction: 'row',
-                      position: { vertical: 'bottom', horizontal: 'middle' },
-                      labelStyle: { fontSize: '10px', fill: '#1e293b' }
-                    }
-                  }}
-                />
+                aprobacionProgramasData.map(row => (
+                  <div key={row.area} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569', marginBottom: '12px', textAlign: 'center' }}>
+                      {row.area}
+                    </span>
+                    <div style={{ width: 120, height: 120 }}>
+                      <Gauge
+                        value={row.tasa}
+                        startAngle={-110}
+                        endAngle={110}
+                        innerRadius="75%"
+                        outerRadius="100%"
+                        text={`${row.tasa}%`}
+                        sx={{
+                          [`& .${gaugeClasses.valueText}`]: {
+                            fontSize: '18px',
+                            fontWeight: '800',
+                            fill: '#1e293b'
+                          },
+                          [`& .${gaugeClasses.valueArc}`]: {
+                            fill: '#a855f7',
+                          },
+                          [`& .${gaugeClasses.referenceArc}`]: {
+                            fill: '#e2e8f0',
+                          }
+                        }}
+                      />
+                    </div>
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: '#64748b', marginTop: '4px', textAlign: 'center' }}>
+                      Histórico: {row.promedioHistorico}%
+                    </span>
+                  </div>
+                ))
               ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>No hay datos coincidentes</div>
+                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px', gridColumn: '1 / -1', textAlign: 'center' }}>No hay datos coincidentes</div>
               )}
             </div>
           </div>
 
           {/* Card 8: Perfil del participante */}
-          <div className="chart-card">
+          <div className="chart-card" style={{ gridColumn: '1 / -1' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1274,45 +1355,144 @@ export const DashboardEducacionContinua = () => {
           </div>
 
           {/* Histograms for Unique and Recurrent Participants */}
-          <div className="chart-card">
+          <div className="chart-card" style={{ minHeight: '380px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Users size={16} style={{ color: '#8b5cf6' }} />
-                <h2 className="chart-title" style={{ margin: 0 }}>Histograma: Participantes Únicos</h2>
+                <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Participantes Únicos</h2>
               </div>
             </div>
-            <div className="chart-wrapper">
-              {uniqueParticipantsAgeDist.length > 0 ? (
-                <BarChart
-                  xAxis={[{ scaleType: 'band', data: uniqueParticipantsAgeDist.map(d => d.range), label: 'Rango de Edad' }]}
-                  series={[{ data: uniqueParticipantsAgeDist.map(d => d.count), color: '#8b5cf6', label: 'Cantidad Personas' }]}
-                  margin={{ top: 20, right: 15, bottom: 40, left: 35 }}
-                  slotProps={{ legend: { hidden: true } }}
-                />
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
-              )}
+            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
+              {/* Controles de Filtros Internos */}
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+                <div className="card-toggle-group" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', paddingLeft: '4px', paddingRight: '4px' }}>SEXO:</span>
+                  {['Todos', 'Masculino', 'Femenino'].map(opt => (
+                    <button 
+                      key={opt} 
+                      className={`btn-toggle ${localSexoFilter === opt ? 'active' : ''}`} 
+                      onClick={() => setLocalSexoFilter(opt)}
+                      style={{ fontSize: '11px', padding: '2px 8px' }}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="card-toggle-group" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', paddingLeft: '4px', paddingRight: '4px' }}>EDAD:</span>
+                  {['Todos', '18-35', '36-50', 'Más de 50'].map(opt => (
+                    <button 
+                      key={opt} 
+                      className={`btn-toggle ${localEdadFilter === opt ? 'active' : ''}`} 
+                      onClick={() => setLocalEdadFilter(opt)}
+                      style={{ fontSize: '11px', padding: '2px 8px' }}
+                    >
+                      {opt === 'Más de 50' ? '> 50' : opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1, gap: '20px', padding: '12px 0' }}>
+                {uniqueParticipantsAgeDist.map(d => {
+                  const total = filteredUniqueParticipantsLocal.length || 1;
+                  const pct = (d.count / total) * 100;
+                  const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
+                  return (
+                    <div key={d.range} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                          {d.range} años
+                        </span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#8b5cf6' }}>
+                          {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        {Array.from({ length: 10 }).map((_, i) => (
+                          <svg 
+                            key={i} 
+                            width="18" 
+                            height="18" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="2.5" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            style={{ 
+                              color: i < filledIconsCount ? '#8b5cf6' : '#cbd5e1', 
+                              transition: 'color 0.3s ease' 
+                            }}
+                          >
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
+                Cada figura representa un 10% del total de participantes únicos ({filteredUniqueParticipantsLocal.length})
+              </div>
             </div>
           </div>
 
-          <div className="chart-card">
+          <div className="chart-card" style={{ minHeight: '380px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <RefreshCw size={16} style={{ color: '#ec4899' }} />
-                <h2 className="chart-title" style={{ margin: 0 }}>Histograma: Frecuencia de Matrículas</h2>
+                <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Frecuencia de Matrículas</h2>
               </div>
             </div>
-            <div className="chart-wrapper">
-              {recurrenceFreqDist.length > 0 ? (
-                <BarChart
-                  xAxis={[{ scaleType: 'band', data: recurrenceFreqDist.map(d => d.category), label: 'Programas cursados por persona' }]}
-                  series={[{ data: recurrenceFreqDist.map(d => d.count), color: '#ec4899', label: 'Cantidad Personas' }]}
-                  margin={{ top: 20, right: 15, bottom: 40, left: 35 }}
-                  slotProps={{ legend: { hidden: true } }}
-                />
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
-              )}
+            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', flexGrow: 1, gap: '24px', padding: '20px 0' }}>
+                {recurrenceFreqDist.map(d => {
+                  const total = filteredUniqueParticipantsLocal.length || 1;
+                  const pct = (d.count / total) * 100;
+                  const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
+                  return (
+                    <div key={d.category} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                          {d.category === '1 Prog' ? '1 Programa' : (d.category === '2 Prog' ? '2 Programas' : '3 o más programas')}
+                        </span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#ec4899' }}>
+                          {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        {Array.from({ length: 10 }).map((_, i) => (
+                          <svg 
+                            key={i} 
+                            width="18" 
+                            height="18" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="2.5" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            style={{ 
+                              color: i < filledIconsCount ? '#ec4899' : '#cbd5e1', 
+                              transition: 'color 0.3s ease' 
+                            }}
+                          >
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                            <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
+                Cada figura representa un 10% del total de participantes únicos ({filteredUniqueParticipantsLocal.length})
+              </div>
             </div>
           </div>
 
@@ -1368,29 +1548,58 @@ export const DashboardEducacionContinua = () => {
             </Box>
           </Box>
 
-          {/* Selector de Período Académico */}
+          {/* Selector de Semestre (Selector Múltiple) */}
           <Box sx={styles.filterSection}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
               <Typography sx={styles.filterSectionTitle}>
-                Período académico
+                Semestre
+              </Typography>
+            </Box>
+            <FormControl fullWidth size="small">
+              <InputLabel id="semestre-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
+              <Select
+                labelId="semestre-select-label"
+                multiple
+                value={semestresSeleccionados}
+                onChange={(e) => setSemestresSeleccionados(e.target.value)}
+                input={<OutlinedInput label="Seleccionar" />}
+                renderValue={(selected) => selected.join(', ')}
+                sx={styles.selectInputStyle}
+              >
+                {SEMESTRES_LIST.map((name) => (
+                  <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
+                    <Checkbox checked={semestresSeleccionados.indexOf(name) > -1} sx={styles.checkboxStyle} />
+                    <ListItemText primary={name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          {/* Selector de Mes (Rango) */}
+          <Box sx={styles.filterSection}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
+              <Typography sx={styles.filterSectionTitle}>
+                Mes
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <FormControl fullWidth size="small">
-                <InputLabel id="periodo-desde-label" sx={styles.selectLabelStyle}>Desde</InputLabel>
+                <InputLabel id="mes-desde-label" sx={styles.selectLabelStyle}>Desde</InputLabel>
                 <Select
-                  labelId="periodo-desde-label"
-                  value={periodoDesde}
+                  labelId="mes-desde-label"
+                  value={mesDesde}
                   label="Desde"
-                  onChange={(e) => setPeriodoDesde(e.target.value)}
+                  onChange={(e) => setMesDesde(e.target.value)}
                   sx={styles.selectInputStyle}
                 >
-                  {PERIODOS_LIST.map((per) => {
-                    const isDisabled = PERIODOS_LIST.indexOf(per) > PERIODOS_LIST.indexOf(periodoHasta);
+                  {MESES_LIST.map((m) => {
+                    const isDisabled = MESES_LIST.indexOf(m) > MESES_LIST.indexOf(mesHasta);
                     return (
-                      <MenuItem key={per} value={per} disabled={isDisabled}>
-                        {per}
+                      <MenuItem key={m} value={m} disabled={isDisabled}>
+                        {m}
                       </MenuItem>
                     );
                   })}
@@ -1398,108 +1607,25 @@ export const DashboardEducacionContinua = () => {
               </FormControl>
               <Typography sx={{ color: '#94A3B8' }}>—</Typography>
               <FormControl fullWidth size="small">
-                <InputLabel id="periodo-hasta-label" sx={styles.selectLabelStyle}>Hasta</InputLabel>
+                <InputLabel id="mes-hasta-label" sx={styles.selectLabelStyle}>Hasta</InputLabel>
                 <Select
-                  labelId="periodo-hasta-label"
-                  value={periodoHasta}
+                  labelId="mes-hasta-label"
+                  value={mesHasta}
                   label="Hasta"
-                  onChange={(e) => setPeriodoHasta(e.target.value)}
+                  onChange={(e) => setMesHasta(e.target.value)}
                   sx={styles.selectInputStyle}
                 >
-                  {PERIODOS_LIST.map((per) => {
-                    const isDisabled = PERIODOS_LIST.indexOf(per) < PERIODOS_LIST.indexOf(periodoDesde);
+                  {MESES_LIST.map((m) => {
+                    const isDisabled = MESES_LIST.indexOf(m) < MESES_LIST.indexOf(mesDesde);
                     return (
-                      <MenuItem key={per} value={per} disabled={isDisabled}>
-                        {per}
+                      <MenuItem key={m} value={m} disabled={isDisabled}>
+                        {m}
                       </MenuItem>
                     );
                   })}
                 </Select>
               </FormControl>
             </Box>
-          </Box>
-
-          {/* Rango de Edad (Slider) */}
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PersonIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Rango de edad
-              </Typography>
-            </Box>
-            <Box sx={{ px: 1, mt: 0.5 }}>
-              <Slider
-                value={rangoEdad}
-                onChange={(e, newValue) => setRangoEdad(newValue)}
-                valueLabelDisplay="auto"
-                min={18}
-                max={65}
-                sx={styles.ageSliderStyle}
-              />
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-                <Typography sx={styles.ageRangeLabels}>
-                  <span>{rangoEdad[0]}</span> — <span>{rangoEdad[1]}</span> años
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-
-          {/* Sexo (Selector Múltiple) */}
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <WcIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Sexo
-              </Typography>
-            </Box>
-            <FormControl fullWidth size="small">
-              <InputLabel id="sexo-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-              <Select
-                labelId="sexo-select-label"
-                multiple
-                value={sexoSeleccionado}
-                onChange={(e) => setSexoSeleccionado(e.target.value)}
-                input={<OutlinedInput label="Seleccionar" />}
-                renderValue={(selected) => selected.join(', ')}
-                sx={styles.selectInputStyle}
-              >
-                {SEXO_LIST.map((name) => (
-                  <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                    <Checkbox checked={sexoSeleccionado.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                    <ListItemText primary={name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-
-          {/* Mes de inicio (Selector Múltiple) */}
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Mes de inicio
-              </Typography>
-            </Box>
-            <FormControl fullWidth size="small">
-              <InputLabel id="mes-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-              <Select
-                labelId="mes-select-label"
-                multiple
-                value={mesInicioSeleccionado}
-                onChange={(e) => setMesInicioSeleccionado(e.target.value)}
-                input={<OutlinedInput label="Seleccionar" />}
-                renderValue={(selected) => selected.join(', ')}
-                sx={styles.selectInputStyle}
-              >
-                {MESES_LIST.map((name) => (
-                  <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                    <Checkbox checked={mesInicioSeleccionado.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                    <ListItemText primary={name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
           </Box>
 
           {/* Tipo de programa (Selector Múltiple) */}
@@ -1651,14 +1777,20 @@ export const DashboardEducacionContinua = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {dictadosSummaryData.map(row => (
-                      <tr key={row.cohorte}>
-                        <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
-                        <td>{row.planificados}</td>
-                        <td>{row.dictados}</td>
-                        <td style={{ fontWeight: 700, color: '#10B981' }}>{row.tasa}%</td>
+                    {effectiveDictadosSeries && effectiveDictadosSeries.length > 0 ? (
+                      effectiveDictadosSeries.map(row => (
+                        <tr key={row.cohorte}>
+                          <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
+                          <td>{row.planificados}</td>
+                          <td>{row.dictados}</td>
+                          <td style={{ fontWeight: 700, color: '#10B981' }}>{row.tasa}%</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} style={{ color: '#64748b', padding: '12px', textAlign: 'center' }}>Sin datos disponibles</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </>
@@ -1676,13 +1808,19 @@ export const DashboardEducacionContinua = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {dictadosSummaryData.map(row => (
-                      <tr key={row.cohorte}>
-                        <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
-                        <td style={{ fontWeight: 700, color: '#1E2875' }}>{row.tasa}%</td>
-                        <td>{row.tasa >= 80 ? 'Excelente (>=80%)' : 'En revisión'}</td>
+                    {effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0 ? (
+                      effectiveEjecucionSeries.map(row => (
+                        <tr key={row.cohorte}>
+                          <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
+                          <td style={{ fontWeight: 700, color: '#1E2875' }}>{row.tasa}%</td>
+                          <td>{row.tasa >= 80 ? 'Excelente (>=80%)' : 'En revisión'}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3} style={{ color: '#64748b', padding: '12px', textAlign: 'center' }}>Sin datos disponibles</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </>

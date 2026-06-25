@@ -324,12 +324,10 @@ export const Auditoria = () => {
           {[
             { text: 'Inicio', icon: <HomeIcon />, path: '/' },
             { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
-            { text: 'Metas', icon: <MetasIcon />, path: '#' },
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
-            { text: 'Visualización de tablas', icon: <TablaIcon />, path: '#' },
           ].filter((item) => {
-            if (item.text === 'Auditoría' || item.text === 'Visualización de tablas') {
+            if (item.text === 'Auditoría') {
               return (
                 user?.role === 'Rector' || 
                 user?.role === 'Administrador' || 
@@ -589,7 +587,6 @@ export const Auditoria = () => {
               sx={styles.tabsList}
             >
               <Tab label="Carga de datos" />
-              <Tab label="Creación de metas" />
               <Tab label="Inicios de sesión" />
             </Tabs>
           </Box>
