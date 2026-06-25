@@ -134,13 +134,16 @@ export const Auditoria = () => {
     const resolveUsuario = (item) => {
       if (item.usuarioNombre) return item.usuarioNombre;
       if (item.usuarioEmail) return item.usuarioEmail;
-      // Registros viejos: el email puede estar dentro de detalles como JSON
       const det = item.detail?.detalles;
       if (det && typeof det === 'string') {
         try {
           const parsed = JSON.parse(det);
           if (parsed?.usuario) return parsed.usuario;
-        } catch (e) {}
+        } catch (e) {
+          // String plano: extraer email si está mencionado (p.ej. LOGIN_FAILED)
+          const m = det.match(/[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}/);
+          if (m) return m[0];
+        }
       }
       if (item.detail?.usuarioId != null) return `#${item.detail.usuarioId}`;
       return '-';
@@ -170,6 +173,15 @@ export const Auditoria = () => {
           return `Intento de inicio de sesión fallido para ${usuario}.`;
         }
         return 'Intento de inicio de sesión fallido.';
+      }
+
+      if (accion === 'LOGOUT_SUCCESS') {
+        const rol = item.detail?.rol || null;
+        if (usuario !== '-' && rol) {
+          return `Cierre de sesión de ${usuario} con rol ${rol}.`;
+        }
+        if (usuario !== '-') return `Cierre de sesión de ${usuario}.`;
+        return 'Cierre de sesión.';
       }
 
       return det || '';
@@ -203,7 +215,9 @@ export const Auditoria = () => {
           ? 'Inicio sesión'
           : item.detail?.accion === 'LOGIN_FAILED'
             ? 'Inicio fallido'
-            : (item.detail?.accion || '-'),
+            : item.detail?.accion === 'LOGOUT_SUCCESS'
+              ? 'Cierre sesión'
+              : (item.detail?.accion || '-'),
       entidad: item.detail?.entidad || 'Sistema',
       registros: 1,
       detalle: resolveDetalleSesion(item)
