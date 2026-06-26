@@ -46,7 +46,6 @@ import {
   CloudUpload as UploadIcon,
   Info as InfoIcon,
   ChevronRight as ChevronRightIcon,
-  FolderOpen as FolderIcon,
   Close as CloseIcon,
   Description as DescriptionIcon,
   Person as PersonIcon,
@@ -749,25 +748,6 @@ export const CargaDatos = () => {
           </Box>
         </Card>
 
-        {/* Sección: Repositorio de Archivos */}
-        <Card sx={styles.sectionCard}>
-          <Typography variant="h6" sx={styles.sectionTitle}>
-            Repositorio de archivos
-          </Typography>
-          <Typography sx={styles.sectionSubText}>
-            Accede al repositorio completo de archivos cargados y descarga plantillas
-          </Typography>
-
-          {/* Botón Acceder dentro de la tarjeta, con el mismo estilo que Cargar datos */}
-          <Button
-            variant="contained"
-            startIcon={<FolderIcon />}
-            sx={styles.uploadButton}
-            onClick={() => navigate('/repositorio')}
-          >
-            Acceder
-          </Button>
-        </Card>
 
       </Box>
 
