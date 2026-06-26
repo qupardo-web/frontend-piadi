@@ -164,6 +164,11 @@ export const DashboardEducacionContinua = () => {
   const [apiMatriculaBreakdown, setApiMatriculaBreakdown] = useState(null);
   const [apiRecurrenciaBreakdown, setApiRecurrenciaBreakdown] = useState(null);
   const [apiPerfilMap, setApiPerfilMap] = useState({});
+  const [apiMatriculaSeries, setApiMatriculaSeries] = useState(null);
+  const [apiIngresosSeries, setApiIngresosSeries] = useState(null);
+  const [apiOfertaByYear, setApiOfertaByYear] = useState({});
+  const [apiIngresosByYear, setApiIngresosByYear] = useState({});
+  const [apiMatriculaByYear, setApiMatriculaByYear] = useState({});
 
   const apiParams = useMemo(() => {
     const params = { department: 'educacion_continua' };
@@ -196,7 +201,9 @@ export const DashboardEducacionContinua = () => {
       getIndicatorBreakdown('participantes_unicos', { ...breakdownParams, groupBy: 'rangoEdad' }).catch(() => null),
       getIndicatorBreakdown('recurrencia_formativa', { ...breakdownParams, groupBy: 'year' }).catch(() => null),
       getIndicatorBreakdown('matricula_por_programa', { ...breakdownParams, groupBy: 'area' }).catch(() => null),
-    ]).then(([summary, oferta, dictados, ejecucion, aprobacionBreakdown, participantesSeries, participantesBreakdown, recurrenciaBreakdown, matriculaBreakdown]) => {
+      getIndicatorSeries('matricula_por_programa', seriesParams).catch(() => null),
+      getIndicatorSeries('ingresos_generados', seriesParams).catch(() => null),
+    ]).then(([summary, oferta, dictados, ejecucion, aprobacionBreakdown, participantesSeries, participantesBreakdown, recurrenciaBreakdown, matriculaBreakdown, matriculaSeries, ingresosSeries]) => {
       if (summary?.success && summary.data) {
         const deptData = summary.data?.departments?.find(d => d.departmentId === 'educacion_continua');
         const cards = deptData?.cards ?? [];
@@ -215,43 +222,53 @@ export const DashboardEducacionContinua = () => {
       if (participantesBreakdown?.success && participantesBreakdown.data?.items?.length) setApiParticipantesBreakdown(participantesBreakdown.data);
       if (recurrenciaBreakdown?.success && recurrenciaBreakdown.data?.items?.length) setApiRecurrenciaBreakdown(recurrenciaBreakdown.data.items);
       if (matriculaBreakdown?.success && matriculaBreakdown.data?.items?.length) setApiMatriculaBreakdown(matriculaBreakdown.data.items);
+      if (matriculaSeries?.success) setApiMatriculaSeries(matriculaSeries.data?.points?.length > 0 ? matriculaSeries.data.points : null);
+      if (ingresosSeries?.success) setApiIngresosSeries(ingresosSeries.data?.points?.length > 0 ? ingresosSeries.data.points : null);
     }).finally(() => setApiLoading(false));
   }, [apiParams, cohorteDesde, cohorteHasta]);
 
-  // Oferta breakdown dinámico según modo seleccionado
+  // Oferta breakdown por año según modo seleccionado (multi-año para ver evolución)
   useEffect(() => {
     if (ofertaViewMode === 'total') {
-      setApiOfertaBreakdown(null);
+      setApiOfertaByYear({});
       return;
     }
-    const params = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta, groupBy: ofertaViewMode };
-    if (areaSeleccionada.length) params.area = areaSeleccionada.join(',');
-    if (tipoSeleccionado.length) params.tipo = tipoSeleccionado.join(',');
-    if (modalidadSeleccionada.length) params.modalidad = modalidadSeleccionada.join(',');
-    getIndicatorBreakdown('oferta_programada', params)
-      .then(r => { if (r?.success && r.data?.items?.length) setApiOfertaBreakdown(r.data); })
-      .catch(() => {});
-  }, [ofertaViewMode, cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada]);
+    const years = ['2023', '2024', '2025', '2026'].filter(yr => parseInt(yr) >= parseInt(cohorteDesde) && parseInt(yr) <= parseInt(cohorteHasta));
+    const base = { department: 'educacion_continua', groupBy: ofertaViewMode };
+    Promise.all(years.map(yr => getIndicatorBreakdown('oferta_programada', { ...base, year: yr }).catch(() => null)))
+      .then(results => {
+        const byYear = {};
+        results.forEach((r, i) => { if (r?.success && r.data?.items?.length) byYear[years[i]] = r.data.items; });
+        setApiOfertaByYear(byYear);
+      });
+  }, [ofertaViewMode, cohorteDesde, cohorteHasta]);
 
-  // Ingresos breakdown dinámico según modo seleccionado
+  // Ingresos breakdown por año según modo seleccionado (multi-año para ver evolución)
   useEffect(() => {
-    const params = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta, groupBy: ingresosViewMode };
-    if (areaSeleccionada.length) params.area = areaSeleccionada.join(',');
-    if (tipoSeleccionado.length) params.tipo = tipoSeleccionado.join(',');
-    if (modalidadSeleccionada.length) params.modalidad = modalidadSeleccionada.join(',');
-    getIndicatorBreakdown('ingresos_generados', params)
-      .then(r => { if (r?.success && r.data?.items?.length) setApiIngresosBreakdown(r.data.items); })
-      .catch(() => {});
-  }, [ingresosViewMode, cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada]);
+    const years = ['2023', '2024', '2025', '2026'].filter(yr => parseInt(yr) >= parseInt(cohorteDesde) && parseInt(yr) <= parseInt(cohorteHasta));
+    const base = { department: 'educacion_continua', groupBy: ingresosViewMode };
+    Promise.all(years.map(yr => getIndicatorBreakdown('ingresos_generados', { ...base, year: yr }).catch(() => null)))
+      .then(results => {
+        const byYear = {};
+        results.forEach((r, i) => { if (r?.success && r.data?.items?.length) byYear[years[i]] = r.data.items; });
+        setApiIngresosByYear(byYear);
+      });
+  }, [ingresosViewMode, cohorteDesde, cohorteHasta]);
 
-  // Matrícula breakdown dinámico según modo seleccionado
+  // Matrícula breakdown por año según modo seleccionado (multi-año para ver evolución)
   useEffect(() => {
-    const groupByMap = { total: 'area', area: 'area', modalidad: 'modalidad', tipo: 'tipo' };
-    const groupBy = groupByMap[matriculaViewMode] || 'area';
-    const params = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta, groupBy };
-    getIndicatorBreakdown('matricula_por_programa', params)
-      .then(r => { if (r?.success && r.data?.items?.length) setApiMatriculaBreakdown(r.data.items); })
-      .catch(() => {});
+    if (matriculaViewMode === 'total') {
+      setApiMatriculaByYear({});
+      return;
+    }
+    const years = ['2023', '2024', '2025', '2026'].filter(yr => parseInt(yr) >= parseInt(cohorteDesde) && parseInt(yr) <= parseInt(cohorteHasta));
+    const base = { department: 'educacion_continua', groupBy: matriculaViewMode };
+    Promise.all(years.map(yr => getIndicatorBreakdown('matricula_por_programa', { ...base, year: yr }).catch(() => null)))
+      .then(results => {
+        const byYear = {};
+        results.forEach((r, i) => { if (r?.success && r.data?.items?.length) byYear[years[i]] = r.data.items; });
+        setApiMatriculaByYear(byYear);
+      });
   }, [matriculaViewMode, cohorteDesde, cohorteHasta]);
 
   // Perfil del participante — todas las dimensiones al cargar
@@ -319,28 +336,22 @@ export const DashboardEducacionContinua = () => {
     if (ofertaViewMode === 'total') {
       return {
         labels: filteredProgramasData.map(d => d.cohorte),
-        series: [{
-          data: filteredProgramasData.map(d => d.total),
-          label: 'Total programado',
-          color: '#1E2875',
-        }],
+        series: [{ data: filteredProgramasData.map(d => d.total), label: 'Total programado', color: '#1E2875' }],
       };
     }
-
-    const items = Array.isArray(apiOfertaBreakdown?.items) ? apiOfertaBreakdown.items : [];
-    if (!items.length) {
-      return { labels: [], series: [] };
-    }
-
+    const years = ['2023', '2024', '2025', '2026'].filter(yr => parseInt(yr) >= parseInt(cohorteDesde) && parseInt(yr) <= parseInt(cohorteHasta));
+    const allLabels = [...new Set(years.flatMap(yr => (apiOfertaByYear[yr] ?? []).map(i => i.label)))];
+    if (!allLabels.length) return { labels: [], series: [] };
+    const yearColors = { '2023': '#93c5fd', '2024': '#60a5fa', '2025': '#3b82f6', '2026': '#1E2875' };
     return {
-      labels: items.map(item => item.label ?? 'Sin dato'),
-      series: [{
-        data: items.map(item => Number(item.value ?? 0)),
-        label: 'Total programado',
-        color: '#1E2875',
-      }],
+      labels: allLabels,
+      series: years.map(yr => ({
+        data: allLabels.map(lbl => (apiOfertaByYear[yr] ?? []).find(i => i.label === lbl)?.value ?? 0),
+        label: yr,
+        color: yearColors[yr] || '#1E2875',
+      })),
     };
-  }, [filteredProgramasData, ofertaViewMode, apiOfertaBreakdown]);
+  }, [filteredProgramasData, ofertaViewMode, apiOfertaByYear, cohorteDesde, cohorteHasta]);
 
   // dictadosSummaryData eliminado — se usan datos reales de effectiveDictadosSeries
   const dictadosSummaryData = useMemo(() => [], []);
@@ -385,6 +396,22 @@ export const DashboardEducacionContinua = () => {
     avgRetencion: 0,
     avgTasaEjecucion: apiSummary?.tasa_ejecucion?.value ?? 0,
   }), [apiSummary]);
+
+  // Cards indicadores clave: valor 2026, valor 2023 y evolución
+  const kpiCardsData = useMemo(() => {
+    const getVal = (series, year) => series?.find(p => Number(p.year) === year)?.value ?? null;
+    const evo = (v26, v23) => (v23 != null && v26 != null && v23 !== 0) ? parseFloat(((v26 - v23) / v23 * 100).toFixed(1)) : null;
+    const o26 = getVal(apiOfertaSeries, 2026); const o23 = getVal(apiOfertaSeries, 2023);
+    const d26 = getVal(apiDictadosSeries, 2026); const d23 = getVal(apiDictadosSeries, 2023);
+    const m26 = getVal(apiMatriculaSeries, 2026); const m23 = getVal(apiMatriculaSeries, 2023);
+    const i26 = getVal(apiIngresosSeries, 2026); const i23 = getVal(apiIngresosSeries, 2023);
+    return [
+      { key: 'oferta', label: 'Oferta programada', Icon: BookOpen, color: '#1E2875', borderColor: '#1E2875', val26: o26, val23: o23, evo: evo(o26, o23), fmt: v => v != null ? String(v) : null },
+      { key: 'dictados', label: 'Cursos dictados', Icon: CheckCircle, color: '#047857', borderColor: '#10B981', val26: d26, val23: d23, evo: evo(d26, d23), fmt: v => v != null ? String(v) : null },
+      { key: 'matricula', label: 'Matrícula total', Icon: Users, color: '#6d28d9', borderColor: '#8b5cf6', val26: m26, val23: m23, evo: evo(m26, m23), fmt: v => v != null ? Number(v).toLocaleString('es-CL') : null },
+      { key: 'ingresos', label: 'Ingresos netos', Icon: DollarSign, color: '#b45309', borderColor: '#F59E0B', val26: i26, val23: i23, evo: evo(i26, i23), fmt: v => v != null ? `$${Number(v).toLocaleString('es-CL')}` : null },
+    ];
+  }, [apiOfertaSeries, apiDictadosSeries, apiMatriculaSeries, apiIngresosSeries]);
 
   // Deduplicated base: Participantes Únicos (Group 2)
   const uniqueParticipantsData = useMemo(() => {
@@ -469,15 +496,31 @@ export const DashboardEducacionContinua = () => {
     };
   }, [uniqueParticipantsData]);
 
-  const radarMetrics = useMemo(() => {
-    if (apiMatriculaBreakdown?.length > 0) return apiMatriculaBreakdown.map(i => i.label);
-    return [];
-  }, [apiMatriculaBreakdown]);
-
-  const radarSeries = useMemo(() => {
-    if (!apiMatriculaBreakdown?.length) return [];
-    return [{ data: apiMatriculaBreakdown.map(i => Number(i.value ?? 0)), label: 'Matrículas', color: '#1E2875' }];
-  }, [apiMatriculaBreakdown]);
+  const matriculaChartData = useMemo(() => {
+    if (matriculaViewMode === 'total') {
+      const points = (apiMatriculaSeries ?? []).filter(p => {
+        const yr = Number(p.year);
+        return yr >= parseInt(cohorteDesde) && yr <= parseInt(cohorteHasta);
+      });
+      if (!points.length) return { labels: [], series: [] };
+      return {
+        labels: points.map(p => String(p.year)),
+        series: [{ data: points.map(p => Number(p.value)), label: 'Matrículas', color: '#1E2875' }],
+      };
+    }
+    const years = ['2023', '2024', '2025', '2026'].filter(yr => parseInt(yr) >= parseInt(cohorteDesde) && parseInt(yr) <= parseInt(cohorteHasta));
+    const allLabels = [...new Set(years.flatMap(yr => (apiMatriculaByYear[yr] ?? []).map(i => i.label)))];
+    if (!allLabels.length) return { labels: [], series: [] };
+    const yearColors = { '2023': '#93c5fd', '2024': '#60a5fa', '2025': '#3b82f6', '2026': '#1E2875' };
+    return {
+      labels: allLabels,
+      series: years.map(yr => ({
+        data: allLabels.map(lbl => (apiMatriculaByYear[yr] ?? []).find(i => i.label === lbl)?.value ?? 0),
+        label: yr,
+        color: yearColors[yr] || '#1E2875',
+      })),
+    };
+  }, [matriculaViewMode, apiMatriculaSeries, apiMatriculaByYear, cohorteDesde, cohorteHasta]);
 
   const aprobacionProgramasData = useMemo(() => {
     const items = Array.isArray(apiTasaAprobacionBreakdown?.items) ? apiTasaAprobacionBreakdown.items : [];
@@ -492,15 +535,36 @@ export const DashboardEducacionContinua = () => {
     }));
   }, [apiTasaAprobacionBreakdown]);
 
-  // Ingresos generados — datos reales desde API, agrupados dinámicamente
+  // Ingresos generados — gráfico multi-año por criterio seleccionado
+  const ingresosChartData = useMemo(() => {
+    const years = ['2023', '2024', '2025', '2026'].filter(yr => parseInt(yr) >= parseInt(cohorteDesde) && parseInt(yr) <= parseInt(cohorteHasta));
+    const allLabels = [...new Set(years.flatMap(yr => (apiIngresosByYear[yr] ?? []).map(i => i.label)))];
+    if (!allLabels.length) return { labels: [], series: [] };
+    const yearColors = { '2023': '#6ee7b7', '2024': '#34d399', '2025': '#10B981', '2026': '#047857' };
+    return {
+      labels: allLabels,
+      series: years.map(yr => ({
+        data: allLabels.map(lbl => {
+          const item = (apiIngresosByYear[yr] ?? []).find(i => i.label === lbl);
+          return item ? parseFloat((item.value / 1000000).toFixed(1)) : 0;
+        }),
+        label: yr,
+        color: yearColors[yr] || '#10B981',
+        valueFormatter: v => `$${v}M`,
+      })),
+    };
+  }, [apiIngresosByYear, cohorteDesde, cohorteHasta, ingresosViewMode]);
+
+  // Ingresos generados — para modal de detalles (usa año más reciente del rango)
   const ingresosGeneradosData = useMemo(() => {
-    if (!apiIngresosBreakdown?.length) return [];
-    return apiIngresosBreakdown.map(item => ({
+    const latestYear = String(cohorteHasta);
+    const items = apiIngresosByYear[latestYear] ?? [];
+    return items.map(item => ({
       area: item.label ?? 'Sin dato',
       ingresosCLP: Number(item.value ?? 0),
       ingresosM: parseFloat((Number(item.value ?? 0) / 1000000).toFixed(1)),
     }));
-  }, [apiIngresosBreakdown]);
+  }, [apiIngresosByYear, cohorteHasta]);
 
   const totalRevenueCLP = useMemo(() => {
     return ingresosGeneradosData.reduce((acc, curr) => acc + curr.ingresosCLP, 0);
@@ -944,52 +1008,33 @@ export const DashboardEducacionContinua = () => {
           </Box>
         </Box>
 
-        {/* Top Summary Cards (KPIs Bar) */}
+        {/* Top Summary Cards — 4 indicadores clave con evolución 2023→2026 */}
         <div className="kpi-container">
-          <div className="kpi-card" style={{ borderLeft: '4px solid #1E2875' }}>
-            <div className="kpi-header">
-              <span>Matrículas Totales</span>
-              <Users size={16} />
-            </div>
-            <div className="kpi-value">
-              {apiSummary?.matricula_por_programa?.value != null
-                ? Number(apiSummary.matricula_por_programa.value).toLocaleString('es-CL')
-                : apiLoading ? '...' : '—'}
-            </div>
-            <div className="kpi-trend">
-              <span>{apiSummary?.matricula_por_programa?.hasData ? 'Datos reales API' : 'Sin datos disponibles'}</span>
-            </div>
-          </div>
-
-          <div className="kpi-card" style={{ borderLeft: '4px solid #10B981' }}>
-            <div className="kpi-header" style={{ color: '#047857' }}>
-              <span>Ingresos Generados (Neto)</span>
-              <DollarSign size={16} style={{ color: '#10B981' }} />
-            </div>
-            <div className="kpi-value" style={{ color: '#047857' }}>
-              {apiSummary?.ingresos_generados?.value != null
-                ? `$${Number(apiSummary.ingresos_generados.value).toLocaleString('es-CL')}`
-                : apiLoading ? '...' : '—'}
-            </div>
-            <div className="kpi-trend" style={{ color: '#047857' }}>
-              <span>{apiSummary?.ingresos_generados?.hasData ? 'Valores facturados netos reales' : 'Sin datos disponibles'}</span>
-            </div>
-          </div>
-
-          <div className="kpi-card" style={{ borderLeft: '4px solid #F59E0B' }}>
-            <div className="kpi-header" style={{ color: '#b45309' }}>
-              <span>Tasa de Ejecución</span>
-              <RefreshCw size={16} style={{ color: '#F59E0B' }} />
-            </div>
-            <div className="kpi-value" style={{ color: '#b45309' }}>
-              {apiSummary?.tasa_ejecucion?.value != null
-                ? `${apiSummary.tasa_ejecucion.value}%`
-                : apiLoading ? '...' : '—'}
-            </div>
-            <div className="kpi-trend" style={{ color: '#b45309' }}>
-              <span>{apiSummary?.tasa_ejecucion?.hasData ? 'Datos reales API' : 'Sin datos disponibles'}</span>
-            </div>
-          </div>
+          {kpiCardsData.map(card => {
+            const { Icon } = card;
+            const evoPos = card.evo != null && card.evo >= 0;
+            return (
+              <div key={card.key} className="kpi-card" style={{ borderLeft: `4px solid ${card.borderColor}` }}>
+                <div className="kpi-header" style={{ color: card.color }}>
+                  <span>{card.label}</span>
+                  <Icon size={16} style={{ color: card.color }} />
+                </div>
+                <div className="kpi-value" style={{ color: card.color }}>
+                  {card.val26 != null ? card.fmt(card.val26) : apiLoading ? '...' : '—'}
+                </div>
+                <div className="kpi-trend" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {card.val23 != null && (
+                    <span style={{ color: '#64748b' }}>2023: {card.fmt(card.val23)}</span>
+                  )}
+                  {card.evo != null && (
+                    <span style={{ color: evoPos ? '#10B981' : '#ef4444', fontWeight: 700 }}>
+                      {evoPos ? '↑' : '↓'} {Math.abs(card.evo)}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Subheader Period Banner */}
@@ -1138,21 +1183,20 @@ export const DashboardEducacionContinua = () => {
             </div>
 
             <div className="chart-wrapper">
-              {ingresosGeneradosData.length > 0 ? (
+              {ingresosChartData.labels.length > 0 ? (
                 <BarChart
-                  xAxis={[{ 
-                    scaleType: 'band', 
-                    data: ingresosGeneradosData.map(d => d.area)
+                  xAxis={[{
+                    scaleType: 'band',
+                    data: ingresosChartData.labels,
+                    label: ingresosViewMode === 'area' ? 'Área' : (ingresosViewMode === 'tipo' ? 'Tipo' : 'Modalidad'),
+                    tickLabelStyle: { fontSize: 11 }
                   }]}
-                  series={[{ 
-                    data: ingresosGeneradosData.map(d => d.ingresosM),
-                    color: '#10B981',
-                    label: 'Millones CLP'
-                  }]}
-                  margin={{ top: 15, right: 15, bottom: 50, left: 50 }}
+                  series={ingresosChartData.series}
+                  margin={{ top: 15, right: 15, bottom: 80, left: 50 }}
+                  slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                 />
               ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>No hay datos coincidentes con los filtros</div>
+                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
               )}
             </div>
           </div>
@@ -1181,18 +1225,18 @@ export const DashboardEducacionContinua = () => {
             </div>
 
             <div className="chart-wrapper" style={{ height: '390px' }}>
-              {radarSeries.length > 0 ? (
+              {matriculaChartData.labels.length > 0 ? (
                 <BarChart
                   height={370}
                   xAxis={[{
                     scaleType: 'band',
-                    data: radarMetrics,
-                    label: matriculaViewMode === 'area' || matriculaViewMode === 'total' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo'),
+                    data: matriculaChartData.labels,
+                    label: matriculaViewMode === 'total' ? 'Año' : (matriculaViewMode === 'area' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo')),
                     tickLabelStyle: { fontSize: 11 }
                   }]}
-                  series={radarSeries}
+                  series={matriculaChartData.series}
                   margin={{ top: 15, right: 15, bottom: 80, left: 50 }}
-                  slotProps={{ legend: { hidden: true } }}
+                  slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                 />
               ) : (
                 <div style={{ color: '#64748b', fontSize: '13px', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>Sin datos disponibles</div>
@@ -1304,7 +1348,7 @@ export const DashboardEducacionContinua = () => {
             </div>
           </div>
 
-          {/* Histograms for Unique and Recurrent Participants */}
+          {/* Pictograma: Participantes Únicos */}
           <div className="chart-card" style={{ minHeight: '380px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1312,20 +1356,58 @@ export const DashboardEducacionContinua = () => {
                 <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Participantes Únicos</h2>
               </div>
             </div>
-            <div className="chart-wrapper">
+            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
               {uniqueParticipantsAgeDist.length > 0 ? (
-                <BarChart
-                  xAxis={[{ scaleType: 'band', data: uniqueParticipantsAgeDist.map(d => d.range), label: 'Rango de Edad' }]}
-                  series={[{ data: uniqueParticipantsAgeDist.map(d => d.count), color: '#8b5cf6', label: 'Cantidad Personas' }]}
-                  margin={{ top: 20, right: 15, bottom: 40, left: 35 }}
-                  slotProps={{ legend: { hidden: true } }}
-                />
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1, gap: '20px', padding: '12px 0' }}>
+                    {uniqueParticipantsAgeDist.map(d => {
+                      const total = uniqueParticipantsTotal || 1;
+                      const pct = (d.count / total) * 100;
+                      const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
+                      return (
+                        <div key={d.range} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                              {d.range} años
+                            </span>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#8b5cf6' }}>
+                              {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            {Array.from({ length: 10 }).map((_, i) => (
+                              <svg
+                                key={i}
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ color: i < filledIconsCount ? '#8b5cf6' : '#cbd5e1', transition: 'color 0.3s ease' }}
+                              >
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                              </svg>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
+                    Cada figura representa un 10% del total de participantes únicos ({uniqueParticipantsTotal})
+                  </div>
+                </>
               ) : (
                 <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
               )}
             </div>
           </div>
 
+          {/* Pictograma: Frecuencia de Matrículas */}
           <div className="chart-card" style={{ minHeight: '380px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1333,14 +1415,51 @@ export const DashboardEducacionContinua = () => {
                 <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Frecuencia de Matrículas</h2>
               </div>
             </div>
-            <div className="chart-wrapper">
+            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
               {recurrenceFreqDist.length > 0 ? (
-                <BarChart
-                  xAxis={[{ scaleType: 'band', data: recurrenceFreqDist.map(d => d.category), label: 'Año / periodo' }]}
-                  series={[{ data: recurrenceFreqDist.map(d => d.count), color: '#ec4899', label: 'Cantidad Personas' }]}
-                  margin={{ top: 20, right: 15, bottom: 40, left: 35 }}
-                  slotProps={{ legend: { hidden: true } }}
-                />
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', flexGrow: 1, gap: '24px', padding: '20px 0' }}>
+                    {recurrenceFreqDist.map(d => {
+                      const total = recurrenceFreqDist.reduce((sum, x) => sum + x.count, 0) || 1;
+                      const pct = (d.count / total) * 100;
+                      const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
+                      return (
+                        <div key={d.category} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                              Año {d.category}
+                            </span>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#ec4899' }}>
+                              {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            {Array.from({ length: 10 }).map((_, i) => (
+                              <svg
+                                key={i}
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ color: i < filledIconsCount ? '#ec4899' : '#cbd5e1', transition: 'color 0.3s ease' }}
+                              >
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                                <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
+                              </svg>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
+                    Cada figura representa un 10% del total de personas con recurrencia formativa
+                  </div>
+                </>
               ) : (
                 <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
               )}
@@ -1707,15 +1826,15 @@ export const DashboardEducacionContinua = () => {
                 <table className="details-table">
                   <thead>
                     <tr>
-                      <th>Métrica / Dimensión</th>
-                      {radarSeries.map(s => <th key={s.label}>{s.label}</th>)}
+                      <th>{matriculaViewMode === 'total' ? 'Año' : (matriculaViewMode === 'area' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo'))}</th>
+                      {matriculaChartData.series.map(s => <th key={s.label}>{s.label}</th>)}
                     </tr>
                   </thead>
                   <tbody>
-                    {radarMetrics.map((metric, idx) => (
-                      <tr key={metric}>
-                        <td style={{ fontWeight: 600 }}>{metric}</td>
-                        {radarSeries.map(s => <td key={s.label}>{s.data[idx] || 0}</td>)}
+                    {matriculaChartData.labels.map((lbl, idx) => (
+                      <tr key={lbl}>
+                        <td style={{ fontWeight: 600 }}>{lbl}</td>
+                        {matriculaChartData.series.map(s => <td key={s.label}>{Number(s.data[idx] || 0).toLocaleString('es-CL')}</td>)}
                       </tr>
                     ))}
                   </tbody>
