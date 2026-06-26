@@ -482,7 +482,7 @@ function App() {
             <Route 
               path="/dashboard-crud" 
               element={
-                <ProtectedRoute allowedRoles={['Rector', 'Administrador', 'Director de Administración', 'Analista de Calidad']}>
+                <ProtectedRoute allowedRoles={['Rector', 'Administrador', 'Director de Administración', 'Analista de Calidad', 'Vicerrectoria de Calidad']}>
                   <Dashboard />
                 </ProtectedRoute>
               } 
@@ -521,7 +521,7 @@ function App() {
             <Route 
               path="/auditoria" 
               element={
-                <ProtectedRoute allowedRoles={['Rector', 'Administrador', 'Director de Administración', 'Analista de Calidad']}>
+                <ProtectedRoute allowedRoles={['Rector', 'Administrador', 'Director de Administración', 'Analista de Calidad', 'Vicerrectoria de Calidad']}>
                   <Auditoria />
                 </ProtectedRoute>
               } 

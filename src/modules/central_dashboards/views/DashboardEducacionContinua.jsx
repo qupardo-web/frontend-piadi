@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './DashboardEducacionContinua.styles';
-import { getDashboardSummary, getIndicatorSeries, getIndicatorBreakdown } from '../../../services/piadiApi';
+import { getDashboardSummary, getIndicatorSeries, getIndicatorBreakdown, getDepartmentFilters } from '../../../services/piadiApi';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
@@ -68,8 +68,7 @@ import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 
 
 
-const COHORTES_LIST = ['2023', '2024', '2025', '2026'];
-const SEMESTRES_LIST = ['1° Semestre', '2° Semestre'];
+const SEMESTRES_LIST = ['Primer semestre', 'Segundo semestre'];
 const SEXO_LIST = ['Femenino', 'Masculino', 'No binario', 'Prefiere no responder'];
 const MESES_LIST = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const TIPOS_LIST = ['Curso', 'Diplomado', 'Seminario', 'Postítulo'];
@@ -170,6 +169,35 @@ export const DashboardEducacionContinua = () => {
   const [apiIngresosByYear, setApiIngresosByYear] = useState({});
   const [apiMatriculaByYear, setApiMatriculaByYear] = useState({});
 
+  // Filtros dinámicos cargados desde el backend
+  const [dynamicAreas, setDynamicAreas] = useState([]);
+  const [dynamicTipos, setDynamicTipos] = useState([]);
+  const [dynamicModalidades, setDynamicModalidades] = useState([]);
+  const [dynamicSemestres, setDynamicSemestres] = useState([]);
+
+  // Fetch de los filtros dinámicos basados en la metadata real de las plantillas/cargas
+  useEffect(() => {
+    getDepartmentFilters('educacion_continua')
+      .then((res) => {
+        if (res?.success && res.data?.filters) {
+          const f = res.data.filters;
+          if (Array.isArray(f.areas)) {
+            setDynamicAreas(f.areas);
+          }
+          if (Array.isArray(f.tipos)) {
+            setDynamicTipos(f.tipos);
+          }
+          if (Array.isArray(f.modalidades)) {
+            setDynamicModalidades(f.modalidades);
+          }
+          if (Array.isArray(f.semesters)) {
+            setDynamicSemestres(f.semesters);
+          }
+        }
+      })
+      .catch((err) => console.error('Error cargando filtros del departamento:', err));
+  }, []);
+
   const apiParams = useMemo(() => {
     const params = { department: 'educacion_continua' };
     const desde = parseInt(cohorteDesde);
@@ -183,13 +211,41 @@ export const DashboardEducacionContinua = () => {
     if (areaSeleccionada.length > 0) params.area = areaSeleccionada.join(',');
     if (tipoSeleccionado.length > 0) params.tipo = tipoSeleccionado.join(',');
     if (modalidadSeleccionada.length > 0) params.modalidad = modalidadSeleccionada.join(',');
+    if (semestresSeleccionados.length > 0) params.semester = semestresSeleccionados.join(',');
+    
+    // Convertir nombres de mes a números del 1 al 12
+    const startIdx = MESES_LIST.indexOf(mesDesde) + 1;
+    const endIdx = MESES_LIST.indexOf(mesHasta) + 1;
+    if (startIdx > 0 && endIdx > 0) {
+      const monthRange = [];
+      for (let i = startIdx; i <= endIdx; i++) {
+        monthRange.push(i);
+      }
+      params.startMonth = monthRange.join(',');
+    }
     return params;
-  }, [cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada]);
+  }, [cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada, semestresSeleccionados, mesDesde, mesHasta]);
 
   useEffect(() => {
     setApiLoading(true);
-    const seriesParams = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta };
-    const breakdownParams = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta };
+    const extraParams = {};
+    if (areaSeleccionada.length > 0) extraParams.area = areaSeleccionada.join(',');
+    if (tipoSeleccionado.length > 0) extraParams.tipo = tipoSeleccionado.join(',');
+    if (modalidadSeleccionada.length > 0) extraParams.modalidad = modalidadSeleccionada.join(',');
+    if (semestresSeleccionados.length > 0) extraParams.semester = semestresSeleccionados.join(',');
+
+    const startIdx = MESES_LIST.indexOf(mesDesde) + 1;
+    const endIdx = MESES_LIST.indexOf(mesHasta) + 1;
+    if (startIdx > 0 && endIdx > 0) {
+      const monthRange = [];
+      for (let i = startIdx; i <= endIdx; i++) {
+        monthRange.push(i);
+      }
+      extraParams.startMonth = monthRange.join(',');
+    }
+
+    const seriesParams = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta, ...extraParams };
+    const breakdownParams = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta, ...extraParams };
 
     Promise.all([
       getDashboardSummary(apiParams).catch(() => null),
@@ -225,7 +281,7 @@ export const DashboardEducacionContinua = () => {
       if (matriculaSeries?.success) setApiMatriculaSeries(matriculaSeries.data?.points?.length > 0 ? matriculaSeries.data.points : null);
       if (ingresosSeries?.success) setApiIngresosSeries(ingresosSeries.data?.points?.length > 0 ? ingresosSeries.data.points : null);
     }).finally(() => setApiLoading(false));
-  }, [apiParams, cohorteDesde, cohorteHasta]);
+  }, [apiParams, cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada, semestresSeleccionados, mesDesde, mesHasta]);
 
   // Oferta breakdown por año según modo seleccionado (multi-año para ver evolución)
   useEffect(() => {
@@ -639,7 +695,8 @@ export const DashboardEducacionContinua = () => {
                 user?.role === 'Rector' || 
                 user?.role === 'Administrador' || 
                 user?.role === 'Director de Administración' ||
-                user?.role === 'Analista de Calidad'
+                user?.role === 'Analista de Calidad' ||
+                user?.role === 'Vicerrectoria de Calidad'
               );
             }
             return true;
@@ -1063,9 +1120,6 @@ export const DashboardEducacionContinua = () => {
                   <button className={`btn-toggle ${ofertaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setOfertaViewMode('tipo')}>Tipo</button>
                   <button className={`btn-toggle ${ofertaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setOfertaViewMode('modalidad')}>Modalidad</button>
                 </div>
-                <button className="btn-details">
-                  <Maximize2 size={12} />
-                </button>
               </div>
             </div>
             
@@ -1100,10 +1154,6 @@ export const DashboardEducacionContinua = () => {
                 <CheckCircle size={16} style={{ color: '#10B981' }} />
                 <h2 className="chart-title" style={{ margin: 0 }}>Cursos efectivamente dictados</h2>
               </div>
-              <button className="btn-details" onClick={() => setActiveModal('dictados')}>
-                <Maximize2 size={12} />
-                <span>Detalles</span>
-              </button>
             </div>
             
             <div className="chart-wrapper">
@@ -1136,10 +1186,6 @@ export const DashboardEducacionContinua = () => {
                 <Percent size={16} style={{ color: '#1E2875' }} />
                 <h2 className="chart-title" style={{ margin: 0 }}>Tasa de ejecución (%)</h2>
               </div>
-              <button className="btn-details" onClick={() => setActiveModal('tasa')}>
-                <Maximize2 size={12} />
-                <span>Detalles</span>
-              </button>
             </div>
             
             <div className="chart-wrapper">
@@ -1176,9 +1222,6 @@ export const DashboardEducacionContinua = () => {
                   <button className={`btn-toggle ${ingresosViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setIngresosViewMode('tipo')}>Tipo</button>
                   <button className={`btn-toggle ${ingresosViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setIngresosViewMode('modalidad')}>Modalidad</button>
                 </div>
-                <button className="btn-details">
-                  <Maximize2 size={12} />
-                </button>
               </div>
             </div>
 
@@ -1218,10 +1261,6 @@ export const DashboardEducacionContinua = () => {
                   </div>
                 </div>
               </div>
-              <button className="btn-details">
-                <Maximize2 size={12} />
-                <span>Detalles</span>
-              </button>
             </div>
 
             <div className="chart-wrapper" style={{ height: '390px' }}>
@@ -1251,10 +1290,6 @@ export const DashboardEducacionContinua = () => {
                 <Award size={16} style={{ color: '#a855f7' }} />
                 <h2 className="chart-title" style={{ margin: 0 }}>Tasa de aprobación</h2>
               </div>
-              <button className="btn-details">
-                <Maximize2 size={12} />
-                <span>Detalles</span>
-              </button>
             </div>
 
             <div className="chart-wrapper" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', padding: '8px' }}>
@@ -1315,10 +1350,6 @@ export const DashboardEducacionContinua = () => {
                   <button className={`btn-toggle ${perfilViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setPerfilViewMode('tipo')}>Tipo</button>
                 </div>
               </div>
-              <button className="btn-details" style={{ alignSelf: 'flex-start' }}>
-                <Maximize2 size={12} />
-                <span>Detalles</span>
-              </button>
             </div>
 
             <div className="chart-wrapper" style={{ marginTop: '8px' }}>
@@ -1537,7 +1568,7 @@ export const DashboardEducacionContinua = () => {
                 renderValue={(selected) => selected.join(', ')}
                 sx={styles.selectInputStyle}
               >
-                {SEMESTRES_LIST.map((name) => (
+                {(dynamicSemestres.length > 0 ? dynamicSemestres : SEMESTRES_LIST).map((name) => (
                   <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
                     <Checkbox checked={semestresSeleccionados.indexOf(name) > -1} sx={styles.checkboxStyle} />
                     <ListItemText primary={name} />
@@ -1617,7 +1648,7 @@ export const DashboardEducacionContinua = () => {
                 renderValue={(selected) => selected.join(', ')}
                 sx={styles.selectInputStyle}
               >
-                {TIPOS_LIST.map((name) => (
+                {(dynamicTipos.length > 0 ? dynamicTipos : TIPOS_LIST).map((name) => (
                   <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
                     <Checkbox checked={tipoSeleccionado.indexOf(name) > -1} sx={styles.checkboxStyle} />
                     <ListItemText primary={name} />
@@ -1646,7 +1677,7 @@ export const DashboardEducacionContinua = () => {
                 renderValue={(selected) => selected.join(', ')}
                 sx={styles.selectInputStyle}
               >
-                {MODALIDADES_LIST.map((name) => (
+                {(dynamicModalidades.length > 0 ? dynamicModalidades : MODALIDADES_LIST).map((name) => (
                   <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
                     <Checkbox checked={modalidadSeleccionada.indexOf(name) > -1} sx={styles.checkboxStyle} />
                     <ListItemText primary={name} />
@@ -1675,7 +1706,7 @@ export const DashboardEducacionContinua = () => {
                 renderValue={(selected) => selected.join(', ')}
                 sx={styles.selectInputStyle}
               >
-                {AREAS_LIST.map((name) => (
+                {(dynamicAreas.length > 0 ? dynamicAreas : AREAS_LIST).map((name) => (
                   <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
                     <Checkbox checked={areaSeleccionada.indexOf(name) > -1} sx={styles.checkboxStyle} />
                     <ListItemText primary={name} />
@@ -1699,206 +1730,6 @@ export const DashboardEducacionContinua = () => {
           </Button>
         </Box>
       </Box>
-
-      {/* DETAILS MODALS OVERLAY */}
-      {activeModal && (
-        <div className="modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setActiveModal(null)}>
-              <X size={20} />
-            </button>
-
-            {activeModal === 'programas' && (
-              <>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', marginBottom: '12px' }}>Detalles: Oferta Programada</h3>
-                <table className="details-table">
-                  <thead>
-                    <tr>
-                      <th>Año Cohorte</th>
-                      <th>Área / Programa</th>
-                      <th>Cursos Planificados</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredProgramasData.length > 0 ? filteredProgramasData.map(row => (
-                      <tr key={row.cohorte}>
-                        <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
-                        <td>Todas las áreas activas</td>
-                        <td>{row.total.toLocaleString()}</td>
-                      </tr>
-                    )) : (
-                      <tr><td colSpan={3} style={{ color: '#64748b', padding: '12px' }}>Sin datos disponibles</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </>
-            )}
-
-            {activeModal === 'dictados' && (
-              <>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', marginBottom: '12px' }}>Detalles: Cursos Efectivamente Dictados</h3>
-                <table className="details-table">
-                  <thead>
-                    <tr>
-                      <th>Año</th>
-                      <th>Planificados</th>
-                      <th>Efectivamente Dictados</th>
-                      <th>Tasa de Ejecución</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {effectiveDictadosSeries && effectiveDictadosSeries.length > 0 ? (
-                      effectiveDictadosSeries.map(row => (
-                        <tr key={row.cohorte}>
-                          <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
-                          <td>{row.planificados}</td>
-                          <td>{row.dictados}</td>
-                          <td style={{ fontWeight: 700, color: '#10B981' }}>{row.tasa}%</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4} style={{ color: '#64748b', padding: '12px', textAlign: 'center' }}>Sin datos disponibles</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </>
-            )}
-
-            {activeModal === 'tasa' && (
-              <>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', marginBottom: '12px' }}>Detalles: Tasa de Ejecución (%)</h3>
-                <table className="details-table">
-                  <thead>
-                    <tr>
-                      <th>Año</th>
-                      <th>Tasa de Ejecución</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0 ? (
-                      effectiveEjecucionSeries.map(row => (
-                        <tr key={row.cohorte}>
-                          <td style={{ fontWeight: 600 }}>{row.cohorte}</td>
-                          <td style={{ fontWeight: 700, color: '#1E2875' }}>{row.tasa}%</td>
-                          <td>{row.tasa >= 80 ? 'Excelente (>=80%)' : 'En revisión'}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={3} style={{ color: '#64748b', padding: '12px', textAlign: 'center' }}>Sin datos disponibles</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </>
-            )}
-
-            {activeModal === 'ingresos' && (
-              <>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', marginBottom: '12px' }}>Detalles: Ingresos Generados</h3>
-                <table className="details-table">
-                  <thead>
-                    <tr>
-                      <th>Categoría</th>
-                      <th>Ingresos ($M CLP)</th>
-                      <th>Total CLP</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ingresosGeneradosData.map(row => (
-                      <tr key={row.area}>
-                        <td style={{ fontWeight: 600 }}>{row.area}</td>
-                        <td style={{ fontWeight: 700, color: '#10B981' }}>${row.ingresosM}M CLP</td>
-                        <td>${Number(row.ingresosCLP).toLocaleString('es-CL')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            )}
-
-            {activeModal === 'matriculaPrograma' && (
-              <>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', marginBottom: '12px' }}>Detalles: Matrículas por Programa</h3>
-                <table className="details-table">
-                  <thead>
-                    <tr>
-                      <th>{matriculaViewMode === 'total' ? 'Año' : (matriculaViewMode === 'area' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo'))}</th>
-                      {matriculaChartData.series.map(s => <th key={s.label}>{s.label}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {matriculaChartData.labels.map((lbl, idx) => (
-                      <tr key={lbl}>
-                        <td style={{ fontWeight: 600 }}>{lbl}</td>
-                        {matriculaChartData.series.map(s => <td key={s.label}>{Number(s.data[idx] || 0).toLocaleString('es-CL')}</td>)}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            )}
-
-            {activeModal === 'aprobacion' && (
-              <>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', marginBottom: '12px' }}>Detalles: Tasa de Aprobación</h3>
-                <table className="details-table">
-                  <thead>
-                    <tr>
-                      <th>Programa / Área</th>
-                      <th>Tasa Aprobación</th>
-                      <th>Promedio Histórico</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {aprobacionProgramasData.length > 0 ? aprobacionProgramasData.map(row => (
-                      <tr key={row.area}>
-                        <td style={{ fontWeight: 600 }}>{row.area}</td>
-                        <td style={{ fontWeight: 700, color: '#a855f7' }}>{row.tasa}%</td>
-                        <td>{row.promedioHistorico}%</td>
-                      </tr>
-                    )) : (
-                      <tr><td colSpan={3} style={{ color: '#64748b', padding: '12px' }}>Sin datos disponibles</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </>
-            )}
-
-            {activeModal === 'perfil' && (
-              <>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', marginBottom: '12px' }}>Detalles: Perfil del Participante</h3>
-                <table className="details-table">
-                  <thead>
-                    <tr>
-                      <th>Segmento / Categoría</th>
-                      <th>Porcentaje Estimado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {perfilParticipantesData ? perfilParticipantesData[perfilViewMode].map(row => {
-                      const total = perfilParticipantesData[perfilViewMode].reduce((acc, curr) => acc + curr.value, 0);
-                      const pct = total > 0 ? ((row.value / total) * 100).toFixed(1) : 0;
-                      return (
-                        <tr key={row.label}>
-                          <td style={{ fontWeight: 600 }}>{row.label}</td>
-                          <td>{pct}% ({row.value.toLocaleString()} alumnos)</td>
-                        </tr>
-                      );
-                    }) : (
-                      <tr><td colSpan={2} style={{ color: '#64748b', padding: '12px' }}>Sin datos disponibles</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </>
-            )}
-
-          </div>
-        </div>
-      )}
 
       </Box>
     </ThemeProvider>
