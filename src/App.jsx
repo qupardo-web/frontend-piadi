@@ -198,9 +198,6 @@ function Dashboard() {
                 <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
                   MUI Decoupled App
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Sesión activa: {user?.username} ({user?.role})
-                </Typography>
               </Box>
             </Box>
 
