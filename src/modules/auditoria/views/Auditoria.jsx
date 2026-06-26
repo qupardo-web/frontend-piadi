@@ -331,7 +331,8 @@ export const Auditoria = () => {
                 user?.role === 'Rector' || 
                 user?.role === 'Administrador' || 
                 user?.role === 'Director de Administración' ||
-                user?.role === 'Analista de Calidad'
+                user?.role === 'Analista de Calidad' ||
+                user?.role === 'Vicerrectoria de Calidad'
               );
             }
             return true;
