@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './DashboardEducacionContinua.styles';
-import { getDashboardSummary, getIndicatorSeries } from '../../../services/piadiApi';
+import { getDashboardSummary, getIndicatorSeries, getIndicatorBreakdown } from '../../../services/piadiApi';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
@@ -66,68 +66,7 @@ import { PieChart } from '@mui/x-charts/PieChart';
 import { RadarChart } from '@mui/x-charts/RadarChart';
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 
-// RAW DATA FOR CALCULATIONS (Years 2023 - 2026)
-const COHORTE_DATA_RAW = [
-  { cohorte: '2023', matriculas: 2280 },
-  { cohorte: '2024', matriculas: 2420 },
-  { cohorte: '2025', matriculas: 2550 },
-  { cohorte: '2026', matriculas: 1920 }
-];
 
-const RETENCION_DATA_RAW = [
-  { periodo: '2023-1', retencion: 87.9 },
-  { periodo: '2023-2', retencion: 87.3 },
-  { periodo: '2024-1', retencion: 88.8 },
-  { periodo: '2024-2', retencion: 89.2 },
-  { periodo: '2025-1', retencion: 89.9 },
-  { periodo: '2025-2', retencion: 90.3 },
-  { periodo: '2026-1', retencion: 90.8 },
-  { periodo: '2026-2', retencion: 91.5 }
-];
-
-const PROGRAMAS_DATA_RAW = [
-  { cohorte: '2023', Auditoria: 18, Contabilidad: 20, Finanzas: 16, IA: 18, Laboral: 12, Tecnologia: 24, Tributaria: 22 },
-  { cohorte: '2024', Auditoria: 20, Contabilidad: 22, Finanzas: 18, IA: 25, Laboral: 14, Tecnologia: 28, Tributaria: 25 },
-  { cohorte: '2025', Auditoria: 22, Contabilidad: 25, Finanzas: 20, IA: 32, Laboral: 15, Tecnologia: 35, Tributaria: 28 },
-  { cohorte: '2026', Auditoria: 17, Contabilidad: 19, Finanzas: 15, IA: 24, Laboral: 11, Tecnologia: 26, Tributaria: 21 }
-];
-
-const NOMINAL_REGISTRATIONS = [
-  { rut: '18.421.954-K', nombre: 'Eduardo Valenzuela', area: 'Tecnología', programa: 'Diplomado en IA Aplicada', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1800000, edad: 29, region: 'Valparaíso', sector: 'Privado', genero: 'Masculino', cargo: 'Ingeniero de Datos', escolaridad: 'Universitario' },
-  { rut: '15.682.411-9', nombre: 'María José Rojas', area: 'Contabilidad', programa: 'Curso Avanzado NIIF 16', aprobacion: 'Aprobado', pago: 'Particular (Tarjeta)', monto: 950000, edad: 42, region: 'Metropolitana', sector: 'Privado', genero: 'Femenino', cargo: 'Contador Auditor', escolaridad: 'Postgrado' },
-  { rut: '18.421.954-K', nombre: 'Eduardo Valenzuela', area: 'Tecnología', programa: 'Taller de Python', aprobacion: 'Aprobado', pago: 'Particular (Transf.)', monto: 1500000, edad: 29, region: 'Valparaíso', sector: 'Privado', genero: 'Masculino', cargo: 'Ingeniero de Datos', escolaridad: 'Universitario' },
-  { rut: '12.873.990-2', nombre: 'Carlos Guzmán', area: 'Auditoría', programa: 'Diplomado en Auditoría Interna', aprobacion: 'Aprobado', pago: 'Beca Institucional', monto: 1200000, edad: 54, region: 'Biobío', sector: 'Público', genero: 'Masculino', cargo: 'Auditor Interno Jefatura', escolaridad: 'Postgrado' },
-  { rut: '19.012.334-5', nombre: 'Camila Sepúlveda', area: 'Tecnología', programa: 'Diplomado en IA Aplicada', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1800000, edad: 24, region: 'Metropolitana', sector: 'Privado', genero: 'Femenino', cargo: 'Analista de Business Intelligence', escolaridad: 'Universitario' },
-  { rut: '17.345.678-9', nombre: 'Roberto Muñoz', area: 'Tributación', programa: 'Reforma Tributaria 2026', aprobacion: 'Reprobado', pago: 'Particular (Tarjeta)', monto: 1100000, edad: 36, region: 'Metropolitana', sector: 'Independiente', genero: 'Masculino', cargo: 'Asesor Tributario', escolaridad: 'Universitario' },
-  { rut: '15.682.411-9', nombre: 'María José Rojas', area: 'Finanzas', programa: 'Diplomado en Finanzas', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1400000, edad: 42, region: 'Metropolitana', sector: 'Privado', genero: 'Femenino', cargo: 'Contador Auditor', escolaridad: 'Postgrado' },
-  { rut: '11.234.567-8', nombre: 'Ana María Silva', area: 'Gestión', programa: 'Taller de Legislación Laboral', aprobacion: 'Aprobado', pago: 'Particular (Tarjeta)', monto: 850000, edad: 58, region: 'Valparaíso', sector: 'Academia', genero: 'Femenino', cargo: 'Docente de Leyes', escolaridad: 'Postgrado' },
-  { rut: '20.123.456-7', nombre: 'Ignacio Fuentes', area: 'Tecnología', programa: 'Curso Fullstack Web Dev', aprobacion: 'Aprobado', pago: 'Particular (Tarjeta)', monto: 1500000, edad: 22, region: 'Metropolitana', sector: 'Academia', genero: 'Masculino', cargo: 'Estudiante de TI', escolaridad: 'Técnico Profesional' },
-  { rut: '16.789.012-3', nombre: 'Francisca Oyarzún', area: 'Tributación', programa: 'Reforma Tributaria 2026', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1100000, edad: 34, region: 'Biobío', sector: 'Público', genero: 'Femenino', cargo: 'Analista de Impuestos', escolaridad: 'Universitario' },
-  { rut: '17.345.678-9', nombre: 'Roberto Muñoz', area: 'Finanzas', programa: 'Valoración de Empresas', aprobacion: 'Aprobado', pago: 'Particular (Transf.)', monto: 1400000, edad: 36, region: 'Metropolitana', sector: 'Independiente', genero: 'Masculino', cargo: 'Asesor Tributario', escolaridad: 'Universitario' },
-  { rut: '14.987.654-3', nombre: 'Gonzalo Pardo', area: 'Contabilidad', programa: 'Curso Avanzado NIIF 16', aprobacion: 'Aprobado', pago: 'Sence (Empresa)', monto: 950000, edad: 46, region: 'Metropolitana', sector: 'Privado', genero: 'Masculino', cargo: 'Subgerente de Contabilidad', escolaridad: 'Postgrado' },
-  { rut: '14.987.654-3', nombre: 'Gonzalo Pardo', area: 'Finanzas', programa: 'Diplomado en Finanzas', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1400000, edad: 46, region: 'Metropolitana', sector: 'Privado', genero: 'Masculino', cargo: 'Subgerente de Contabilidad', escolaridad: 'Postgrado' },
-  { rut: '18.112.233-4', nombre: 'Valeria Toledo', area: 'Gestión', programa: 'Taller de Legislación Laboral', aprobacion: 'Aprobado', pago: 'Beca Parcial', monto: 850000, edad: 31, region: 'Araucanía', sector: 'Privado', genero: 'Femenino', cargo: 'Generalista de RRHH', escolaridad: 'Universitario' },
-  { rut: '18.112.233-4', nombre: 'Valeria Toledo', area: 'Tecnología', programa: 'Diplomado en IA Aplicada', aprobacion: 'Aprobado', pago: 'Sence (Empresa)', monto: 1800000, edad: 31, region: 'Araucanía', sector: 'Privado', genero: 'Femenino', cargo: 'Generalista de RRHH', escolaridad: 'Universitario' },
-  { rut: '13.445.556-7', nombre: 'Daniela Cáceres', area: 'Auditoría', programa: 'Diplomado en Auditoría Interna', aprobacion: 'Reprobado', pago: 'Particular (Tarjeta)', monto: 1200000, edad: 51, region: 'Metropolitana', sector: 'Privado', genero: 'Femenino', cargo: 'Contralor Corporativo', escolaridad: 'Postgrado' },
-  { rut: '10.556.778-9', nombre: 'Andrés Benavente', area: 'Tributación', programa: 'Reforma Tributaria 2026', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1100000, edad: 61, region: 'Coquimbo', sector: 'Público', genero: 'Masculino', cargo: 'Fiscalizador SII', escolaridad: 'Postgrado' },
-  { rut: '10.556.778-9', nombre: 'Andrés Benavente', area: 'Auditoría', programa: 'Diplomado en Auditoría Interna', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1200000, edad: 61, region: 'Coquimbo', sector: 'Público', genero: 'Masculino', cargo: 'Fiscalizador SII', escolaridad: 'Postgrado' },
-  { rut: '16.122.344-5', nombre: 'Patricio Soto', area: 'Tecnología', programa: 'Curso Fullstack Web Dev', aprobacion: 'Aprobado', pago: 'Particular (Tarjeta)', monto: 1500000, edad: 38, region: 'Metropolitana', sector: 'Privado', genero: 'Masculino', cargo: 'Jefe de Proyectos TI', escolaridad: 'Universitario' },
-  { rut: '15.990.887-2', nombre: 'Claudia Vargas', area: 'Contabilidad', programa: 'Curso Avanzado NIIF 16', aprobacion: 'Aprobado', pago: 'Sence (Empresa)', monto: 950000, edad: 44, region: 'Antofagasta', sector: 'Privado', genero: 'Femenino', cargo: 'Contadora Principal Minera', escolaridad: 'Técnico Profesional' },
-  { rut: '15.990.887-2', nombre: 'Claudia Vargas', area: 'Tributación', programa: 'Reforma Tributaria 2026', aprobacion: 'Aprobado', pago: 'Sence (Empresa)', monto: 1100000, edad: 44, region: 'Antofagasta', sector: 'Privado', genero: 'Femenino', cargo: 'Contadora Principal Minera', escolaridad: 'Técnico Profesional' },
-  { rut: '19.445.667-K', nombre: 'Martín Silva', area: 'Tecnología', programa: 'Taller de Python', aprobacion: 'Aprobado', pago: 'Beca 100%', monto: 1500000, edad: 25, region: 'Valparaíso', sector: 'Academia', genero: 'Masculino', cargo: 'Ayudante de Investigación', escolaridad: 'Universitario' },
-  { rut: '12.334.445-6', nombre: 'Mónica Gidi', area: 'Finanzas', programa: 'Valoración de Empresas', aprobacion: 'Aprobado', pago: 'Convenio Empresa', monto: 1400000, edad: 55, region: 'Metropolitana', sector: 'Privado', genero: 'Femenino', cargo: 'Directora de Finanzas', escolaridad: 'Postgrado' },
-  { rut: '17.889.001-2', nombre: 'Álvaro Espinoza', area: 'Tecnología', programa: 'Diplomado en IA Aplicada', aprobacion: 'Aprobado', pago: 'Particular (Transf.)', monto: 1800000, edad: 33, region: 'Metropolitana', sector: 'Privado', genero: 'Masculino', cargo: 'Consultor TI Sénior', escolaridad: 'Postgrado' },
-  { rut: '17.889.001-2', nombre: 'Álvaro Espinoza', area: 'Tecnología', programa: 'Taller de Python', aprobacion: 'Aprobado', pago: 'Particular (Tarjeta)', monto: 1500000, edad: 33, region: 'Metropolitana', sector: 'Privado', genero: 'Masculino', cargo: 'Consultor TI Sénior', escolaridad: 'Postgrado' }
-];
-
-const PROGRAM_PRICING = {
-  'Auditoría': { valorLista: 1500000, descuento: 0.20, neto: 1200000 },
-  'Contabilidad': { valorLista: 1187500, descuento: 0.20, neto: 950000 },
-  'Finanzas': { valorLista: 1750000, descuento: 0.20, neto: 1400000 },
-  'Tecnología': { valorLista: 2250000, descuento: 0.20, neto: 1800000 }, 
-  'Gestión': { valorLista: 1062500, descuento: 0.20, neto: 850000 },
-  'Tributación': { valorLista: 1375000, descuento: 0.20, neto: 1100000 }
-};
 
 const COHORTES_LIST = ['2023', '2024', '2025', '2026'];
 const SEMESTRES_LIST = ['1° Semestre', '2° Semestre'];
@@ -215,6 +154,16 @@ export const DashboardEducacionContinua = () => {
   const [apiOfertaSeries, setApiOfertaSeries] = useState(null);
   const [apiDictadosSeries, setApiDictadosSeries] = useState(null);
   const [apiEjecucionSeries, setApiEjecucionSeries] = useState(null);
+  const [apiOfertaBreakdown, setApiOfertaBreakdown] = useState(null);
+  const [apiTasaAprobacionBreakdown, setApiTasaAprobacionBreakdown] = useState(null);
+  const [apiPerfilBreakdown, setApiPerfilBreakdown] = useState(null);
+  const [apiParticipantesSeries, setApiParticipantesSeries] = useState(null);
+  const [apiParticipantesBreakdown, setApiParticipantesBreakdown] = useState(null);
+  const [apiRecurrenciaSeries, setApiRecurrenciaSeries] = useState(null);
+  const [apiIngresosBreakdown, setApiIngresosBreakdown] = useState(null);
+  const [apiMatriculaBreakdown, setApiMatriculaBreakdown] = useState(null);
+  const [apiRecurrenciaBreakdown, setApiRecurrenciaBreakdown] = useState(null);
+  const [apiPerfilMap, setApiPerfilMap] = useState({});
 
   const apiParams = useMemo(() => {
     const params = { department: 'educacion_continua' };
@@ -235,14 +184,20 @@ export const DashboardEducacionContinua = () => {
   useEffect(() => {
     setApiLoading(true);
     const seriesParams = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta };
+    const breakdownParams = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta };
+
     Promise.all([
       getDashboardSummary(apiParams).catch(() => null),
       getIndicatorSeries('oferta_programada', seriesParams).catch(() => null),
       getIndicatorSeries('cursos_dictados', seriesParams).catch(() => null),
       getIndicatorSeries('tasa_ejecucion', seriesParams).catch(() => null),
-    ]).then(([summary, oferta, dictados, ejecucion]) => {
+      getIndicatorBreakdown('tasa_aprobacion', { ...breakdownParams, groupBy: 'area' }).catch(() => null),
+      getIndicatorSeries('participantes_unicos', seriesParams).catch(() => null),
+      getIndicatorBreakdown('participantes_unicos', { ...breakdownParams, groupBy: 'rangoEdad' }).catch(() => null),
+      getIndicatorBreakdown('recurrencia_formativa', { ...breakdownParams, groupBy: 'year' }).catch(() => null),
+      getIndicatorBreakdown('matricula_por_programa', { ...breakdownParams, groupBy: 'area' }).catch(() => null),
+    ]).then(([summary, oferta, dictados, ejecucion, aprobacionBreakdown, participantesSeries, participantesBreakdown, recurrenciaBreakdown, matriculaBreakdown]) => {
       if (summary?.success && summary.data) {
-        // Formato real: data.departments[0].cards[{ indicatorKey, value, hasData }]
         const deptData = summary.data?.departments?.find(d => d.departmentId === 'educacion_continua');
         const cards = deptData?.cards ?? [];
         if (cards.some(c => c.hasData)) {
@@ -251,12 +206,75 @@ export const DashboardEducacionContinua = () => {
           setApiSummary(map);
         }
       }
-      // Serie usa data.points (no data.series)
+
       if (oferta?.success) setApiOfertaSeries(oferta.data?.points?.length > 0 ? oferta.data.points : null);
       if (dictados?.success) setApiDictadosSeries(dictados.data?.points?.length > 0 ? dictados.data.points : null);
       if (ejecucion?.success) setApiEjecucionSeries(ejecucion.data?.points?.length > 0 ? ejecucion.data.points : null);
+      if (aprobacionBreakdown?.success && aprobacionBreakdown.data?.items?.length) setApiTasaAprobacionBreakdown(aprobacionBreakdown.data);
+      if (participantesSeries?.success) setApiParticipantesSeries(participantesSeries.data?.points?.length > 0 ? participantesSeries.data.points : null);
+      if (participantesBreakdown?.success && participantesBreakdown.data?.items?.length) setApiParticipantesBreakdown(participantesBreakdown.data);
+      if (recurrenciaBreakdown?.success && recurrenciaBreakdown.data?.items?.length) setApiRecurrenciaBreakdown(recurrenciaBreakdown.data.items);
+      if (matriculaBreakdown?.success && matriculaBreakdown.data?.items?.length) setApiMatriculaBreakdown(matriculaBreakdown.data.items);
     }).finally(() => setApiLoading(false));
   }, [apiParams, cohorteDesde, cohorteHasta]);
+
+  // Oferta breakdown dinámico según modo seleccionado
+  useEffect(() => {
+    if (ofertaViewMode === 'total') {
+      setApiOfertaBreakdown(null);
+      return;
+    }
+    const params = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta, groupBy: ofertaViewMode };
+    if (areaSeleccionada.length) params.area = areaSeleccionada.join(',');
+    if (tipoSeleccionado.length) params.tipo = tipoSeleccionado.join(',');
+    if (modalidadSeleccionada.length) params.modalidad = modalidadSeleccionada.join(',');
+    getIndicatorBreakdown('oferta_programada', params)
+      .then(r => { if (r?.success && r.data?.items?.length) setApiOfertaBreakdown(r.data); })
+      .catch(() => {});
+  }, [ofertaViewMode, cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada]);
+
+  // Ingresos breakdown dinámico según modo seleccionado
+  useEffect(() => {
+    const params = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta, groupBy: ingresosViewMode };
+    if (areaSeleccionada.length) params.area = areaSeleccionada.join(',');
+    if (tipoSeleccionado.length) params.tipo = tipoSeleccionado.join(',');
+    if (modalidadSeleccionada.length) params.modalidad = modalidadSeleccionada.join(',');
+    getIndicatorBreakdown('ingresos_generados', params)
+      .then(r => { if (r?.success && r.data?.items?.length) setApiIngresosBreakdown(r.data.items); })
+      .catch(() => {});
+  }, [ingresosViewMode, cohorteDesde, cohorteHasta, areaSeleccionada, tipoSeleccionado, modalidadSeleccionada]);
+
+  // Matrícula breakdown dinámico según modo seleccionado
+  useEffect(() => {
+    const groupByMap = { total: 'area', area: 'area', modalidad: 'modalidad', tipo: 'tipo' };
+    const groupBy = groupByMap[matriculaViewMode] || 'area';
+    const params = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta, groupBy };
+    getIndicatorBreakdown('matricula_por_programa', params)
+      .then(r => { if (r?.success && r.data?.items?.length) setApiMatriculaBreakdown(r.data.items); })
+      .catch(() => {});
+  }, [matriculaViewMode, cohorteDesde, cohorteHasta]);
+
+  // Perfil del participante — todas las dimensiones al cargar
+  useEffect(() => {
+    const bp = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta };
+    const dims = [
+      { key: 'region', groupBy: 'region' },
+      { key: 'sector', groupBy: 'sectorEconomico' },
+      { key: 'escolaridad', groupBy: 'nivelDeEstudio' },
+      { key: 'edad', groupBy: 'rangoEdad' },
+      { key: 'genero', groupBy: 'sexo' },
+      { key: 'tipo', groupBy: 'tipoParticipante' },
+    ];
+    Promise.all(dims.map(d => getIndicatorBreakdown('perfil_participante', { ...bp, groupBy: d.groupBy }).catch(() => null)))
+      .then(results => {
+        const map = {};
+        dims.forEach((d, i) => {
+          const r = results[i];
+          if (r?.success && r.data?.items?.length) map[d.key] = r.data.items;
+        });
+        setApiPerfilMap(map);
+      });
+  }, [cohorteDesde, cohorteHasta]);
 
   const activeMenu = 'Dashboards';
 
@@ -297,19 +315,32 @@ export const DashboardEducacionContinua = () => {
       }));
   }, [apiOfertaSeries, cohorteDesde, cohorteHasta]);
 
-  // Serie de oferta programada — total real de API (sin desglose por área/tipo/modalidad)
-  const ofertaChartSeries = useMemo(() => {
+  const ofertaChartData = useMemo(() => {
     if (ofertaViewMode === 'total') {
-      return [
-        { data: filteredProgramasData.map(d => d.Auditoria + d.Contabilidad + d.Finanzas + d.IA + d.Laboral + d.Tecnologia + d.Tributaria), label: 'Total Programas', color: '#1E2875' }
-      ];
-    } else if (!filteredProgramasData.length) return [];
-    return [{
-      data: filteredProgramasData.map(d => d.total),
-      label: 'Total programado',
-      color: '#1E2875',
-    }];
-  }, [filteredProgramasData]);
+      return {
+        labels: filteredProgramasData.map(d => d.cohorte),
+        series: [{
+          data: filteredProgramasData.map(d => d.total),
+          label: 'Total programado',
+          color: '#1E2875',
+        }],
+      };
+    }
+
+    const items = Array.isArray(apiOfertaBreakdown?.items) ? apiOfertaBreakdown.items : [];
+    if (!items.length) {
+      return { labels: [], series: [] };
+    }
+
+    return {
+      labels: items.map(item => item.label ?? 'Sin dato'),
+      series: [{
+        data: items.map(item => Number(item.value ?? 0)),
+        label: 'Total programado',
+        color: '#1E2875',
+      }],
+    };
+  }, [filteredProgramasData, ofertaViewMode, apiOfertaBreakdown]);
 
   // dictadosSummaryData eliminado — se usan datos reales de effectiveDictadosSeries
   const dictadosSummaryData = useMemo(() => [], []);
@@ -385,7 +416,7 @@ export const DashboardEducacionContinua = () => {
       if (localSexoFilter !== 'Todos' && p.genero !== localSexoFilter) {
         return false;
       }
-      
+
       // Age group filter
       if (localEdadFilter !== 'Todos') {
         if (localEdadFilter === '18-35') {
@@ -396,34 +427,32 @@ export const DashboardEducacionContinua = () => {
           if (p.edad <= 50) return false;
         }
       }
-      
+
       return true;
     });
   }, [uniqueParticipantsData, localSexoFilter, localEdadFilter]);
 
   const uniqueParticipantsAgeDist = useMemo(() => {
-    if (!uniqueParticipantsData.length) return [];
-    const dist = { '18-25': 0, '26-35': 0, '36-50': 0, 'Más de 50': 0 };
-    filteredUniqueParticipantsLocal.forEach(p => {
-      if (p.edad <= 25) dist['18-25']++;
-      else if (p.edad <= 35) dist['26-35']++;
-      else if (p.edad <= 50) dist['36-50']++;
-      else dist['Más de 50']++;
-    });
-    return Object.keys(dist).map(key => ({ range: key, count: dist[key] }));
-  }, [filteredUniqueParticipantsLocal]);
+    const items = Array.isArray(apiParticipantesBreakdown?.items) ? apiParticipantesBreakdown.items : [];
+    if (!items.length) return [];
+    return items.map(item => ({
+      range: item.label ?? 'Sin dato',
+      count: Number(item.value ?? 0),
+    }));
+  }, [apiParticipantesBreakdown]);
 
   const recurrenceFreqDist = useMemo(() => {
-    if (!uniqueParticipantsData.length) return [];
-    const dist = { '1 Prog': 0, '2 Prog': 0, '3 o más': 0 };
-    filteredUniqueParticipantsLocal.forEach(p => {
-      const count = p.programas.length;
-      if (count === 1) dist['1 Prog']++;
-      else if (count === 2) dist['2 Prog']++;
-      else dist['3 o más']++;
-    });
-    return Object.keys(dist).map(key => ({ category: key, count: dist[key] }));
-  }, [filteredUniqueParticipantsLocal]);
+    const items = Array.isArray(apiRecurrenciaBreakdown) ? apiRecurrenciaBreakdown : [];
+    if (!items.length) return [];
+    return items.map(item => ({
+      category: String(item.label ?? ''),
+      count: Number(item.value ?? 0),
+    }));
+  }, [apiRecurrenciaBreakdown]);
+
+  const uniqueParticipantsTotal = useMemo(() => {
+    return uniqueParticipantsAgeDist.reduce((sum, item) => sum + (Number(item.count) || 0), 0);
+  }, [uniqueParticipantsAgeDist]);
 
   // Recurrencia Formativa Calculations
   const recurrenciaStats = useMemo(() => {
@@ -440,119 +469,52 @@ export const DashboardEducacionContinua = () => {
     };
   }, [uniqueParticipantsData]);
 
-  // Radar Chart — sin datos reales por área/tipo, retorna vacío
-  const radarSeries = useMemo(() => [], [matriculaViewMode, cohorteDesde, cohorteHasta]);
-
   const radarMetrics = useMemo(() => {
-    if (matriculaViewMode === 'total') {
-      return ['Total Matrículas'];
-    } else if (matriculaViewMode === 'area') {
-      return ['Auditoría', 'Contabilidad', 'Finanzas', 'Tecnología', 'Gestión', 'Tributación', 'Otras'];
-    } else if (matriculaViewMode === 'modalidad') {
-      return ['Online', 'Presencial', 'Híbrido'];
-    } else {
-      return ['Curso', 'Diplomado', 'Seminario'];
-    }
-  }, [matriculaViewMode]);
+    if (apiMatriculaBreakdown?.length > 0) return apiMatriculaBreakdown.map(i => i.label);
+    return [];
+  }, [apiMatriculaBreakdown]);
 
+  const radarSeries = useMemo(() => {
+    if (!apiMatriculaBreakdown?.length) return [];
+    return [{ data: apiMatriculaBreakdown.map(i => Number(i.value ?? 0)), label: 'Matrículas', color: '#1E2875' }];
+  }, [apiMatriculaBreakdown]);
 
-
-  // Tasa de aprobación — requiere datos nominales reales (sin endpoint aún)
   const aprobacionProgramasData = useMemo(() => {
-    if (!filteredNominalGroup2.length) return [];
-    const baseRates = {
-      'Auditoría': 92.4,
-      'Contabilidad': 89.5,
-      'Finanzas': 91.2,
-      'Tecnología': 94.8,
-      'Gestión': 88.7,
-      'Tributación': 90.6
-    };
+    const items = Array.isArray(apiTasaAprobacionBreakdown?.items) ? apiTasaAprobacionBreakdown.items : [];
+    if (!items.length) return [];
 
-    let list = Object.keys(baseRates).map(area => {
-      const areaRegs = filteredNominalGroup2.filter(r => r.area.startsWith(area));
-      const total = areaRegs.length;
-      const aprobados = areaRegs.filter(r => r.aprobacion === 'Aprobado').length;
-      
-      const rate = total > 0 
-        ? parseFloat(((aprobados / total) * 100).toFixed(1)) 
-        : baseRates[area];
-      
-      const promedio = baseRates[area];
-      const scaledMatriculas = Math.round(total * (kpiStats.totalMatriculas / Math.max(1, filteredNominalGroup2.length)));
+    return items.map(item => ({
+      area: item.label ?? 'Sin dato',
+      tasa: Number(item.value ?? 0),
+      promedioHistorico: Number(item.value ?? 0),
+      matriculas: 0,
+      aprobados: 0,
+    }));
+  }, [apiTasaAprobacionBreakdown]);
 
-      return {
-        area,
-        tasa: rate,
-        promedioHistorico: promedio,
-        matriculas: scaledMatriculas || Math.round(kpiStats.totalMatriculas * 0.15),
-        aprobados: Math.round((scaledMatriculas * rate) / 100)
-      };
-    });
-
-    if (areaSeleccionada.length > 0) {
-      list = list.filter(d => areaSeleccionada.includes(d.area));
-    }
-
-    return list;
-  }, [filteredNominalGroup2, kpiStats.totalMatriculas, areaSeleccionada]);
-
-  // Ingresos generados grouped dynamically by Area, Tipo or Modalidad
+  // Ingresos generados — datos reales desde API, agrupados dinámicamente
   const ingresosGeneradosData = useMemo(() => {
-    const totalCLPBase = filteredNominalGroup1.reduce((acc, curr) => acc + curr.monto, 0);
-    const totalCLPEst = totalCLPBase * (kpiStats.totalMatriculas / Math.max(1, filteredNominalGroup1.length)) * 12;
-
-    const dist = {};
-    filteredNominalGroup1.forEach(item => {
-      let key = 'Otros';
-      if (ingresosViewMode === 'area') {
-        key = item.area;
-      } else if (ingresosViewMode === 'tipo') {
-        key = item.programa.includes('Diplomado') ? 'Diplomado' : 'Curso';
-      } else if (ingresosViewMode === 'modalidad') {
-        if (item.programa.includes('IA') || item.programa.includes('Finanzas') || item.programa.includes('Auditoría')) {
-          key = 'Online';
-        } else if (item.programa.includes('NIIF') || item.programa.includes('Fullstack') || item.programa.includes('Tributaria')) {
-          key = 'Híbrida';
-        } else {
-          key = 'Presencial';
-        }
-      }
-      dist[key] = (dist[key] || 0) + item.monto;
-    });
-
-    const keys = Object.keys(dist);
-    if (keys.length === 0) return [];
-
-    const totalBaseDist = Object.values(dist).reduce((a, b) => a + b, 0);
-
-    return keys.map(key => {
-      const share = totalBaseDist > 0 ? (dist[key] / totalBaseDist) : 0;
-      const ingresosCLP = Math.round(totalCLPEst * share);
-      const ingresosM = parseFloat((ingresosCLP / 1000000).toFixed(1));
-
-      const pricing = PROGRAM_PRICING[key] || { neto: 1200000, valorLista: 1500000, descuento: 0.20 };
-      const count = Math.max(1, Math.round(ingresosCLP / pricing.neto));
-
-      return {
-        area: key, 
-        matriculas: count,
-        valorLista: pricing.valorLista,
-        descuento: pricing.descuento,
-        netoUnitario: pricing.neto,
-        ingresosCLP,
-        ingresosM
-      };
-    });
-  }, [filteredNominalGroup1, ingresosViewMode, kpiStats.totalMatriculas]);
+    if (!apiIngresosBreakdown?.length) return [];
+    return apiIngresosBreakdown.map(item => ({
+      area: item.label ?? 'Sin dato',
+      ingresosCLP: Number(item.value ?? 0),
+      ingresosM: parseFloat((Number(item.value ?? 0) / 1000000).toFixed(1)),
+    }));
+  }, [apiIngresosBreakdown]);
 
   const totalRevenueCLP = useMemo(() => {
     return ingresosGeneradosData.reduce((acc, curr) => acc + curr.ingresosCLP, 0);
   }, [ingresosGeneradosData]);
 
-  // Perfil del participante — sin datos reales por dimensión (sin endpoint), retorna null
-  const perfilParticipantesData = null;
-
+  const perfilParticipantesData = useMemo(() => {
+    const items = apiPerfilMap[perfilViewMode] ?? [];
+    if (!items.length) return null;
+    return items.map((item, id) => ({
+      id,
+      label: item.label ?? 'Sin dato',
+      value: Number(item.value ?? 0),
+    }));
+  }, [apiPerfilMap, perfilViewMode]);
 
   const activePeriodosText = useMemo(() => {
     let text = `Años: ${cohorteDesde} a ${cohorteHasta}`;
@@ -561,7 +523,7 @@ export const DashboardEducacionContinua = () => {
     } else {
       text += ` | Todos los semestres`;
     }
-    
+
     text += ` | Meses: ${mesDesde} a ${mesHasta}`;
 
     const filtersActive = [];
@@ -1071,14 +1033,14 @@ export const DashboardEducacionContinua = () => {
             </div>
             
             <div className="chart-wrapper">
-              {filteredProgramasData.length > 0 ? (
+              {ofertaChartData.labels.length > 0 ? (
                 <BarChart
                   xAxis={[{
                     scaleType: 'band',
-                    data: filteredProgramasData.map(d => d.cohorte),
-                    label: 'Año'
+                    data: ofertaChartData.labels,
+                    label: ofertaViewMode === 'total' ? 'Año' : (ofertaViewMode === 'area' ? 'Área' : (ofertaViewMode === 'tipo' ? 'Tipo' : 'Modalidad'))
                   }]}
-                  series={ofertaChartSeries}
+                  series={ofertaChartData.series}
                   margin={{ top: 15, right: 15, bottom: 60, left: 40 }}
                   slotProps={{
                     legend: {
@@ -1146,17 +1108,13 @@ export const DashboardEducacionContinua = () => {
             <div className="chart-wrapper">
               {effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0 ? (
                 <LineChart
-                  xAxis={[{ 
-                    scaleType: 'point', 
-                    data: effectiveEjecucionSeries.map(d => d.cohorte),
-                    label: 'Año'
-                  }]}
-                  series={[{ 
+                  xAxis={[{ scaleType: 'point', data: effectiveEjecucionSeries.map(d => d.cohorte), label: 'Año' }]}
+                  series={[{
                     data: effectiveEjecucionSeries.map(d => d.tasa),
                     color: '#1E2875',
                     label: 'Tasa Ejecución %',
                     valueFormatter: (value) => `${value}%`,
-                    showMark: true
+                    showMark: true,
                   }]}
                   margin={{ top: 15, right: 15, bottom: 40, left: 45 }}
                 />
@@ -1231,22 +1189,22 @@ export const DashboardEducacionContinua = () => {
             </div>
 
             <div className="chart-wrapper" style={{ height: '390px' }}>
-              <BarChart
-                height={370}
-                xAxis={[{ 
-                  scaleType: 'band', 
-                  data: radarMetrics,
-                  label: matriculaViewMode === 'area' ? 'Área de programa' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo de programa')
-                }]}
-                series={radarSeries}
-                slotProps={{
-                  legend: {
-                    direction: 'row',
-                    position: { vertical: 'bottom', horizontal: 'middle' },
-                    labelStyle: { fontSize: '11px', fill: '#1e293b' }
-                  }
-                }}
-              />
+              {radarSeries.length > 0 ? (
+                <BarChart
+                  height={370}
+                  xAxis={[{
+                    scaleType: 'band',
+                    data: radarMetrics,
+                    label: matriculaViewMode === 'area' || matriculaViewMode === 'total' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo'),
+                    tickLabelStyle: { fontSize: 11 }
+                  }]}
+                  series={radarSeries}
+                  margin={{ top: 15, right: 15, bottom: 80, left: 50 }}
+                  slotProps={{ legend: { hidden: true } }}
+                />
+              ) : (
+                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>Sin datos disponibles</div>
+              )}
             </div>
           </div>
 
@@ -1332,7 +1290,7 @@ export const DashboardEducacionContinua = () => {
                 <PieChart
                   series={[
                     {
-                      data: perfilParticipantesData[perfilViewMode],
+                      data: perfilParticipantesData,
                       innerRadius: 20,
                       outerRadius: 85,
                       paddingAngle: 3,
@@ -1362,82 +1320,17 @@ export const DashboardEducacionContinua = () => {
                 <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Participantes Únicos</h2>
               </div>
             </div>
-            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
-              {/* Controles de Filtros Internos */}
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
-                <div className="card-toggle-group" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', paddingLeft: '4px', paddingRight: '4px' }}>SEXO:</span>
-                  {['Todos', 'Masculino', 'Femenino'].map(opt => (
-                    <button 
-                      key={opt} 
-                      className={`btn-toggle ${localSexoFilter === opt ? 'active' : ''}`} 
-                      onClick={() => setLocalSexoFilter(opt)}
-                      style={{ fontSize: '11px', padding: '2px 8px' }}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-                
-                <div className="card-toggle-group" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', paddingLeft: '4px', paddingRight: '4px' }}>EDAD:</span>
-                  {['Todos', '18-35', '36-50', 'Más de 50'].map(opt => (
-                    <button 
-                      key={opt} 
-                      className={`btn-toggle ${localEdadFilter === opt ? 'active' : ''}`} 
-                      onClick={() => setLocalEdadFilter(opt)}
-                      style={{ fontSize: '11px', padding: '2px 8px' }}
-                    >
-                      {opt === 'Más de 50' ? '> 50' : opt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1, gap: '20px', padding: '12px 0' }}>
-                {uniqueParticipantsAgeDist.map(d => {
-                  const total = filteredUniqueParticipantsLocal.length || 1;
-                  const pct = (d.count / total) * 100;
-                  const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
-                  return (
-                    <div key={d.range} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
-                          {d.range} años
-                        </span>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#8b5cf6' }}>
-                          {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        {Array.from({ length: 10 }).map((_, i) => (
-                          <svg 
-                            key={i} 
-                            width="18" 
-                            height="18" 
-                            viewBox="0 0 24 24" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            strokeWidth="2.5" 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            style={{ 
-                              color: i < filledIconsCount ? '#8b5cf6' : '#cbd5e1', 
-                              transition: 'color 0.3s ease' 
-                            }}
-                          >
-                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                          </svg>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
-                Cada figura representa un 10% del total de participantes únicos ({filteredUniqueParticipantsLocal.length})
-              </div>
+            <div className="chart-wrapper">
+              {uniqueParticipantsAgeDist.length > 0 ? (
+                <BarChart
+                  xAxis={[{ scaleType: 'band', data: uniqueParticipantsAgeDist.map(d => d.range), label: 'Rango de Edad' }]}
+                  series={[{ data: uniqueParticipantsAgeDist.map(d => d.count), color: '#8b5cf6', label: 'Cantidad Personas' }]}
+                  margin={{ top: 20, right: 15, bottom: 40, left: 35 }}
+                  slotProps={{ legend: { hidden: true } }}
+                />
+              ) : (
+                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
+              )}
             </div>
           </div>
 
@@ -1448,51 +1341,17 @@ export const DashboardEducacionContinua = () => {
                 <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Frecuencia de Matrículas</h2>
               </div>
             </div>
-            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', flexGrow: 1, gap: '24px', padding: '20px 0' }}>
-                {recurrenceFreqDist.map(d => {
-                  const total = filteredUniqueParticipantsLocal.length || 1;
-                  const pct = (d.count / total) * 100;
-                  const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
-                  return (
-                    <div key={d.category} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
-                          {d.category === '1 Prog' ? '1 Programa' : (d.category === '2 Prog' ? '2 Programas' : '3 o más programas')}
-                        </span>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#ec4899' }}>
-                          {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        {Array.from({ length: 10 }).map((_, i) => (
-                          <svg 
-                            key={i} 
-                            width="18" 
-                            height="18" 
-                            viewBox="0 0 24 24" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            strokeWidth="2.5" 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            style={{ 
-                              color: i < filledIconsCount ? '#ec4899' : '#cbd5e1', 
-                              transition: 'color 0.3s ease' 
-                            }}
-                          >
-                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                            <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
-                          </svg>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
-                Cada figura representa un 10% del total de participantes únicos ({filteredUniqueParticipantsLocal.length})
-              </div>
+            <div className="chart-wrapper">
+              {recurrenceFreqDist.length > 0 ? (
+                <BarChart
+                  xAxis={[{ scaleType: 'band', data: recurrenceFreqDist.map(d => d.category), label: 'Año / periodo' }]}
+                  series={[{ data: recurrenceFreqDist.map(d => d.count), color: '#ec4899', label: 'Cantidad Personas' }]}
+                  margin={{ top: 20, right: 15, bottom: 40, left: 35 }}
+                  slotProps={{ legend: { hidden: true } }}
+                />
+              ) : (
+                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
+              )}
             </div>
           </div>
 
@@ -1833,16 +1692,16 @@ export const DashboardEducacionContinua = () => {
                   <thead>
                     <tr>
                       <th>Categoría</th>
-                      <th>Estimación Matrículas</th>
                       <th>Ingresos ($M CLP)</th>
+                      <th>Total CLP</th>
                     </tr>
                   </thead>
                   <tbody>
                     {ingresosGeneradosData.map(row => (
                       <tr key={row.area}>
                         <td style={{ fontWeight: 600 }}>{row.area}</td>
-                        <td>{row.matriculas}</td>
                         <td style={{ fontWeight: 700, color: '#10B981' }}>${row.ingresosM}M CLP</td>
+                        <td>${Number(row.ingresosCLP).toLocaleString('es-CL')}</td>
                       </tr>
                     ))}
                   </tbody>

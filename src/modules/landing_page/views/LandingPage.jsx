@@ -150,10 +150,9 @@ const TAB_DATA = {
   }
 };
 
-// Mapeo de colores específicos por departamento según el requerimiento.
+// Mapeo de colores específicos por departamento.
 const DEPARTMENT_COLORS = {
-  0: '#1E2875', // Resumen (Azul institucional)
-  1: '#46D19F', // Educación Continua (Turquesa claro)
+  0: '#46D19F', // Educación Continua (Turquesa claro)
 };
 
 export const LandingPage = () => {
@@ -218,30 +217,26 @@ export const LandingPage = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  // Obtiene los datos del departamento seleccionado según la pestaña activa.
-  // Tab 0 = Resumen (mock, pendiente endpoint real). Tab 1 = Educación Continua (solo datos reales).
+  // Solo Educación Continua — Resumen eliminado (sin endpoint real disponible)
   const currentData = (() => {
-    if (activeTab === 1) {
-      const get = (key) => ecApiData?.[key]?.value;
-      const oferta = get('oferta_programada');
-      const dictados = get('cursos_dictados');
-      const ejecucion = get('tasa_ejecucion');
-      const matricula = get('matricula_por_programa');
-      const aprobacion = get('tasa_aprobacion');
-      const ingresos = get('ingresos_generados');
-      return {
-        kpis: [
-          { title: 'Oferta programada', value: oferta != null ? String(oferta) : 'Sin datos', trend: '↑', trendDesc: 'programas 2026', isBlue: true },
-          { title: 'Cursos dictados', value: dictados != null ? String(dictados) : 'Sin datos', trend: '↑', trendDesc: 'ejecutados 2026', isBlue: false },
-          { title: 'Tasa de ejecución', value: ejecucion != null ? `${ejecucion}%` : 'Sin datos', trend: '↑', trendDesc: 'cursos ejecutados', isBlue: false },
-          { title: 'Matrícula total', value: matricula != null ? Number(matricula).toLocaleString('es-CL') : 'Sin datos', trend: '↑', trendDesc: 'participantes 2026', isBlue: true },
-          { title: 'Tasa de aprobación', value: aprobacion != null ? `${aprobacion}%` : 'Sin datos', trend: '↑', trendDesc: 'aprobados del total', isBlue: false },
-          { title: 'Ingresos netos', value: ingresos != null ? `$${Number(ingresos).toLocaleString('es-CL')}` : 'Sin datos', trend: '↑', trendDesc: 'CLP facturados', isBlue: false },
-        ],
-        goals: []
-      };
-    }
-    return TAB_DATA[0]; // Resumen — pendiente de endpoint real
+    const get = (key) => ecApiData?.[key]?.value;
+    const oferta = get('oferta_programada');
+    const dictados = get('cursos_dictados');
+    const ejecucion = get('tasa_ejecucion');
+    const matricula = get('matricula_por_programa');
+    const aprobacion = get('tasa_aprobacion');
+    const ingresos = get('ingresos_generados');
+    return {
+      kpis: [
+        { title: 'Oferta programada', value: oferta != null ? String(oferta) : 'Sin datos', trend: '↑', trendDesc: 'programas 2026', isBlue: true },
+        { title: 'Cursos dictados', value: dictados != null ? String(dictados) : 'Sin datos', trend: '↑', trendDesc: 'ejecutados 2026', isBlue: false },
+        { title: 'Tasa de ejecución', value: ejecucion != null ? `${ejecucion}%` : 'Sin datos', trend: '↑', trendDesc: 'cursos ejecutados', isBlue: false },
+        { title: 'Matrícula total', value: matricula != null ? Number(matricula).toLocaleString('es-CL') : 'Sin datos', trend: '↑', trendDesc: 'participantes 2026', isBlue: true },
+        { title: 'Tasa de aprobación', value: aprobacion != null ? `${aprobacion}%` : 'Sin datos', trend: '↑', trendDesc: 'aprobados del total', isBlue: false },
+        { title: 'Ingresos netos', value: ingresos != null ? `$${Number(ingresos).toLocaleString('es-CL')}` : 'Sin datos', trend: '↑', trendDesc: 'CLP facturados', isBlue: false },
+      ],
+      goals: []
+    };
   })();
   
   // Obtiene el color de fondo personalizado para este departamento
@@ -470,7 +465,6 @@ export const LandingPage = () => {
             scrollButtons="auto"
             sx={styles.tabsList}
           >
-            <Tab label="Resumen" />
             <Tab label="Educación Continua" />
           </Tabs>
         </Box>
@@ -552,7 +546,7 @@ export const LandingPage = () => {
                   Metas Prioritarias
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Seguimiento de objetivos clave ordenados por prioridad ({activeTab === 0 ? 'General' : 'Educación Continua'})
+                  Seguimiento de objetivos clave ordenados por prioridad (Educación Continua)
                 </Typography>
               </Box>
             </Box>

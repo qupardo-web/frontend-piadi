@@ -62,7 +62,7 @@ export const Auditoria = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState('carga');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filterRole, setFilterRole] = useState('Todos');
@@ -241,9 +241,8 @@ export const Auditoria = () => {
   // Obtener los logs activos en base a la pestaña seleccionada
   const getActiveLogs = () => {
     switch (activeTab) {
-      case 0: return realCargaLogs ?? [];
-      case 1: return []; // Pendiente: sin endpoint real para metas
-      case 2: return realSessionLogs ?? [];
+      case 'carga': return realCargaLogs ?? [];
+      case 'session': return realSessionLogs ?? [];
       default: return [];
     }
   };
@@ -586,8 +585,8 @@ export const Auditoria = () => {
               onChange={handleTabChange} 
               sx={styles.tabsList}
             >
-              <Tab label="Carga de datos" />
-              <Tab label="Inicios de sesión" />
+              <Tab value="carga" label="Carga de datos" />
+              <Tab value="session" label="Inicios de sesión" />
             </Tabs>
           </Box>
 
@@ -608,7 +607,7 @@ export const Auditoria = () => {
                   <TableCell sx={styles.tableHeadCell}>Rol</TableCell>
                   <TableCell sx={styles.tableHeadCell}>Acción</TableCell>
                   <TableCell sx={styles.tableHeadCell}>Entidad / Registros</TableCell>
-                  {activeTab === 0 ? (
+                  {activeTab === 'carga' ? (
                     <>
                       <TableCell sx={styles.tableHeadCell}>Plantilla</TableCell>
                       <TableCell sx={styles.tableHeadCell}>Archivo de origen</TableCell>
@@ -624,7 +623,7 @@ export const Auditoria = () => {
                 {filteredLogs.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} sx={{ textAlign: 'center', color: '#94A3B8', py: 4, fontSize: '14px' }}>
-                      {activeTab === 1 ? 'Módulo de metas pendiente de implementación.' : 'No hay registros disponibles.'}
+                      {activeTab === 'session' ? 'No hay registros de sesión disponibles.' : 'No hay registros disponibles.'}
                     </TableCell>
                   </TableRow>
                 )}
@@ -683,7 +682,7 @@ export const Auditoria = () => {
                     </TableCell>
 
                     {/* Columnas específicas */}
-                    {activeTab === 0 ? (
+                    {activeTab === 'carga' ? (
                       <>
                         <TableCell sx={styles.tableBodyCell}>{log.plantilla}</TableCell>
                         <TableCell sx={styles.tableBodyCell}>
@@ -713,7 +712,7 @@ export const Auditoria = () => {
                 <Box sx={styles.mobileCardHeader}>
                   {/* minWidth: 0, flexGrow: 1 y overflow: 'hidden' son requeridos en Flexbox para que los hijos con text-overflow: ellipsis puedan encogerse y truncar correctamente */}
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 0, flexGrow: 1, overflow: 'hidden' }}>
-                    {activeTab === 0 ? (
+                    {activeTab === 'carga' ? (
                       <Box component="a" href="#" sx={styles.mobileFileLink}>
                         <DescriptionIcon sx={{ fontSize: 16, flexShrink: 0 }} />
                         {/* Nombre de archivo con truncado (...) en móviles */}
@@ -762,7 +761,7 @@ export const Auditoria = () => {
                         {log.fecha}
                       </Typography>
                     </Box>
-                    {activeTab === 0 ? (
+                    {activeTab === 'carga' ? (
                       <Box sx={styles.metadataItem}>
                         <DescriptionIcon sx={{ fontSize: 16, color: '#6B7280' }} />
                         <Typography variant="body2" sx={{ fontSize: '12px', color: '#475569' }}>
