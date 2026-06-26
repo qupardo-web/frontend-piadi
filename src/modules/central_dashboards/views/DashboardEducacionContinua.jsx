@@ -1312,7 +1312,7 @@ export const DashboardEducacionContinua = () => {
             </div>
           </div>
 
-          {/* Histograms for Unique and Recurrent Participants */}
+          {/* Pictograma: Participantes Únicos */}
           <div className="chart-card" style={{ minHeight: '380px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1320,20 +1320,58 @@ export const DashboardEducacionContinua = () => {
                 <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Participantes Únicos</h2>
               </div>
             </div>
-            <div className="chart-wrapper">
+            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
               {uniqueParticipantsAgeDist.length > 0 ? (
-                <BarChart
-                  xAxis={[{ scaleType: 'band', data: uniqueParticipantsAgeDist.map(d => d.range), label: 'Rango de Edad' }]}
-                  series={[{ data: uniqueParticipantsAgeDist.map(d => d.count), color: '#8b5cf6', label: 'Cantidad Personas' }]}
-                  margin={{ top: 20, right: 15, bottom: 40, left: 35 }}
-                  slotProps={{ legend: { hidden: true } }}
-                />
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1, gap: '20px', padding: '12px 0' }}>
+                    {uniqueParticipantsAgeDist.map(d => {
+                      const total = uniqueParticipantsTotal || 1;
+                      const pct = (d.count / total) * 100;
+                      const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
+                      return (
+                        <div key={d.range} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                              {d.range} años
+                            </span>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#8b5cf6' }}>
+                              {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            {Array.from({ length: 10 }).map((_, i) => (
+                              <svg
+                                key={i}
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ color: i < filledIconsCount ? '#8b5cf6' : '#cbd5e1', transition: 'color 0.3s ease' }}
+                              >
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                              </svg>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
+                    Cada figura representa un 10% del total de participantes únicos ({uniqueParticipantsTotal})
+                  </div>
+                </>
               ) : (
                 <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
               )}
             </div>
           </div>
 
+          {/* Pictograma: Frecuencia de Matrículas */}
           <div className="chart-card" style={{ minHeight: '380px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1341,14 +1379,51 @@ export const DashboardEducacionContinua = () => {
                 <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Frecuencia de Matrículas</h2>
               </div>
             </div>
-            <div className="chart-wrapper">
+            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
               {recurrenceFreqDist.length > 0 ? (
-                <BarChart
-                  xAxis={[{ scaleType: 'band', data: recurrenceFreqDist.map(d => d.category), label: 'Año / periodo' }]}
-                  series={[{ data: recurrenceFreqDist.map(d => d.count), color: '#ec4899', label: 'Cantidad Personas' }]}
-                  margin={{ top: 20, right: 15, bottom: 40, left: 35 }}
-                  slotProps={{ legend: { hidden: true } }}
-                />
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', flexGrow: 1, gap: '24px', padding: '20px 0' }}>
+                    {recurrenceFreqDist.map(d => {
+                      const total = recurrenceFreqDist.reduce((sum, x) => sum + x.count, 0) || 1;
+                      const pct = (d.count / total) * 100;
+                      const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
+                      return (
+                        <div key={d.category} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                              Año {d.category}
+                            </span>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#ec4899' }}>
+                              {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            {Array.from({ length: 10 }).map((_, i) => (
+                              <svg
+                                key={i}
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ color: i < filledIconsCount ? '#ec4899' : '#cbd5e1', transition: 'color 0.3s ease' }}
+                              >
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                                <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
+                              </svg>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
+                    Cada figura representa un 10% del total de personas con recurrencia formativa
+                  </div>
+                </>
               ) : (
                 <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
               )}
