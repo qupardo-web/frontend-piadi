@@ -168,6 +168,7 @@ export const DashboardEducacionContinua = () => {
   const [apiIngresosSeries, setApiIngresosSeries] = useState(null);
   const [apiOfertaByYear, setApiOfertaByYear] = useState({});
   const [apiIngresosByYear, setApiIngresosByYear] = useState({});
+  const [apiMatriculaByYear, setApiMatriculaByYear] = useState({});
 
   const apiParams = useMemo(() => {
     const params = { department: 'educacion_continua' };
@@ -254,14 +255,20 @@ export const DashboardEducacionContinua = () => {
       });
   }, [ingresosViewMode, cohorteDesde, cohorteHasta]);
 
-  // Matrícula breakdown dinámico según modo seleccionado
+  // Matrícula breakdown por año según modo seleccionado (multi-año para ver evolución)
   useEffect(() => {
-    const groupByMap = { total: 'area', area: 'area', modalidad: 'modalidad', tipo: 'tipo' };
-    const groupBy = groupByMap[matriculaViewMode] || 'area';
-    const params = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta, groupBy };
-    getIndicatorBreakdown('matricula_por_programa', params)
-      .then(r => { if (r?.success && r.data?.items?.length) setApiMatriculaBreakdown(r.data.items); })
-      .catch(() => {});
+    if (matriculaViewMode === 'total') {
+      setApiMatriculaByYear({});
+      return;
+    }
+    const years = ['2023', '2024', '2025', '2026'].filter(yr => parseInt(yr) >= parseInt(cohorteDesde) && parseInt(yr) <= parseInt(cohorteHasta));
+    const base = { department: 'educacion_continua', groupBy: matriculaViewMode };
+    Promise.all(years.map(yr => getIndicatorBreakdown('matricula_por_programa', { ...base, year: yr }).catch(() => null)))
+      .then(results => {
+        const byYear = {};
+        results.forEach((r, i) => { if (r?.success && r.data?.items?.length) byYear[years[i]] = r.data.items; });
+        setApiMatriculaByYear(byYear);
+      });
   }, [matriculaViewMode, cohorteDesde, cohorteHasta]);
 
   // Perfil del participante — todas las dimensiones al cargar
@@ -489,15 +496,31 @@ export const DashboardEducacionContinua = () => {
     };
   }, [uniqueParticipantsData]);
 
-  const radarMetrics = useMemo(() => {
-    if (apiMatriculaBreakdown?.length > 0) return apiMatriculaBreakdown.map(i => i.label);
-    return [];
-  }, [apiMatriculaBreakdown]);
-
-  const radarSeries = useMemo(() => {
-    if (!apiMatriculaBreakdown?.length) return [];
-    return [{ data: apiMatriculaBreakdown.map(i => Number(i.value ?? 0)), label: 'Matrículas', color: '#1E2875' }];
-  }, [apiMatriculaBreakdown]);
+  const matriculaChartData = useMemo(() => {
+    if (matriculaViewMode === 'total') {
+      const points = (apiMatriculaSeries ?? []).filter(p => {
+        const yr = Number(p.year);
+        return yr >= parseInt(cohorteDesde) && yr <= parseInt(cohorteHasta);
+      });
+      if (!points.length) return { labels: [], series: [] };
+      return {
+        labels: points.map(p => String(p.year)),
+        series: [{ data: points.map(p => Number(p.value)), label: 'Matrículas', color: '#1E2875' }],
+      };
+    }
+    const years = ['2023', '2024', '2025', '2026'].filter(yr => parseInt(yr) >= parseInt(cohorteDesde) && parseInt(yr) <= parseInt(cohorteHasta));
+    const allLabels = [...new Set(years.flatMap(yr => (apiMatriculaByYear[yr] ?? []).map(i => i.label)))];
+    if (!allLabels.length) return { labels: [], series: [] };
+    const yearColors = { '2023': '#93c5fd', '2024': '#60a5fa', '2025': '#3b82f6', '2026': '#1E2875' };
+    return {
+      labels: allLabels,
+      series: years.map(yr => ({
+        data: allLabels.map(lbl => (apiMatriculaByYear[yr] ?? []).find(i => i.label === lbl)?.value ?? 0),
+        label: yr,
+        color: yearColors[yr] || '#1E2875',
+      })),
+    };
+  }, [matriculaViewMode, apiMatriculaSeries, apiMatriculaByYear, cohorteDesde, cohorteHasta]);
 
   const aprobacionProgramasData = useMemo(() => {
     const items = Array.isArray(apiTasaAprobacionBreakdown?.items) ? apiTasaAprobacionBreakdown.items : [];
@@ -1210,18 +1233,18 @@ export const DashboardEducacionContinua = () => {
             </div>
 
             <div className="chart-wrapper" style={{ height: '390px' }}>
-              {radarSeries.length > 0 ? (
+              {matriculaChartData.labels.length > 0 ? (
                 <BarChart
                   height={370}
                   xAxis={[{
                     scaleType: 'band',
-                    data: radarMetrics,
-                    label: matriculaViewMode === 'area' || matriculaViewMode === 'total' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo'),
+                    data: matriculaChartData.labels,
+                    label: matriculaViewMode === 'total' ? 'Año' : (matriculaViewMode === 'area' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo')),
                     tickLabelStyle: { fontSize: 11 }
                   }]}
-                  series={radarSeries}
+                  series={matriculaChartData.series}
                   margin={{ top: 15, right: 15, bottom: 80, left: 50 }}
-                  slotProps={{ legend: { hidden: true } }}
+                  slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                 />
               ) : (
                 <div style={{ color: '#64748b', fontSize: '13px', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>Sin datos disponibles</div>
@@ -1811,15 +1834,15 @@ export const DashboardEducacionContinua = () => {
                 <table className="details-table">
                   <thead>
                     <tr>
-                      <th>Métrica / Dimensión</th>
-                      {radarSeries.map(s => <th key={s.label}>{s.label}</th>)}
+                      <th>{matriculaViewMode === 'total' ? 'Año' : (matriculaViewMode === 'area' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo'))}</th>
+                      {matriculaChartData.series.map(s => <th key={s.label}>{s.label}</th>)}
                     </tr>
                   </thead>
                   <tbody>
-                    {radarMetrics.map((metric, idx) => (
-                      <tr key={metric}>
-                        <td style={{ fontWeight: 600 }}>{metric}</td>
-                        {radarSeries.map(s => <td key={s.label}>{s.data[idx] || 0}</td>)}
+                    {matriculaChartData.labels.map((lbl, idx) => (
+                      <tr key={lbl}>
+                        <td style={{ fontWeight: 600 }}>{lbl}</td>
+                        {matriculaChartData.series.map(s => <td key={s.label}>{Number(s.data[idx] || 0).toLocaleString('es-CL')}</td>)}
                       </tr>
                     ))}
                   </tbody>
