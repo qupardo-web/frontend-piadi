@@ -621,7 +621,7 @@ export const DashboardEducacionContinua = () => {
         <Box sx={styles.userCard}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
             <Avatar sx={styles.userAvatar}>
-              {user?.username ? user.username.substring(0, 2).toUpperCase() : 'JD'}
+              {user?.username ? user.username.split(/[. @]/).filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'JD'}
             </Avatar>
             <Box>
               <Typography variant="body2" sx={{ fontWeight: 600, color: '#ffffff', lineHeight: 1.2 }}>
@@ -926,14 +926,6 @@ export const DashboardEducacionContinua = () => {
                 </Typography>
               </Box>
             </Box>
-            {user && (
-              <Box sx={styles.sessionCard}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#1DC2A0' }} />
-                <Typography variant="body2" sx={{ color: '#334155', fontWeight: 500 }}>
-                  Sesión activa: <span style={{ fontWeight: 700 }}>{user.username}</span> ({user.role})
-                </Typography>
-              </Box>
-            )}
           </Box>
 
           {/* Breadcrumbs */}
