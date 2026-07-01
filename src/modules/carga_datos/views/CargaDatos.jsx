@@ -265,12 +265,6 @@ export const CargaDatos = () => {
               Sube y actualiza los indicadores institucionales mediante archivos de plantilla.
             </Typography>
           </Box>
-          <Box sx={styles.sessionBadge}>
-            <Box sx={styles.sessionDot} />
-            <Typography sx={styles.sessionText}>
-              Sesión activa: {user?.username || 'Usuario'} ({user?.role || 'Invitado'})
-            </Typography>
-          </Box>
         </Box>
 
         {/* Alerta de Formato Requerido */}
@@ -325,11 +319,11 @@ export const CargaDatos = () => {
                 )}
                 {paginatedUploads.map((row, index) => (
                   <TableRow key={index} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                    <TableCell sx={styles.tableCell}>{row.fecha}</TableCell>
-                    <TableCell sx={styles.tableCell}>{row.usuario}</TableCell>
-                    <TableCell sx={styles.tableCell}>{row.plantilla}</TableCell>
-                    <TableCell sx={styles.tableCell}>{row.archivo}</TableCell>
-                    <TableCell sx={styles.tableCell}>
+                    <TableCell sx={styles.tableBodyCell}>{row.fecha}</TableCell>
+                    <TableCell sx={styles.tableBodyCell}>{row.usuario}</TableCell>
+                    <TableCell sx={styles.tableBodyCell}>{row.plantilla}</TableCell>
+                    <TableCell sx={styles.tableBodyCell}>{row.archivo}</TableCell>
+                    <TableCell sx={styles.tableBodyCell}>
                       <Box sx={styles.statusBadgeSuccess}>
                         <CheckCircleIcon sx={{ fontSize: 14 }} />
                         Carga exitosa
@@ -506,9 +500,19 @@ export const CargaDatos = () => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle sx={styles.dialogTitle}>
-          Cargar nuevo archivo de datos
-          <IconButton onClick={handleCloseDialog} sx={{ color: '#94a3b8' }}>
+        <DialogTitle sx={{ p: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+          <Box>
+            <Typography sx={styles.dialogTitle}>
+              {uploadSuccess ? 'Carga exitosa' : 'Cargar datos'}
+            </Typography>
+            <Typography sx={styles.dialogSubtitle}>
+              {uploadSuccess 
+                ? 'El archivo Excel se ha validado e importado correctamente en la base de datos'
+                : 'Selecciona una plantilla y arrastra tu archivo Excel o haz clic para seleccionarlo'
+              }
+            </Typography>
+          </Box>
+          <IconButton onClick={handleCloseDialog} sx={{ color: '#94a3b8', mt: -1 }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -516,36 +520,34 @@ export const CargaDatos = () => {
         <DialogContent sx={styles.dialogContent}>
           {uploadSuccess ? (
             /* Pantalla de Confirmación de Carga Exitosa */
-            <Box sx={styles.successScreenContainer}>
-              <Box sx={styles.successIconContainer}>
-                <CheckCircleIcon sx={{ fontSize: 64, color: '#10B981' }} />
-              </Box>
-              <Typography sx={styles.successScreenTitle}>¡Archivo cargado con éxito!</Typography>
-              <Typography sx={styles.successScreenSubtitle}>
-                Los datos se han ingresado correctamente y el historial ha sido actualizado.
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4, px: 2, textAlign: 'center' }}>
+              <CheckCircleIcon sx={{ fontSize: 64, color: '#10B981', mb: 2 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1E2875', mb: 1, fontFamily: "'Inter', sans-serif" }}>
+                ¡Datos importados con éxito!
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#6B7280', mb: 4, maxWidth: '450px', fontFamily: "'Inter', sans-serif" }}>
+                El archivo <strong>{selectedFile?.name}</strong> fue verificado y cargado sin errores en el sistema.
               </Typography>
 
               {successSummary && (
-                <Box sx={styles.successSummaryContainer}>
-                  <Typography sx={styles.summaryTitle}>Resumen de importación en base de datos:</Typography>
-                  <Box sx={styles.summaryCardWrapper}>
-                    {Object.entries(successSummary).map(([tabla, count]) => (
-                      <Box key={tabla} sx={styles.summaryItemRow}>
-                        <Typography sx={styles.summaryItemTable}>{tabla}</Typography>
-                        <Box sx={styles.summaryItemCountBadge}>+{count} filas</Box>
-                      </Box>
+                <Box sx={{ width: '100%', maxWidth: '500px', bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', p: 3, textAlign: 'left', mb: 1 }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#334155', mb: 2, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: "'Inter', sans-serif" }}>
+                    Resumen de registros procesados:
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '12px 24px' }}>
+                    {Object.entries(successSummary).map(([tabla, cantidad]) => (
+                      <React.Fragment key={tabla}>
+                        <Typography sx={{ fontSize: '14px', color: '#475569', fontWeight: 500, fontFamily: "'Inter', sans-serif" }}>
+                          {tabla}
+                        </Typography>
+                        <Typography sx={{ fontSize: '14px', color: '#10B981', fontWeight: 700, textAlign: 'right', fontFamily: "'Inter', sans-serif" }}>
+                          +{cantidad} filas
+                        </Typography>
+                      </React.Fragment>
                     ))}
                   </Box>
                 </Box>
               )}
-
-              <Button
-                variant="contained"
-                onClick={handleCloseDialog}
-                sx={styles.understoodButton}
-              >
-                Entendido
-              </Button>
             </Box>
           ) : (
             /* Flujo Estándar de Carga */
@@ -664,25 +666,41 @@ export const CargaDatos = () => {
 
               {/* Indicador de Progreso en Carga */}
               {uploading && (
-                <Box sx={styles.progressContainer}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography sx={styles.progressLabel}>Cargando y validando consistencia...</Typography>
-                    <Typography sx={styles.progressLabel}>Procesando</Typography>
-                  </Box>
-                  <LinearProgress sx={styles.linearProgressBar} />
+                <Box sx={{ width: '100%', mt: 3 }}>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500, color: '#1E2875', mb: 1, fontFamily: "'Inter', sans-serif" }}>
+                    Validando estructura del archivo Excel...
+                  </Typography>
+                  <LinearProgress sx={{ 
+                    height: 8, 
+                    borderRadius: 4, 
+                    bgcolor: '#E5E7EB',
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: '#1DC2A0'
+                    }
+                  }} />
                 </Box>
               )}
 
               {/* Alertas de error en caso de fallo estructural o celdas vacías */}
               {uploadError && (
-                <Alert severity="error" sx={styles.errorAlertContainer}>
-                  <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>
+                <Alert 
+                  severity="error" 
+                  sx={{ 
+                    mt: 3, 
+                    fontFamily: "'Inter', sans-serif",
+                    borderRadius: '8px',
+                    border: '1px solid #FCA5A5',
+                    bgcolor: '#FEF2F2',
+                    '& .MuiAlert-message': { width: '100%' }
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 600, fontSize: '15px', color: '#991B1B', mb: uploadErrorDetails.length > 0 ? 1 : 0 }}>
                     {uploadError}
                   </Typography>
                   {uploadErrorDetails.length > 0 && (
-                    <Box component="ul" sx={styles.errorDetailsList}>
+                    <Box component="ul" sx={{ pl: 2.5, m: 0, color: '#991B1B', fontSize: '13px' }}>
                       {uploadErrorDetails.map((detail, idx) => (
-                        <li key={idx}>
+                        <li key={idx} style={{ marginBottom: '4px' }}>
                           <strong>Hoja:</strong> {detail.sheet || 'General'} | 
                           <strong> Celda:</strong> {detail.row ? `Fila ${detail.row}` : ''}{detail.column ? `, Columna ${detail.column}` : ''} | 
                           <strong> Fallo:</strong> {detail.message}
@@ -697,22 +715,28 @@ export const CargaDatos = () => {
         </DialogContent>
 
         <DialogActions sx={styles.dialogActions}>
-          <Button
-            onClick={handleCloseDialog}
-            sx={styles.dialogCancelButton}
-            disabled={uploading}
-          >
-            {uploadSuccess ? 'Cerrar' : 'Cancelar'}
-          </Button>
-          {!uploadSuccess && (
+          {uploadSuccess ? (
             <Button
               variant="contained"
-              onClick={handleUploadSubmit}
-              disabled={!selectedTemplate || !selectedFile || uploading}
-              sx={styles.dialogSubmitButton(selectedTemplate && selectedFile && !uploading)}
+              onClick={handleCloseDialog}
+              sx={styles.dialogSubmitButton(true)}
             >
-              Cargar datos
+              Entendido
             </Button>
+          ) : (
+            <>
+              <Button onClick={handleCloseDialog} sx={styles.dialogCancelButton} disabled={uploading}>
+                Cancelar
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleUploadSubmit}
+                disabled={!selectedTemplate || !selectedFile || uploading}
+                sx={styles.dialogSubmitButton(selectedTemplate && selectedFile && !uploading)}
+              >
+                Cargar datos
+              </Button>
+            </>
           )}
         </DialogActions>
       </Dialog>
