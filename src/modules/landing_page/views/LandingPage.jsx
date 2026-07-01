@@ -286,6 +286,11 @@ export const LandingPage = () => {
                   sx={{
                     ...cardStyle,
                     cursor: 'pointer',
+                    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 12px 24px rgba(30, 40, 117, 0.08)',
+                    },
                     '&:focus-visible': {
                       outline: '2px solid #0F4AFF',
                       outlineOffset: 2,
