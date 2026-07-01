@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { getDashboardSummary } from '../../../services/piadiApi';
 
+const LANDING_YEAR = 2026;
+
 // Mapeo de colores específicos por departamento.
 export const DEPARTMENT_COLORS = {
   0: '#46D19F', // Educación Continua (Turquesa claro)
@@ -20,13 +22,13 @@ export const useLandingPage = () => {
   const [ecApiData, setEcApiData] = useState(null);
 
   useEffect(() => {
-    getDashboardSummary({ department: 'educacion_continua', year: 2026 })
+    getDashboardSummary({ department: 'educacion_continua', year: LANDING_YEAR })
       .then(res => {
         if (!res?.success || !res.data) return;
         // Formato real: data.departments[0].cards[{ indicatorKey, value, hasData }]
         const deptData = res.data?.departments?.find(d => d.departmentId === 'educacion_continua');
         const cards = deptData?.cards ?? [];
-        if (!cards.some(c => c.hasData)) return; // sin datos reales, mantener mock
+        if (!cards.some(c => c.hasData)) return;
         const map = {};
         cards.forEach(c => { map[c.indicatorKey] = c; });
         setEcApiData(map);
@@ -52,13 +54,14 @@ export const useLandingPage = () => {
     const aprobacion = get('tasa_aprobacion');
     const ingresos = get('ingresos_generados');
     return {
+      year: LANDING_YEAR,
       kpis: [
-        { title: 'Oferta programada', value: oferta != null ? String(oferta) : 'Sin datos', trend: '↑', trendDesc: 'programas 2026', isBlue: true },
-        { title: 'Cursos dictados', value: dictados != null ? String(dictados) : 'Sin datos', trend: '↑', trendDesc: 'ejecutados 2026', isBlue: false },
-        { title: 'Tasa de ejecución', value: ejecucion != null ? `${ejecucion}%` : 'Sin datos', trend: '↑', trendDesc: 'cursos ejecutados', isBlue: false },
-        { title: 'Matrícula total', value: matricula != null ? Number(matricula).toLocaleString('es-CL') : 'Sin datos', trend: '↑', trendDesc: 'participantes 2026', isBlue: true },
-        { title: 'Tasa de aprobación', value: aprobacion != null ? `${aprobacion}%` : 'Sin datos', trend: '↑', trendDesc: 'aprobados del total', isBlue: false },
-        { title: 'Ingresos netos', value: ingresos != null ? `$${Number(ingresos).toLocaleString('es-CL')}` : 'Sin datos', trend: '↑', trendDesc: 'CLP facturados', isBlue: false },
+        { title: 'Oferta programada', value: oferta != null ? String(oferta) : 'Sin datos', trend: '↑', trendDesc: `programas ${LANDING_YEAR}`, isBlue: true, targetHash: 'oferta-programada' },
+        { title: 'Cursos dictados', value: dictados != null ? String(dictados) : 'Sin datos', trend: '↑', trendDesc: `ejecutados ${LANDING_YEAR}`, isBlue: false, targetHash: 'cursos-dictados' },
+        { title: 'Tasa de ejecución', value: ejecucion != null ? `${ejecucion}%` : 'Sin datos', trend: '↑', trendDesc: 'cursos ejecutados', isBlue: false, targetHash: 'tasa-ejecucion' },
+        { title: 'Matrícula total', value: matricula != null ? Number(matricula).toLocaleString('es-CL') : 'Sin datos', trend: '↑', trendDesc: `participantes ${LANDING_YEAR}`, isBlue: true, targetHash: 'matricula-por-programa' },
+        { title: 'Tasa de aprobación', value: aprobacion != null ? `${aprobacion}%` : 'Sin datos', trend: '↑', trendDesc: 'aprobados del total', isBlue: false, targetHash: 'tasa-aprobacion' },
+        { title: 'Ingresos netos', value: ingresos != null ? `$${Number(ingresos).toLocaleString('es-CL')}` : 'Sin datos', trend: '↑', trendDesc: 'CLP facturados', isBlue: false, targetHash: 'ingresos-generados' },
       ],
       goals: []
     };

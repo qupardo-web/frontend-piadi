@@ -28,6 +28,9 @@ export const getDepartmentKpis = (deptKey) =>
 export const getDepartmentFilters = (deptKey) =>
   apiFetch(`/api/departments/${deptKey}/filters`);
 
+export const getRoles = () =>
+  apiFetch('/api/roles');
+
 export const getIndicatorValues = (key, params) =>
   apiFetch(`/api/indicators/${key}/values${buildParams(params)}`);
 
