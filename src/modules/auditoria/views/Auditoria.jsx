@@ -71,6 +71,9 @@ export const Auditoria = () => {
     setFilterDesde,
     filterHasta,
     setFilterHasta,
+    sortKey,
+    sortDirection,
+    handleSort,
     currentPage,
     setCurrentPage,
     openHelpDialog,
@@ -79,10 +82,51 @@ export const Auditoria = () => {
     activeMenu,
     handleDrawerToggle,
     handleTabChange,
+    roleOptions,
     filteredLogs,
     totalPages,
     paginatedLogs,
+    canExportCsv,
+    handleExportCsv,
   } = useAuditoria();
+
+  const getActionBadgeStyle = (action) => {
+    if (action === 'Carga' || action === 'Carga de plantilla') return styles.badgeCarga;
+    if (action === 'Creación') return styles.badgeCreacion;
+    if (action === 'Edición') return styles.badgeEdicion;
+    if (action === 'Eliminación') return styles.badgeEliminacion;
+    if (action === 'Inicio sesión' || action === 'Inicio de sesión exitoso') return styles.badgeInicioSesion;
+    if (
+      action === 'Inicio fallido' ||
+      action === 'Inicio de sesión fallido' ||
+      action === 'Cierre sesión' ||
+      action === 'Cierre de sesión'
+    ) {
+      return styles.badgeCierreSesion;
+    }
+    return styles.badgeLogin;
+  };
+
+  const renderSortIndicator = (key) => (
+    sortKey === key ? (
+      <Box component="span" sx={{ ml: 0.75, fontSize: '12px', color: '#0F4AFF' }}>
+        {sortDirection === 'asc' ? '↑' : '↓'}
+      </Box>
+    ) : null
+  );
+
+  const sortableHeaderProps = (key) => ({
+    sx: { ...styles.tableHeadCell, cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' },
+    role: 'button',
+    tabIndex: 0,
+    onClick: () => handleSort(key),
+    onKeyDown: (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handleSort(key);
+      }
+    },
+  });
 
   const sidebarContent = (
     <Box sx={styles.drawerContent}>
@@ -291,7 +335,12 @@ export const Auditoria = () => {
               >
                 Filtrar
               </Button>
-              <Button startIcon={<ExportIcon />} sx={styles.exportButton}>
+              <Button
+                startIcon={<ExportIcon />}
+                sx={styles.exportButton}
+                onClick={handleExportCsv}
+                disabled={!canExportCsv}
+              >
                 Exportar
               </Button>
             </Box>
@@ -310,10 +359,9 @@ export const Auditoria = () => {
                     sx={styles.filterSelect}
                   >
                     <MenuItem value="Todos">Todos</MenuItem>
-                    <MenuItem value="Rector">Rector</MenuItem>
-                    <MenuItem value="Analista de Calidad">Analista de Calidad</MenuItem>
-                    <MenuItem value="Director Académico">Director Académico</MenuItem>
-                    <MenuItem value="Director de Administración">Director de Administración</MenuItem>
+                    {roleOptions.map((role) => (
+                      <MenuItem key={role} value={role}>{role}</MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Box>
@@ -374,19 +422,35 @@ export const Auditoria = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={styles.tableHeadCell}>Fecha y hora</TableCell>
-                  <TableCell sx={styles.tableHeadCell}>Usuario</TableCell>
-                  <TableCell sx={styles.tableHeadCell}>Rol</TableCell>
-                  <TableCell sx={styles.tableHeadCell}>Acción</TableCell>
-                  <TableCell sx={styles.tableHeadCell}>Entidad / Registros</TableCell>
+                  <TableCell {...sortableHeaderProps('fecha')}>
+                    Fecha y hora{renderSortIndicator('fecha')}
+                  </TableCell>
+                  <TableCell {...sortableHeaderProps('usuario')}>
+                    Usuario{renderSortIndicator('usuario')}
+                  </TableCell>
+                  <TableCell {...sortableHeaderProps('rol')}>
+                    Rol{renderSortIndicator('rol')}
+                  </TableCell>
+                  <TableCell {...sortableHeaderProps('accion')}>
+                    Acción{renderSortIndicator('accion')}
+                  </TableCell>
+                  <TableCell {...sortableHeaderProps('entidadRegistros')}>
+                    Entidad / Registros{renderSortIndicator('entidadRegistros')}
+                  </TableCell>
                   {activeTab === 'carga' ? (
                     <>
-                      <TableCell sx={styles.tableHeadCell}>Plantilla</TableCell>
-                      <TableCell sx={styles.tableHeadCell}>Archivo de origen</TableCell>
+                      <TableCell {...sortableHeaderProps('plantilla')}>
+                        Plantilla{renderSortIndicator('plantilla')}
+                      </TableCell>
+                      <TableCell {...sortableHeaderProps('archivo')}>
+                        Archivo de origen{renderSortIndicator('archivo')}
+                      </TableCell>
                     </>
                   ) : (
                     <>
-                      <TableCell sx={styles.tableHeadCell}>Detalles</TableCell>
+                      <TableCell {...sortableHeaderProps('detalle')}>
+                        Detalles{renderSortIndicator('detalle')}
+                      </TableCell>
                     </>
                   )}
                 </TableRow>
@@ -394,7 +458,7 @@ export const Auditoria = () => {
               <TableBody>
                 {filteredLogs.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} sx={{ textAlign: 'center', color: '#94A3B8', py: 4, fontSize: '14px' }}>
+                    <TableCell colSpan={activeTab === 'carga' ? 7 : 6} sx={{ textAlign: 'center', color: '#94A3B8', py: 4, fontSize: '14px' }}>
                       {activeTab === 'session' ? 'No hay registros de sesión disponibles.' : 'No hay registros disponibles.'}
                     </TableCell>
                   </TableRow>
@@ -422,25 +486,7 @@ export const Auditoria = () => {
 
                     {/* Acción */}
                     <TableCell sx={styles.tableBodyCell}>
-                      <Box 
-                        sx={
-                          log.accion === 'Carga' 
-                            ? styles.badgeCarga 
-                            : log.accion === 'Creación' 
-                            ? styles.badgeCreacion 
-                            : log.accion === 'Edición' 
-                            ? styles.badgeEdicion 
-                            : log.accion === 'Eliminación' 
-                            ? styles.badgeEliminacion 
-                            : log.accion === 'Inicio sesión'
-                            ? styles.badgeInicioSesion
-                            : log.accion === 'Inicio fallido'
-                            ? styles.badgeCierreSesion
-                            : log.accion === 'Cierre sesión'
-                            ? styles.badgeCierreSesion
-                            : styles.badgeLogin
-                        }
-                      >
+                      <Box sx={getActionBadgeStyle(log.accion)}>
                         {log.accion}
                       </Box>
                     </TableCell>
@@ -494,25 +540,7 @@ export const Auditoria = () => {
                       <Typography sx={styles.entidadBold}>{log.entidad}</Typography>
                     )}
                   </Box>
-                  <Box 
-                    sx={
-                      log.accion === 'Carga' 
-                        ? styles.badgeCarga 
-                        : log.accion === 'Creación' 
-                        ? styles.badgeCreacion 
-                        : log.accion === 'Edición' 
-                        ? styles.badgeEdicion 
-                        : log.accion === 'Eliminación' 
-                        ? styles.badgeEliminacion 
-                        : log.accion === 'Inicio sesión'
-                        ? styles.badgeInicioSesion
-                        : log.accion === 'Inicio fallido'
-                        ? styles.badgeCierreSesion
-                        : log.accion === 'Cierre sesión'
-                        ? styles.badgeCierreSesion
-                        : styles.badgeLogin
-                    }
-                  >
+                  <Box sx={getActionBadgeStyle(log.accion)}>
                     {log.accion}
                   </Box>
                 </Box>
