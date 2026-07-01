@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../auth';
+import React from 'react';
+import { useLandingPage } from './LandingPage.hooks';
 import { styles } from './LandingPage.styles';
-import { getDashboardSummary } from '../../../services/piadiApi';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
@@ -10,10 +8,8 @@ import {
   Grid,
   Card,
   CardContent,
-  Button,
-  Tabs,
   Tab,
-  LinearProgress,
+  Tabs,
   Avatar,
   IconButton,
   Divider,
@@ -30,235 +26,36 @@ import {
 import {
   Home as HomeIcon,
   Dashboard as DashboardIcon,
-  TrackChanges as MetasIcon,
   UploadFile as CargaIcon,
   Shield as AuditoriaIcon,
-  TableChart as TablaIcon,
   ExitToApp as LogoutIcon,
   ArrowUpward as ArrowUpIcon,
-  CheckCircle as CheckCircleIcon,
-  AccessTime as AccessTimeIcon,
-  Warning as WarningIcon,
-  MoreVert as MoreVertIcon,
   Help as HelpIcon,
   Menu as MenuIcon,
   ExpandMore as ExpandMoreIcon,
   Close as CloseIcon,
+  MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 
-// =========================================================================
-// ESTRUCTURA DE DATOS INTERACTIVOS (TAB_DATA)
-// =========================================================================
-const TAB_DATA = {
-  0: { // Resumen (Datos por defecto)
-    kpis: [
-      { title: 'Matrícula total institucional', value: '3,842', trend: '8%', trendDesc: 'vs semestre anterior', isBlue: true },
-      { title: 'Tasa de aprobación general', value: '86%', trend: '2%', trendDesc: 'vs semestre anterior', isBlue: false },
-      { title: 'Cursos Ed. Continua dictados', value: '24', trend: '4%', trendDesc: 'vs periodo anterior', isBlue: false },
-      { title: 'Proyectos de innovación activos', value: '15', trend: '3%', trendDesc: 'nuevos este semestre', isBlue: true },
-      { title: 'Convenios VcM vigentes', value: '45', trend: '8', trendDesc: 'nuevos este año', isBlue: false },
-      { title: 'Tasa de titulación', value: '78%', trend: '5%', trendDesc: 'vs cohorte anterior', isBlue: false },
-    ],
-    goals: [
-      { title: 'Total de 200 matriculados en cursos', status: 'completada', statusText: 'Completada', progress: 100, progressValue: '120%', start: '12-03-2026', end: '14-06-2026' },
-      { title: 'Total de 20 cursos ejecutados', status: 'progreso', statusText: 'En progreso', progress: 40, progressValue: '40%', start: '12-03-2026', end: '14-06-2026' },
-      { title: 'Reducir tasa de abandono por debajo del 30%', status: 'atencion', statusText: 'Requiere atención', progress: 85, progressValue: '85%', start: '12-03-2026', end: '14-06-2026' }
-    ]
-  },
-  1: { // Admisión
-    kpis: [
-      { title: 'Postulantes Nuevos', value: '1,420', trend: '15%', trendDesc: 'vs año anterior', isBlue: true },
-      { title: 'Tasa de Aceptación', value: '72%', trend: '3%', trendDesc: 'vs meta', isBlue: false },
-      { title: 'Matrículas procesadas', value: '980', trend: '5%', trendDesc: 'este periodo', isBlue: false },
-      { title: 'Cupos disponibles', value: '120', trend: '-10%', trendDesc: 'vacantes', isBlue: true },
-      { title: 'Becas de admisión otorgadas', value: '85', trend: '12', trendDesc: 'nuevas asignaciones', isBlue: false },
-      { title: 'Tasa de deserción temprana', value: '1.8%', trend: '-0.5%', trendDesc: 'mejorado', isBlue: false }
-    ],
-    goals: [
-      { title: 'Completar matrícula carreras nocturnas', status: 'progreso', statusText: 'En progreso', progress: 85, progressValue: '85%', start: '02-01-2026', end: '15-04-2026' },
-      { title: 'Digitalizar firma de pagarés de matrícula', status: 'completada', statusText: 'Completada', progress: 100, progressValue: '100%', start: '10-12-2025', end: '28-02-2026' }
-    ]
-  },
-  2: { // Relaciones Estudiantiles
-    kpis: [
-      { title: 'Atenciones Bienestar', value: '940', trend: '10%', trendDesc: 'este periodo', isBlue: true },
-      { title: 'Tasa participación talleres', value: '58%', trend: '6%', trendDesc: 'vs año anterior', isBlue: false },
-      { title: 'Postulaciones a becas Junaeb', value: '450', trend: '4%', trendDesc: 'procesadas', isBlue: false },
-      { title: 'Actividades recreativas ejecutadas', value: '12', trend: '2', trendDesc: 'nuevos talleres', isBlue: true },
-      { title: 'Satisfacción general DAE', value: '91%', trend: '2.4%', trendDesc: 'en encuestas', isBlue: false },
-      { title: 'Casos socioeconómicos resueltos', value: '188', trend: '95%', trendDesc: 'resolución', isBlue: false }
-    ],
-    goals: [
-      { title: 'Implementar programa de salud mental 2026', status: 'progreso', statusText: 'En progreso', progress: 60, progressValue: '60%', start: '01-03-2026', end: '30-07-2026' },
-      { title: 'Habilitar nuevo portal de becas y créditos internos', status: 'atencion', statusText: 'Requiere atención', progress: 45, progressValue: '45%', start: '15-02-2026', end: '30-06-2026' }
-    ]
-  },
-  3: { // Desarrollo Curricular
-    kpis: [
-      { title: 'Programas de estudio actualizados', value: '8', trend: '25%', trendDesc: 'vs meta anual', isBlue: true },
-      { title: 'Evaluaciones docentes completadas', value: '94%', trend: '1.2%', trendDesc: 'participación', isBlue: false },
-      { title: 'Asignaturas rediseñadas', value: '12', trend: '3', trendDesc: 'bajo enfoque competencias', isBlue: false },
-      { title: 'Acreditaciones vigentes', value: '4', trend: '100%', trendDesc: 'en regla', isBlue: true },
-      { title: 'Proyectos de docencia interna', value: '6', trend: '1', trendDesc: 'nuevos proyectos', isBlue: false },
-      { title: 'Uso de plataforma virtual', value: '88%', trend: '4%', trendDesc: 'docentes activos', isBlue: false }
-    ],
-    goals: [
-      { title: 'Rediseño de mallas curriculares del área de Finanzas', status: 'progreso', statusText: 'En progreso', progress: 70, progressValue: '70%', start: '01-01-2026', end: '30-10-2026' },
-      { title: 'Capacitación docente en metodologías activas', status: 'completada', statusText: 'Completada', progress: 100, progressValue: '100%', start: '05-01-2026', end: '10-03-2026' }
-    ]
-  },
-  4: { // Innovación
-    kpis: [
-      { title: 'Patentes en trámite', value: '3', trend: '50%', trendDesc: 'nuevas solicitudes', isBlue: true },
-      { title: 'Fondos de investigación adjudicados', value: '$85M', trend: '18%', trendDesc: 'incremento anual', isBlue: false },
-      { title: 'Publicaciones científicas (Scopus/WoS)', value: '14', trend: '2', trendDesc: 'este semestre', isBlue: false },
-      { title: 'Semilleros de investigación activos', value: '8', trend: '3', trendDesc: 'nuevos grupos', isBlue: true },
-      { title: 'Convenios internacionales de I+D', value: '5', trend: '1', trendDesc: 'vigentes', isBlue: false },
-      { title: 'Tasa transferencia tecnológica', value: '30%', trend: '5%', trendDesc: 'crecimiento', isBlue: false }
-    ],
-    goals: [
-      { title: 'Desarrollar prototipo de IA para análisis financiero', status: 'progreso', statusText: 'En progreso', progress: 50, progressValue: '50%', start: '10-02-2026', end: '15-11-2026' },
-      { title: 'Lanzar concurso de innovación para estudiantes', status: 'completada', statusText: 'Completada', progress: 100, progressValue: '100%', start: '01-03-2026', end: '30-05-2026' }
-    ]
-  },
-  5: { // Educación Continua
-    kpis: [
-      { title: 'Matrícula diplomados', value: '320', trend: '12%', trendDesc: 'este ciclo', isBlue: true },
-      { title: 'Tasa de retención programas', value: '95%', trend: '0.8%', trendDesc: 'satisfechos', isBlue: false },
-      { title: 'Programas de capacitación corporativa', value: '15', trend: '4', trendDesc: 'nuevas empresas', isBlue: false },
-      { title: 'Ingresos por venta de cursos', value: '$120M', trend: '20%', trendDesc: 'vs trimestre anterior', isBlue: true },
-      { title: 'Docentes del sector industrial', value: '82%', trend: '5%', trendDesc: 'expertos activos', isBlue: false },
-      { title: 'Satisfacción de relatores', value: '4.8/5.0', trend: '0.2', trendDesc: 'evaluación', isBlue: false }
-    ],
-    goals: [
-      { title: 'Diseñar 5 nuevos diplomados online', status: 'progreso', statusText: 'En progreso', progress: 80, progressValue: '80%', start: '05-01-2026', end: '30-06-2026' },
-      { title: 'Auditoría Sence para cursos de capacitación', status: 'atencion', statusText: 'Requiere atención', progress: 20, progressValue: '20%', start: '10-04-2026', end: '30-08-2026' }
-    ]
-  },
-  6: { // Vinculación con el Medio
-    kpis: [
-      { title: 'Convenios con empresas vigentes', value: '142', trend: '15', trendDesc: 'nuevos este año', isBlue: true },
-      { title: 'Proyectos de asistencia técnica', value: '28', trend: '8%', trendDesc: 'en ejecución', isBlue: false },
-      { title: 'Tasa inserción laboral egresados', value: '88%', trend: '2%', trendDesc: 'primer año', isBlue: false },
-      { title: 'Actividades de extensión abiertas', value: '35', trend: '5', trendDesc: 'charlas/seminarios', isBlue: true },
-      { title: 'Beneficiarios comunitarios', value: '4,200', trend: '18%', trendDesc: 'alcance social', isBlue: false },
-      { title: 'Alumnos en prácticas profesionales', value: '450', trend: '10%', trendDesc: 'colocación efectiva', isBlue: false }
-    ],
-    goals: [
-      { title: 'Renovación de alianza con red de colegios técnicos', status: 'completada', statusText: 'Completada', progress: 100, progressValue: '100%', start: '05-01-2026', end: '12-04-2026' }
-    ]
-  }
-};
-
-// Mapeo de colores específicos por departamento.
-const DEPARTMENT_COLORS = {
-  0: '#46D19F', // Educación Continua (Turquesa claro)
-};
-
 export const LandingPage = () => {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState(0);
-  const [activeMenu, setActiveMenu] = useState('Inicio');
-  
-  // Estado para controlar la apertura del menú lateral en móviles
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [openHelpDialog, setOpenHelpDialog] = useState(false); // Estado para abrir el Centro de Ayuda
-  const [ecApiData, setEcApiData] = useState(null);
-
-  useEffect(() => {
-    getDashboardSummary({ department: 'educacion_continua', year: 2026 })
-      .then(res => {
-        if (!res?.success || !res.data) return;
-        // Formato real: data.departments[0].cards[{ indicatorKey, value, hasData }]
-        const deptData = res.data?.departments?.find(d => d.departmentId === 'educacion_continua');
-        const cards = deptData?.cards ?? [];
-        if (!cards.some(c => c.hasData)) return; // sin datos reales, mantener mock
-        const map = {};
-        cards.forEach(c => { map[c.indicatorKey] = c; });
-        setEcApiData(map);
-      })
-      .catch(() => {});
-  }, []);
-
-  // Datos de las Preguntas Frecuentes (FAQ) del Centro de Ayuda
-  const faqData = [
-    {
-      q: '¿Qué son las metas y cómo se usan?',
-      a: 'Las metas son objetivos específicos que puedes rastrear a lo largo del tiempo. Cada meta tiene un progreso medido en porcentaje, fechas de inicio y término, y un estado (Completada, En curso, o Superada). Las barras de progreso muestran visualmente qué tan cerca estás de cumplir cada meta.'
-    },
-    {
-      q: '¿Cómo interpreto los indicadores?',
-      a: 'Los indicadores muestran métricas clave como "Total de cursos dictados" o "Tasa de ejecución". El número principal es el valor actual, y la flecha con porcentaje indica el cambio comparado con el periodo anterior. Una flecha verde hacia arriba significa mejora.'
-    },
-    {
-      q: '¿Cómo navego entre secciones?',
-      a: 'Usa el menú lateral izquierdo para moverte entre Inicio, Dashboards, Metas, y otras secciones. La sección activa se muestra con fondo verde azulado y una barra blanca en el borde izquierdo.'
-    },
-    {
-      q: '¿Qué significan los colores en las metas?',
-      a: 'Verde indica meta completada (100% o más), amarillo indica meta en progreso (menos de 100%), y rojo indica que se ha superado el límite de una meta negativa (como "tasa de abandono debajo del 30%").'
-    },
-    {
-      q: '¿Cómo puedo ver más detalles?',
-      a: 'Haz clic en el botón "Detalles" junto a cada meta, o en "Ingresar a Dashboard" para ver análisis más profundos con gráficos interactivos.'
-    },
-    {
-      q: '¿Cómo funcionan las métricas?',
-      isRich: true
-    }
-  ];
-
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  // Solo Educación Continua — Resumen eliminado (sin endpoint real disponible)
-  const currentData = (() => {
-    const get = (key) => ecApiData?.[key]?.value;
-    const oferta = get('oferta_programada');
-    const dictados = get('cursos_dictados');
-    const ejecucion = get('tasa_ejecucion');
-    const matricula = get('matricula_por_programa');
-    const aprobacion = get('tasa_aprobacion');
-    const ingresos = get('ingresos_generados');
-    return {
-      kpis: [
-        { title: 'Oferta programada', value: oferta != null ? String(oferta) : 'Sin datos', trend: '↑', trendDesc: 'programas 2026', isBlue: true },
-        { title: 'Cursos dictados', value: dictados != null ? String(dictados) : 'Sin datos', trend: '↑', trendDesc: 'ejecutados 2026', isBlue: false },
-        { title: 'Tasa de ejecución', value: ejecucion != null ? `${ejecucion}%` : 'Sin datos', trend: '↑', trendDesc: 'cursos ejecutados', isBlue: false },
-        { title: 'Matrícula total', value: matricula != null ? Number(matricula).toLocaleString('es-CL') : 'Sin datos', trend: '↑', trendDesc: 'participantes 2026', isBlue: true },
-        { title: 'Tasa de aprobación', value: aprobacion != null ? `${aprobacion}%` : 'Sin datos', trend: '↑', trendDesc: 'aprobados del total', isBlue: false },
-        { title: 'Ingresos netos', value: ingresos != null ? `$${Number(ingresos).toLocaleString('es-CL')}` : 'Sin datos', trend: '↑', trendDesc: 'CLP facturados', isBlue: false },
-      ],
-      goals: []
-    };
-  })();
-  
-  // Obtiene el color de fondo personalizado para este departamento
-  const deptColor = DEPARTMENT_COLORS[activeTab] || '#1E2875';
-
-  // Forzamos el color del texto a blanco para todas las tarjetas de color
-  const isLight = false;
-  const customTextColor = '#ffffff';
-
-  // Devuelve el icono correcto para cada estado de meta
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'completada':
-        return <CheckCircleIcon sx={{ fontSize: '0.9rem' }} />;
-      case 'progreso':
-        return <AccessTimeIcon sx={{ fontSize: '0.9rem' }} />;
-      case 'atencion':
-        return <WarningIcon sx={{ fontSize: '0.9rem' }} />;
-      default:
-        return null;
-    }
-  };
+  const {
+    navigate,
+    user,
+    logout,
+    activeTab,
+    activeMenu,
+    setActiveMenu,
+    mobileOpen,
+    openHelpDialog,
+    setOpenHelpDialog,
+    currentData,
+    deptColor,
+    isLight,
+    customTextColor,
+    faqData,
+    handleTabChange,
+    handleDrawerToggle,
+  } = useLandingPage();
 
   // =========================================================================
   // SUB-COMPONENTE: CONTENIDO DEL SIDEBAR (REUTILIZABLE)
@@ -311,7 +108,7 @@ export const LandingPage = () => {
                 key={item.text}
                 onClick={() => {
                   setActiveMenu(item.text);
-                  setMobileOpen(false); // Cierra el drawer móvil si se hace click
+                  handleDrawerToggle(); // Cierra el drawer móvil si se hace click
                   if (item.path !== '#') {
                     navigate(item.path);
                   }

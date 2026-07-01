@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../auth';
+import React from 'react';
+import { useCargaDatos, getTemplateColor } from './CargaDatos.hooks';
 import { styles } from './CargaDatos.styles';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
@@ -30,14 +29,13 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Grid,
 } from '@mui/material';
 import {
   Home as HomeIcon,
   Dashboard as DashboardIcon,
-  TrackChanges as MetasIcon,
   UploadFile as CargaIcon,
   Shield as AuditoriaIcon,
-  TableChart as TablaIcon,
   ExitToApp as LogoutIcon,
   CheckCircle as CheckCircleIcon,
   MoreVert as MoreVertIcon,
@@ -55,362 +53,51 @@ import {
   Download as DownloadIcon,
 } from '@mui/icons-material';
 
-// Plantillas de carga de datos oficiales
-const TEMPLATES = [
-  {
-    id: 'matricula',
-    title: 'Matrícula y Estudiantes',
-    desc: 'Matrícula total, nuevos vs antiguos, distribución por sexo, edad y carrera',
-    badge: 'Admisión',
-    color: '#1E2875',
-  },
-  {
-    id: 'caracterizacion',
-    title: 'Caracterización Estudiante',
-    desc: 'Nivel socioeconómico, situación familiar, procedencia geográfica, tipo de colegio',
-    badge: 'Admisión',
-    color: '#1E2875',
-  },
-  {
-    id: 'rendimiento',
-    title: 'Rendimiento Académico',
-    desc: 'Tasas de aprobación/reprobación, asignaturas críticas, prácticas, titulación',
-    badge: 'Desarrollo Curricular',
-    color: '#175696',
-  },
-  {
-    id: 'educacion_continua',
-    title: 'Educación Continua',
-    desc: 'Cursos programados y dictados, matrícula, tasa de aprobación, ingresos',
-    badge: 'Educación Continua',
-    color: '#46D19F',
-  },
-  {
-    id: 'vinculacion',
-    title: 'Vinculación con el Medio',
-    desc: 'Convenios vigentes y nuevos, actividades VcM, participantes',
-    badge: 'Vinculación con el Medio',
-    color: '#E27800',
-  },
-  {
-    id: 'innovacion',
-    title: 'Innovación',
-    desc: 'Proyectos en curso y finalizados, financiamiento externo, docentes involucrados',
-    badge: 'Innovación',
-    color: '#3EC9FF',
-  },
-];
-
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-const getTemplateColor = (roleName) => {
-  if (!roleName) return '#1E2875';
-  const name = roleName.toLowerCase();
-  if (name.includes('admisión') || name.includes('adcision') || name.includes('resumen')) return '#1E2875';
-  if (name.includes('estudiantiles')) return '#51158C';
-  if (name.includes('curricular') || name.includes('desarrollo')) return '#175696';
-  if (name.includes('innovación') || name.includes('innovacion')) return '#3EC9FF';
-  if (name.includes('continua')) return '#46D19F';
-  if (name.includes('vinculación') || name.includes('vinculacion') || name.includes('medio')) return '#E27800';
-  return '#1E2875';
-};
-
 export const CargaDatos = () => {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  
-  // Estados para la carga de datos y diálogo
-  const [uploads, setUploads] = useState([]);
-  const [openUploadDialog, setOpenUploadDialog] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [isDragActive, setIsDragActive] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1); // Página inicial 1 por defecto
-  const [openHelpDialog, setOpenHelpDialog] = useState(false); // Estado para abrir el Centro de Ayuda
-  const [templates, setTemplates] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState('');
-  const [uploadErrorDetails, setUploadErrorDetails] = useState([]);
+  const {
+    navigate,
+    user,
+    logout,
+    mobileOpen,
+    uploads,
+    openUploadDialog,
+    setOpenUploadDialog,
+    selectedTemplate,
+    selectedFile,
+    setSelectedFile,
+    isDragActive,
+    currentPage,
+    setCurrentPage,
+    openHelpDialog,
+    setOpenHelpDialog,
+    uploading,
+    uploadError,
+    uploadErrorDetails,
+    uploadSuccess,
+    successSummary,
+    filteredTemplates,
+    faqData,
+    activeMenu,
+    handleDrawerToggle,
+    handleTemplateSelect,
+    handleFileChange,
+    handleDragOver,
+    handleDragLeave,
+    handleDownloadTemplate,
+    handleDrop,
+    handleCloseDialog,
+    handleUploadSubmit,
+  } = useCargaDatos();
 
+  // Paginación lógica simple de cargas (5 por página)
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(uploads.length / itemsPerPage) || 1;
+  const paginatedUploads = uploads.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-
-
-
-  // Carga de plantillas dinámicas desde el backend
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/plantillas`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.length > 0) {
-            setTemplates(data);
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn('Error fetching plantillas from backend, using fallbacks:', err);
-      }
-      
-      // Fallbacks estáticos si el backend está desconectado
-      const fallbackTemplates = [
-        {
-          id: 1,
-          name: 'Matrícula y Estudiantes',
-          description: 'Matrícula total, nuevos vs antiguos, distribución por sexo, edad y carrera',
-          role: { name: 'Admisión' }
-        },
-        {
-          id: 2,
-          name: 'Caracterización Estudiante',
-          description: 'Nivel socioeconómico, situación familiar, procedencia geográfica, tipo de colegio',
-          role: { name: 'Admisión' }
-        },
-        {
-          id: 3,
-          name: 'Rendimiento Académico',
-          description: 'Tasas de aprobación/reprobación, asignaturas críticas, prácticas, titulación',
-          role: { name: 'Desarrollo Curricular' }
-        },
-        {
-          id: 4,
-          name: 'Educación Continua',
-          description: 'Cursos programados y dictados, matrícula, tasa de aprobación, ingresos',
-          role: { name: 'Educación Continua' }
-        },
-        {
-          id: 5,
-          name: 'Vinculación con el Medio',
-          description: 'Convenios vigentes y nuevos, actividades VcM, participantes',
-          role: { name: 'Vinculación con el Medio' }
-        },
-        {
-          id: 6,
-          name: 'Innovación',
-          description: 'Proyectos en curso y finalizados, financiamiento externo, docentes involucrados',
-          role: { name: 'Innovación' }
-        }
-      ];
-      setTemplates(fallbackTemplates);
-    };
-
-    fetchTemplates();
-  }, []);
-
-  // Carga el historial real de cargas desde auditoría (re-ejecuta cuando templates carga)
-  useEffect(() => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) return;
-    const formatDate = (iso) => {
-      if (!iso) return '-';
-      const d = new Date(iso);
-      const pad = (n) => String(n).padStart(2, '0');
-      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    };
-    fetch(`${API_URL}/api/audit-logs?type=carga&limit=10`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(r => r.ok ? r.json() : null)
-      .then(json => {
-        const items = json?.data?.items ?? [];
-        if (!items.length) return;
-        setUploads(items.map(item => {
-          const plantillaId = item.detail?.plantilla;
-          const tmpl = templates.find(t => String(t.id) === String(plantillaId));
-          return {
-            fecha: formatDate(item.createdAt),
-            usuario: item.usuarioNombre || item.usuarioEmail || (item.detail?.usuarioId != null ? `#${item.detail.usuarioId}` : '-'),
-            plantilla: tmpl?.name || item.detail?.entidad || plantillaId || '-',
-            archivo: item.detail?.archivo || '-',
-          };
-        }));
-      })
-      .catch(() => {});
-  }, [templates]);
-
-  // Filtrado de plantillas por rol (Rector y administradores ven todas)
-  const filteredTemplates = templates.filter((tmpl) => {
-    if (
-      user?.role === 'Rector' || 
-      user?.role === 'Administrador' || 
-      user?.role === 'Director de Administración'
-    ) {
-      return true;
-    }
-    return tmpl.role?.name === user?.role;
-  });
-
-  // Datos de las Preguntas Frecuentes (FAQ) del Centro de Ayuda
-  const faqData = [
-    {
-      q: '¿Qué son las metas y cómo se usan?',
-      a: 'Las metas son objetivos específicos que puedes rastrear a lo largo del tiempo. Cada meta tiene un progreso medido en porcentaje, fechas de inicio y término, y un estado (Completada, En curso, o Superada). Las barras de progreso muestran visualmente qué tan cerca estás de cumplir cada meta.'
-    },
-    {
-      q: '¿Cómo interpreto los indicadores?',
-      a: 'Los indicadores muestran métricas clave como "Total de cursos dictados" o "Tasa de ejecución". El número principal es el valor actual, y la flecha con porcentaje indica el cambio comparado con el periodo anterior. Una flecha verde hacia arriba significa mejora.'
-    },
-    {
-      q: '¿Cómo navego entre secciones?',
-      a: 'Usa el menú lateral izquierdo para moverte entre Inicio, Dashboards, Metas, y otras secciones. La sección activa se muestra con fondo verde azulado y una barra blanca en el borde izquierdo.'
-    },
-    {
-      q: '¿Qué significan los colores en las metas?',
-      a: 'Verde indica meta completada (100% o más), amarillo indica meta en progreso (menos de 100%), y rojo indica que se ha superado el límite de una meta negativa (como "tasa de abandono debajo del 30%").'
-    },
-    {
-      q: '¿Cómo puedo ver más detalles?',
-      a: 'Haz clic en el botón "Detalles" junto a cada meta, o en "Ingresar a Dashboard" para ver análisis más profundos con gráficos interactivos.'
-    },
-    {
-      q: '¿Cómo funcionan las métricas?',
-      isRich: true
-    }
-  ];
-
-  // Mapeamos el menú activo a "Carga de datos"
-  const activeMenu = 'Carga de datos';
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const handleTemplateSelect = (templateId) => {
-    setSelectedTemplate(templateId);
-  };
-
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragActive(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragActive(false);
-  };
-
-  const handleDownloadTemplate = async (e, templateId) => {
-    e.stopPropagation(); // Evita que se seleccione la tarjeta
-    try {
-      const token = sessionStorage.getItem('auth_token');
-      const response = await fetch(`${API_URL}/api/plantillas/${templateId}/descargar`, {
-        method: 'GET',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-      });
-
-      if (!response.ok) {
-        throw new Error('No se pudo descargar la plantilla desde el servidor');
-      }
-
-      // Obtener el nombre del archivo de la cabecera Content-Disposition
-      let filename = 'plantilla.xlsx';
-      const disposition = response.headers.get('content-disposition');
-      if (disposition && disposition.indexOf('attachment') !== -1) {
-        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-        const matches = filenameRegex.exec(disposition);
-        if (matches != null && matches[1]) { 
-          filename = matches[1].replace(/['"]/g, '');
-        }
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Error al descargar la plantilla:', err);
-      alert(err.message || 'Error al descargar la plantilla.');
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      if (file.name.endsWith('.xlsx')) {
-        setSelectedFile(file);
-      } else {
-        alert('Por favor, selecciona un archivo con extensión .xlsx (Excel).');
-      }
-    }
-  };
-
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [successSummary, setSuccessSummary] = useState(null);
-
-  const handleCloseDialog = () => {
-    setOpenUploadDialog(false);
-    setSelectedTemplate(null);
-    setSelectedFile(null);
-    setUploadError('');
-    setUploadErrorDetails([]);
-    setUploading(false);
-    setUploadSuccess(false);
-    setSuccessSummary(null);
-  };
-
-  const handleUploadSubmit = async () => {
-    if (selectedTemplate && selectedFile) {
-      setUploading(true);
-      setUploadError('');
-      setUploadErrorDetails([]);
-      setUploadSuccess(false);
-      setSuccessSummary(null);
-
-      const formData = new FormData();
-      formData.append('archivo', selectedFile);
-
-      try {
-        const token = sessionStorage.getItem('auth_token');
-        const response = await fetch(`${API_URL}/api/plantillas/${selectedTemplate}/cargar`, {
-          method: 'POST',
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-          body: formData
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          const templateObj = templates.find(t => t.id === selectedTemplate);
-          const newUpload = {
-            fecha: new Date().toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ''),
-            usuario: user?.username || 'Jane Doe',
-            plantilla: templateObj?.name || 'Matrícula y Estudiantes',
-            archivo: selectedFile.name,
-          };
-          setUploads([newUpload, ...uploads]);
-          setCurrentPage(1); // Restablecer a la página 1 para que el usuario visualice su carga
-          
-          setSuccessSummary(data.resumen || null);
-          setUploadSuccess(true);
-        } else {
-          // Si el servidor retorna errores de validación estructurados
-          setUploadError(data.message || data.error || 'Error en la estructura del archivo.');
-          if (data.errores) {
-            setUploadErrorDetails(data.errores);
-          }
-        }
-      } catch (err) {
-        console.error('Error al subir archivo:', err);
-        setUploadError('No se pudo establecer comunicación con el servidor.');
-      } finally {
-        setUploading(false);
-      }
-    }
-  };
+  const activeTemplateObj = filteredTemplates.find(t => t.id === selectedTemplate);
 
   // =========================================================================
   // SUB-COMPONENTE: CONTENIDO DEL SIDEBAR (REUTILIZABLE)
@@ -462,7 +149,7 @@ export const CargaDatos = () => {
               <Box
                 key={item.text}
                 onClick={() => {
-                  setMobileOpen(false);
+                  handleDrawerToggle(); // Cierra el drawer móvil si se hace click
                   if (item.path !== '#') {
                     navigate(item.path);
                   }
@@ -553,7 +240,7 @@ export const CargaDatos = () => {
         open={mobileOpen}
         onClose={handleDrawerToggle}
         ModalProps={{
-          keepMounted: true,
+          keepMounted: true, // Optimiza el rendimiento de apertura en móviles.
         }}
         sx={{
           display: { xs: 'block', md: 'none' },
@@ -564,36 +251,24 @@ export const CargaDatos = () => {
       </Drawer>
 
       {/* =========================================================================
-          SECCIÓN 2: ÁREA DE CONTENIDO PRINCIPAL (DERECHA)
+          SECCIÓN 2: ÁREA DE CONTENIDO PRINCIPAL (DERECHA / ABAJO)
           ========================================================================= */}
       <Box sx={styles.contentArea}>
         
-        {/* Cabecera de la Página */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
-            <Box sx={styles.panelHeader}>
-              <Box sx={styles.panelIconContainer}>
-                <UploadIcon />
-              </Box>
-              <Box>
-                <Typography variant="h5" sx={styles.panelTitle}>
-                  Carga de Datos
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                  Sube archivos Excel con datos institucionales según las plantillas predefinidas
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-
-          {/* Breadcrumbs de orientación */}
-          <Box sx={styles.breadcrumbsContainer}>
-            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/')}>
-              Inicio
-            </Typography>
-            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
-            <Typography variant="body1" sx={{ color: '#1E2875', fontWeight: 600 }}>
+        {/* Fila superior: Cabecera con Sesión Activa */}
+        <Box sx={styles.headerRow}>
+          <Box>
+            <Typography variant="h5" sx={styles.panelTitle}>
               Carga de datos
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
+              Sube y actualiza los indicadores institucionales mediante archivos de plantilla.
+            </Typography>
+          </Box>
+          <Box sx={styles.sessionBadge}>
+            <Box sx={styles.sessionDot} />
+            <Typography sx={styles.sessionText}>
+              Sesión activa: {user?.username || 'Usuario'} ({user?.role || 'Invitado'})
             </Typography>
           </Box>
         </Box>
@@ -612,11 +287,7 @@ export const CargaDatos = () => {
         </Box>
 
         {/* Botón Acción: Cargar Datos */}
-        {/* ==========================================
-            [BOTÓN ACCIÓN PRINCIPAL: CARGAR DATOS]
-            Abre el diálogo modal de selección de plantilla e importación de archivos.
-            ========================================== */}
-        {user?.role !== 'Analista de Calidad' && (
+        {user?.role !== 'Analista de Calidad' && user?.role !== 'Vicerrectoria de Calidad' && (
           <Button
             variant="contained"
             startIcon={<UploadIcon />}
@@ -648,26 +319,20 @@ export const CargaDatos = () => {
                 {uploads.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} sx={{ textAlign: 'center', color: '#94A3B8', py: 4, fontSize: '14px' }}>
-                      No hay cargas registradas.
+                      No se registran cargas en el historial local de auditoría.
                     </TableCell>
                   </TableRow>
                 )}
-                {uploads.map((upload, index) => (
-                  <TableRow key={index}>
-                    <TableCell sx={styles.tableBodyCell}>{upload.fecha}</TableCell>
-                    <TableCell sx={styles.tableBodyCell}>{upload.usuario}</TableCell>
-                    <TableCell sx={styles.tableBodyCell}>{upload.plantilla}</TableCell>
-                    <TableCell sx={styles.tableBodyCell}>
-                      <a href="#" sx={styles.fileLink} style={{ color: '#10B981', fontWeight: 500, textDecoration: 'none' }}>
-                        {upload.archivo}
-                      </a>
-                    </TableCell>
-                    <TableCell sx={styles.tableBodyCell}>
+                {paginatedUploads.map((row, index) => (
+                  <TableRow key={index} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                    <TableCell sx={styles.tableCell}>{row.fecha}</TableCell>
+                    <TableCell sx={styles.tableCell}>{row.usuario}</TableCell>
+                    <TableCell sx={styles.tableCell}>{row.plantilla}</TableCell>
+                    <TableCell sx={styles.tableCell}>{row.archivo}</TableCell>
+                    <TableCell sx={styles.tableCell}>
                       <Box sx={styles.statusBadgeSuccess}>
-                        <CheckCircleIcon sx={{ fontSize: 16 }} />
-                        <Typography variant="body2" sx={{ fontSize: '14px', fontWeight: 600 }}>
-                          Exitoso
-                        </Typography>
+                        <CheckCircleIcon sx={{ fontSize: 14 }} />
+                        Carga exitosa
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -676,332 +341,73 @@ export const CargaDatos = () => {
             </Table>
           </TableContainer>
 
-          {/* Vista móvil: Diseño de Tarjetas Responsivo */}
-          <Box sx={styles.mobileCardsContainer}>
-            {uploads.slice((currentPage - 1) * 3, currentPage * 3).map((upload, index) => (
-              <Box key={index} sx={styles.mobileUploadCard}>
-                <Box sx={styles.mobileCardHeader}>
-                  {/* Nombre de archivo estilizado con clase de truncado (textOverflow: ellipsis) */}
-                  <Box component="a" href="#" sx={styles.mobileCardFilename}>
-                    {upload.archivo}
-                  </Box>
-                </Box>
-                <Box sx={styles.mobileMetadataRow}>
-                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                    <Box sx={styles.metadataItem}>
-                      <PersonIcon sx={{ fontSize: 16, color: '#6B7280' }} />
-                      <Typography variant="body2" sx={{ fontSize: '12px', color: '#475569' }}>
-                        {upload.usuario}
-                      </Typography>
+          {/* Versión responsiva apilada (tarjetas) para dispositivos móviles */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2 }}>
+            {uploads.length === 0 ? (
+              <Typography sx={{ textAlign: 'center', color: '#94A3B8', py: 4, fontSize: '14px' }}>
+                No se registran cargas en el historial local de auditoría.
+              </Typography>
+            ) : (
+              paginatedUploads.map((row, idx) => (
+                <Box key={idx} sx={styles.mobileCardContainer}>
+                  <Box sx={styles.mobileCardHeader}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CalendarIcon sx={{ fontSize: 18, color: '#64748b' }} />
+                      <Typography sx={styles.mobileCardTitle}>{row.fecha}</Typography>
                     </Box>
-                    <Box sx={styles.metadataItem}>
-                      <CalendarIcon sx={{ fontSize: 16, color: '#6B7280' }} />
-                      <Typography variant="body2" sx={{ fontSize: '12px', color: '#475569' }}>
-                        {upload.fecha}
-                      </Typography>
+                    <Box sx={styles.statusBadgeSuccess}>
+                      <CheckCircleIcon sx={{ fontSize: 13 }} />
+                      Carga exitosa
                     </Box>
                   </Box>
-                  <Box sx={styles.templatePill}>
-                    <DescriptionIcon sx={{ fontSize: 12, color: '#ffffff' }} />
-                    <Typography variant="caption" sx={{ fontSize: '11px', fontWeight: 600, color: '#ffffff' }}>
-                      {upload.plantilla}
-                    </Typography>
+                  <Box sx={styles.mobileCardBody}>
+                    <Box sx={styles.mobileCardRow}>
+                      <PersonIcon />
+                      <Typography sx={styles.mobileCardLabel}>Usuario:</Typography>
+                      <Typography sx={styles.mobileCardValue}>{row.usuario}</Typography>
+                    </Box>
+                    <Box sx={styles.mobileCardRow}>
+                      <DescriptionIcon />
+                      <Typography sx={styles.mobileCardLabel}>Plantilla:</Typography>
+                      <Typography sx={styles.mobileCardValue}>{row.plantilla}</Typography>
+                    </Box>
+                    <Box sx={styles.mobileCardRow}>
+                      <UploadIcon />
+                      <Typography sx={styles.mobileCardLabel}>Archivo:</Typography>
+                      <Typography sx={styles.mobileCardValue}>{row.archivo}</Typography>
+                    </Box>
                   </Box>
                 </Box>
-              </Box>
-            ))}
+              ))
+            )}
+          </Box>
 
-            {/* Paginación móvil */}
-            <Box sx={styles.paginationContainer}>
+          {/* Controles de Paginación */}
+          <Box sx={styles.paginationRow}>
+            <Typography sx={styles.paginationText}>
+              Página {currentPage} de {totalPages} ({uploads.length} cargas en total)
+            </Typography>
+            <Box sx={styles.paginationButtons}>
               <IconButton 
+                size="small" 
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                sx={styles.paginationArrow}
-                size="small"
+                sx={styles.paginationIconButton}
               >
-                <ChevronLeftIcon fontSize="small" />
+                <ChevronLeftIcon />
               </IconButton>
-              
-              <Typography sx={styles.paginationDot}>...</Typography>
-              
-              {[1, 2, 3].map((pageNum) => (
-                <Typography
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  sx={styles.paginationPage(currentPage === pageNum)}
-                >
-                  {pageNum}
-                </Typography>
-              ))}
-              
-              <Typography sx={styles.paginationDot}>...</Typography>
-              
               <IconButton 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, 3))}
-                disabled={currentPage === 3}
-                sx={styles.paginationArrow}
                 size="small"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                sx={styles.paginationIconButton}
               >
-                <ChevronRightIcon fontSize="small" />
+                <ChevronRightIcon />
               </IconButton>
             </Box>
           </Box>
         </Card>
-
-
       </Box>
-
-      {/* =========================================================================
-          DIÁLOGO MODAL: CARGAR DATOS (POPUP)
-          ========================================================================= */}
-      <Dialog
-        open={openUploadDialog}
-        onClose={handleCloseDialog}
-        PaperProps={{ sx: styles.dialogPaper }}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle sx={{ p: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-          <Box>
-            <Typography sx={styles.dialogTitle}>
-              {uploadSuccess ? 'Carga exitosa' : 'Cargar datos'}
-            </Typography>
-            <Typography sx={styles.dialogSubtitle}>
-              {uploadSuccess 
-                ? 'El archivo Excel se ha validado e importado correctamente en la base de datos'
-                : 'Selecciona una plantilla y arrastra tu archivo Excel o haz clic para seleccionarlo'
-              }
-            </Typography>
-          </Box>
-          <IconButton onClick={handleCloseDialog} sx={{ color: '#94a3b8', mt: -1 }}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent sx={{ p: 0, overflowY: 'visible' }}>
-          {uploadSuccess ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4, px: 2, textAlign: 'center' }}>
-              <CheckCircleIcon sx={{ fontSize: 64, color: '#10B981', mb: 2 }} />
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1E2875', mb: 1, fontFamily: "'Inter', sans-serif" }}>
-                ¡Datos importados con éxito!
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#6B7280', mb: 4, maxWidth: '450px', fontFamily: "'Inter', sans-serif" }}>
-                El archivo <strong>{selectedFile?.name}</strong> fue verificado y cargado sin errores en el sistema.
-              </Typography>
-
-              {successSummary && (
-                <Box sx={{ width: '100%', maxWidth: '500px', bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', p: 3, textAlign: 'left', mb: 1 }}>
-                  <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#334155', mb: 2, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: "'Inter', sans-serif" }}>
-                    Resumen de registros procesados:
-                  </Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '12px 24px' }}>
-                    {Object.entries(successSummary).map(([tabla, cantidad]) => (
-                      <React.Fragment key={tabla}>
-                        <Typography sx={{ fontSize: '14px', color: '#475569', fontWeight: 500, fontFamily: "'Inter', sans-serif" }}>
-                          {tabla}
-                        </Typography>
-                        <Typography sx={{ fontSize: '14px', color: '#10B981', fontWeight: 700, textAlign: 'right', fontFamily: "'Inter', sans-serif" }}>
-                          +{cantidad} filas
-                        </Typography>
-                      </React.Fragment>
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </Box>
-          ) : (
-            <>
-
-
-              {/* 1. Selecciona una plantilla */}
-              <Typography sx={styles.sectionSubtitleDialog}>1. Selecciona una plantilla</Typography>
-              
-              <Box sx={styles.templatesGrid}>
-                {filteredTemplates.map((tmpl) => {
-                  const isSelected = selectedTemplate === tmpl.id;
-                  const tmplColor = getTemplateColor(tmpl.role?.name);
-
-                  return (
-                    <Box
-                      key={tmpl.id}
-                      onClick={() => !uploading && handleTemplateSelect(tmpl.id)}
-                      sx={[styles.templateCard(isSelected), uploading && { pointerEvents: 'none', opacity: 0.6 }]}
-                    >
-                      <Box sx={styles.templateCardIcon(tmplColor)}>
-                        <DescriptionIcon fontSize="medium" />
-                      </Box>
-                      <Box sx={{ flexGrow: 1, pr: 4 }}>
-                        <Typography sx={styles.templateCardTitle}>
-                          {tmpl.name}
-                        </Typography>
-                        <Typography sx={styles.templateCardDesc}>
-                          {tmpl.description}
-                        </Typography>
-                        <Box sx={styles.templateBadge(tmplColor)}>
-                          {tmpl.role?.name || 'General'}
-                        </Box>
-                      </Box>
-                      <IconButton
-                        onClick={(e) => handleDownloadTemplate(e, tmpl.id)}
-                        disabled={uploading}
-                        sx={{
-                          position: 'absolute',
-                          bottom: 12,
-                          right: 12,
-                          color: tmplColor,
-                          padding: '6px',
-                          '&:hover': {
-                            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                          },
-                        }}
-                        title="Descargar plantilla"
-                      >
-                        <DownloadIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  );
-                })}
-              </Box>
-
-
-
-              {/* 2. Carga tu archivo (Habilitado solo al seleccionar una plantilla de la sección anterior) */}
-              <Box sx={{ 
-                opacity: (selectedTemplate && !uploading) ? 1 : 0.4, 
-                pointerEvents: (selectedTemplate && !uploading) ? 'auto' : 'none',
-                transition: 'all 0.3s ease-in-out',
-                mt: 3 
-              }}>
-                <Typography sx={styles.sectionSubtitleDialog}>2. Carga tu archivo</Typography>
-                
-                <Box
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  sx={styles.dropZone(isDragActive && selectedTemplate)}
-                  onClick={() => selectedTemplate && !uploading && document.getElementById('dialog-file-input').click()}
-                >
-                  <input
-                    type="file"
-                    id="dialog-file-input"
-                    accept=".xlsx"
-                    style={{ display: 'none' }}
-                    onChange={handleFileChange}
-                    disabled={!selectedTemplate || uploading}
-                  />
-                  
-                  <UploadIcon sx={[styles.dropZoneIcon, selectedFile && { color: '#10B981' }]} />
-                  
-                  {selectedFile ? (
-                    <Box>
-                      <Typography sx={styles.dropZoneTextPrimary} style={{ color: '#10B981' }}>
-                        Archivo seleccionado: {selectedFile.name}
-                      </Typography>
-                      <Typography sx={styles.dropZoneTextSecondary}>
-                        Tamaño: {(selectedFile.size / 1024).toFixed(1)} KB (Listo para cargar)
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <>
-                      <Typography sx={styles.dropZoneTextPrimary}>
-                        Arrastra tu archivo aquí
-                      </Typography>
-                      <Typography sx={styles.dropZoneTextSecondary}>
-                        o haz clic para seleccionarlo
-                      </Typography>
-                      
-                      <Button
-                        variant="contained"
-                        sx={styles.dropZoneSelectButton}
-                        component="span"
-                        disabled={!selectedTemplate || uploading}
-                      >
-                        Seleccionar archivo
-                      </Button>
-                      
-                      <Typography sx={styles.dropZoneCaption}>
-                        Formato aceptado: .xlsx (Excel)
-                      </Typography>
-                    </>
-                  )}
-                </Box>
-              </Box>
-
-              {/* Barra de progreso de validación */}
-              {uploading && (
-                <Box sx={{ width: '100%', mt: 3 }}>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 500, color: '#1E2875', mb: 1, fontFamily: "'Inter', sans-serif" }}>
-                    Validando estructura del archivo Excel...
-                  </Typography>
-                  <LinearProgress sx={{ 
-                    height: 8, 
-                    borderRadius: 4, 
-                    bgcolor: '#E5E7EB',
-                    '& .MuiLinearProgress-bar': {
-                      bgcolor: '#1DC2A0'
-                    }
-                  }} />
-                </Box>
-              )}
-
-              {/* Mensaje de error general y detalles de validación en la parte inferior */}
-              {uploadError && (
-                <Alert 
-                  severity="error" 
-                  sx={{ 
-                    mt: 3, 
-                    fontFamily: "'Inter', sans-serif",
-                    borderRadius: '8px',
-                    border: '1px solid #FCA5A5',
-                    bgcolor: '#FEF2F2',
-                    '& .MuiAlert-message': { width: '100%' }
-                  }}
-                >
-                  <Typography sx={{ fontWeight: 600, fontSize: '15px', color: '#991B1B', mb: uploadErrorDetails.length > 0 ? 1 : 0 }}>
-                    {uploadError}
-                  </Typography>
-                  
-                  {uploadErrorDetails.length > 0 && (
-                    <Box sx={{ mt: 1, pl: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      {uploadErrorDetails.map((err, idx) => (
-                        <Typography key={idx} variant="body2" sx={{ color: '#7F1D1D', fontSize: '13px', display: 'list-item', listStyleType: 'disc' }}>
-                          <strong>Hoja:</strong> {err.hoja || 'N/A'} — <strong>Campo:</strong> {err.campo || 'N/A'}: {err.mensaje}
-                        </Typography>
-                      ))}
-                    </Box>
-                  )}
-                </Alert>
-              )}
-            </>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 0, mt: 3, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-          {uploadSuccess ? (
-            <Button
-              variant="contained"
-              onClick={handleCloseDialog}
-              sx={styles.dialogSubmitButton(true)}
-            >
-              Entendido
-            </Button>
-          ) : (
-            <>
-              <Button onClick={handleCloseDialog} sx={styles.dialogCancelButton} disabled={uploading}>
-                Cancelar
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleUploadSubmit}
-                sx={styles.dialogSubmitButton(selectedTemplate !== null && selectedFile !== null && !uploading)}
-                disabled={!selectedTemplate || !selectedFile || uploading}
-              >
-                {uploading ? 'Validando...' : 'Cargar datos'}
-              </Button>
-            </>
-          )}
-        </DialogActions>
-      </Dialog>
 
       {/* Botón flotante de ayuda */}
       <IconButton sx={styles.floatingHelpButton} onClick={() => setOpenHelpDialog(true)}>
@@ -1088,6 +494,227 @@ export const CargaDatos = () => {
             </Typography>
           </Box>
         </DialogContent>
+      </Dialog>
+
+      {/* =========================================================================
+          DIÁLOGO MODAL: SELECCIÓN E IMPORTACIÓN DE PLANTILLA DE DATOS
+          ========================================================================= */}
+      <Dialog
+        open={openUploadDialog}
+        onClose={handleCloseDialog}
+        PaperProps={{ sx: styles.dialogPaper }}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={styles.dialogTitle}>
+          Cargar nuevo archivo de datos
+          <IconButton onClick={handleCloseDialog} sx={{ color: '#94a3b8' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={styles.dialogContent}>
+          {uploadSuccess ? (
+            /* Pantalla de Confirmación de Carga Exitosa */
+            <Box sx={styles.successScreenContainer}>
+              <Box sx={styles.successIconContainer}>
+                <CheckCircleIcon sx={{ fontSize: 64, color: '#10B981' }} />
+              </Box>
+              <Typography sx={styles.successScreenTitle}>¡Archivo cargado con éxito!</Typography>
+              <Typography sx={styles.successScreenSubtitle}>
+                Los datos se han ingresado correctamente y el historial ha sido actualizado.
+              </Typography>
+
+              {successSummary && (
+                <Box sx={styles.successSummaryContainer}>
+                  <Typography sx={styles.summaryTitle}>Resumen de importación en base de datos:</Typography>
+                  <Box sx={styles.summaryCardWrapper}>
+                    {Object.entries(successSummary).map(([tabla, count]) => (
+                      <Box key={tabla} sx={styles.summaryItemRow}>
+                        <Typography sx={styles.summaryItemTable}>{tabla}</Typography>
+                        <Box sx={styles.summaryItemCountBadge}>+{count} filas</Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              <Button
+                variant="contained"
+                onClick={handleCloseDialog}
+                sx={styles.understoodButton}
+              >
+                Entendido
+              </Button>
+            </Box>
+          ) : (
+            /* Flujo Estándar de Carga */
+            <>
+              {/* 1. Selecciona una plantilla */}
+              <Typography sx={styles.sectionSubtitleDialog}>1. Selecciona una plantilla</Typography>
+              
+              <Box sx={styles.templatesGrid}>
+                {filteredTemplates.map((template) => {
+                  const isSelected = selectedTemplate === template.id;
+                  const tmplColor = getTemplateColor(template.role?.name);
+
+                  return (
+                    <Box
+                      key={template.id}
+                      onClick={() => !uploading && handleTemplateSelect(template.id)}
+                      sx={[styles.templateCard(isSelected), uploading && { pointerEvents: 'none', opacity: 0.6 }]}
+                    >
+                      <Box sx={styles.templateCardIcon(tmplColor)}>
+                        <DescriptionIcon fontSize="medium" />
+                      </Box>
+                      <Box sx={{ flexGrow: 1, pr: 4 }}>
+                        <Typography sx={styles.templateCardTitle}>
+                          {template.name}
+                        </Typography>
+                        <Typography sx={styles.templateCardDesc}>
+                          {template.description}
+                        </Typography>
+                        <Box sx={styles.templateBadge(tmplColor)}>
+                          {template.role?.name || 'General'}
+                        </Box>
+                      </Box>
+                      <IconButton
+                        onClick={(e) => handleDownloadTemplate(e, template.id)}
+                        disabled={uploading}
+                        sx={{
+                          position: 'absolute',
+                          bottom: 12,
+                          right: 12,
+                          color: tmplColor,
+                          padding: '6px',
+                          '&:hover': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                          },
+                        }}
+                        title="Descargar plantilla"
+                      >
+                        <DownloadIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  );
+                })}
+              </Box>
+
+              {/* 2. Carga tu archivo */}
+              <Box sx={{ 
+                opacity: (selectedTemplate && !uploading) ? 1 : 0.4, 
+                pointerEvents: (selectedTemplate && !uploading) ? 'auto' : 'none',
+                transition: 'all 0.3s ease-in-out',
+                mt: 3 
+              }}>
+                <Typography sx={styles.sectionSubtitleDialog}>2. Carga tu archivo</Typography>
+                
+                <Box
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  sx={styles.dropZone(isDragActive && selectedTemplate)}
+                  onClick={() => selectedTemplate && !uploading && document.getElementById('dialog-file-input').click()}
+                >
+                  <input
+                    type="file"
+                    id="dialog-file-input"
+                    accept=".xlsx"
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                    disabled={!selectedTemplate || uploading}
+                  />
+                  
+                  <UploadIcon sx={[styles.dropZoneIcon, selectedFile && { color: '#10B981' }]} />
+                  
+                  {selectedFile ? (
+                    <Box>
+                      <Typography sx={styles.dropZoneTextPrimary} style={{ color: '#10B981' }}>
+                        Archivo seleccionado: {selectedFile.name}
+                      </Typography>
+                      <Typography sx={styles.dropZoneTextSecondary}>
+                        Tamaño: {(selectedFile.size / 1024).toFixed(1)} KB (Listo para cargar)
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <Typography sx={styles.dropZoneTextPrimary}>
+                        Arrastra tu archivo aquí
+                      </Typography>
+                      <Typography sx={styles.dropZoneTextSecondary}>
+                        o haz clic para seleccionarlo
+                      </Typography>
+                      
+                      <Button
+                        variant="contained"
+                        sx={styles.dropZoneSelectButton}
+                        component="span"
+                        disabled={!selectedTemplate || uploading}
+                      >
+                        Seleccionar archivo
+                      </Button>
+                      
+                      <Typography sx={styles.dropZoneCaption}>
+                        Formato aceptado: .xlsx (Excel)
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Indicador de Progreso en Carga */}
+              {uploading && (
+                <Box sx={styles.progressContainer}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography sx={styles.progressLabel}>Cargando y validando consistencia...</Typography>
+                    <Typography sx={styles.progressLabel}>Procesando</Typography>
+                  </Box>
+                  <LinearProgress sx={styles.linearProgressBar} />
+                </Box>
+              )}
+
+              {/* Alertas de error en caso de fallo estructural o celdas vacías */}
+              {uploadError && (
+                <Alert severity="error" sx={styles.errorAlertContainer}>
+                  <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 0.5 }}>
+                    {uploadError}
+                  </Typography>
+                  {uploadErrorDetails.length > 0 && (
+                    <Box component="ul" sx={styles.errorDetailsList}>
+                      {uploadErrorDetails.map((detail, idx) => (
+                        <li key={idx}>
+                          <strong>Hoja:</strong> {detail.sheet || 'General'} | 
+                          <strong> Celda:</strong> {detail.row ? `Fila ${detail.row}` : ''}{detail.column ? `, Columna ${detail.column}` : ''} | 
+                          <strong> Fallo:</strong> {detail.message}
+                        </li>
+                      ))}
+                    </Box>
+                  )}
+                </Alert>
+              )}
+            </>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={styles.dialogActions}>
+          <Button
+            onClick={handleCloseDialog}
+            sx={styles.dialogCancelButton}
+            disabled={uploading}
+          >
+            {uploadSuccess ? 'Cerrar' : 'Cancelar'}
+          </Button>
+          {!uploadSuccess && (
+            <Button
+              variant="contained"
+              onClick={handleUploadSubmit}
+              disabled={!selectedTemplate || !selectedFile || uploading}
+              sx={styles.dialogSubmitButton(selectedTemplate && selectedFile && !uploading)}
+            >
+              Cargar datos
+            </Button>
+          )}
+        </DialogActions>
       </Dialog>
     </Box>
   );

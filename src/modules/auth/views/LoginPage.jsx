@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import React from 'react';
+import { useLoginPage } from './LoginPage.hooks';
 import { styles } from './LoginPage.styles';
 import { 
   Box, 
@@ -40,55 +40,21 @@ const lightTheme = createTheme({
 });
 
 export const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  
-  // Estados para validación de campos vacíos y formato de correo
-  const [emailError, setEmailError] = useState(false);
-  const [emailHelperText, setEmailHelperText] = useState('');
-  const [passwordError, setPasswordError] = useState(false);
-  
-  const { login, error, loading } = useAuth();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Reiniciar validaciones previas
-    setEmailError(false);
-    setEmailHelperText('');
-    setPasswordError(false);
-    
-    let hasError = false;
-    
-    // Validar si el campo de correo está vacío
-    if (!email.trim()) {
-      setEmailError(true);
-      setEmailHelperText('Por favor ingrese su correo electrónico');
-      hasError = true;
-    } else {
-      // Validar formato de correo electrónico
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email.trim())) {
-        setEmailError(true);
-        setEmailHelperText('Por favor ingrese un formato de correo electrónico válido');
-        hasError = true;
-      }
-    }
-    
-    if (!password.trim()) {
-      setPasswordError(true);
-      hasError = true;
-    }
-    
-    if (hasError) return; // Evita el envío si hay algún error
-    
-    await login(email, password);
-  };
-
-  const handleOAuthLogin = () => {
-    alert('Redirigiendo a autenticación SSO institucional...');
-  };
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    showPassword,
+    setShowPassword,
+    emailError,
+    emailHelperText,
+    passwordError,
+    error,
+    loading,
+    handleSubmit,
+    handleOAuthLogin
+  } = useLoginPage();
 
   return (
     <ThemeProvider theme={lightTheme}>
@@ -162,11 +128,7 @@ export const LoginPage = () => {
               placeholder="Ingrese su correo electrónico"
               variant="outlined"
               value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setEmailError(false);
-                setEmailHelperText('');
-              }}
+              onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
               error={emailError}
               helperText={emailHelperText}
@@ -181,10 +143,7 @@ export const LoginPage = () => {
               type={showPassword ? 'text' : 'password'}
               variant="outlined"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setPasswordError(false);
-              }}
+              onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
               error={passwordError}
               helperText={passwordError ? "Por favor ingrese su contraseña" : ""}

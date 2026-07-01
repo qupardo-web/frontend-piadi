@@ -368,4 +368,40 @@ export const styles = {
       borderColor: '#CBD5E1',
     },
   },
+
+  // KPI Cards Styles
+  kpiCardHeaderLabel: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#64748b',
+    textTransform: 'uppercase',
+    mb: 1,
+  },
+  kpiCardHeaderVal: {
+    fontWeight: 700,
+    color: '#1e1b4b',
+    mb: 0.5,
+  },
+  kpiCardHeaderIcon: (color) => ({
+    color: color,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }),
+  kpiCardFooterLabel: {
+    fontSize: '12px',
+    color: '#64748b',
+    fontWeight: 500,
+  },
+  kpiEvoBadge: (isPositive) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    px: 1,
+    py: 0.2,
+    borderRadius: 1,
+    bgcolor: isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+    color: isPositive ? '#10B981' : '#ef4444',
+    fontWeight: 700,
+    fontSize: '12px',
+  }),
 };
