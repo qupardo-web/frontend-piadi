@@ -1,5 +1,5 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './DashboardEducacionContinua.styles';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
@@ -120,6 +120,7 @@ const dashboardLightTheme = createTheme({
 });
 
 export const DashboardEducacionContinua = () => {
+  const location = useLocation();
   const {
     navigate,
     user,
@@ -205,6 +206,15 @@ export const DashboardEducacionContinua = () => {
     perfilParticipantesData,
     activePeriodosText,
   } = useDashboardEducacionContinua();
+
+  useEffect(() => {
+    if (!location.hash) return;
+    const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (!target) return;
+    window.setTimeout(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }, [location.hash]);
 
   // NAV NAVEGACIÓN IZQUIERDA
   const sidebarContent = (
@@ -655,7 +665,7 @@ export const DashboardEducacionContinua = () => {
         <div className="charts-grid">
 
           {/* Card 9: Oferta de cursos programada */}
-          <div className="chart-card" style={{ gridColumn: '1 / -1', height: '390px' }}>
+          <div id="oferta-programada" className="chart-card" style={{ gridColumn: '1 / -1', height: '390px' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <BookOpen size={16} style={{ color: '#1E2875' }} />
@@ -696,7 +706,7 @@ export const DashboardEducacionContinua = () => {
           </div>
 
           {/* Card 3: Cursos efectivamente dictados */}
-          <div className="chart-card">
+          <div id="cursos-dictados" className="chart-card">
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle size={16} style={{ color: '#10B981' }} />
@@ -728,7 +738,7 @@ export const DashboardEducacionContinua = () => {
           </div>
 
           {/* Card 4: Tasa de ejecución (%) */}
-          <div className="chart-card">
+          <div id="tasa-ejecucion" className="chart-card">
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Percent size={16} style={{ color: '#1E2875' }} />
@@ -756,7 +766,7 @@ export const DashboardEducacionContinua = () => {
           </div>
 
           {/* Card 7: Ingresos Generados */}
-          <div className="chart-card" style={{ gridColumn: '1 / -1', height: '390px' }}>
+          <div id="ingresos-generados" className="chart-card" style={{ gridColumn: '1 / -1', height: '390px' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <DollarSign size={16} style={{ color: '#10B981' }} />
@@ -793,7 +803,7 @@ export const DashboardEducacionContinua = () => {
           </div>
 
           {/* Card 5: Matrícula por programa (Radar Chart) */}
-          <div className="chart-card" style={{ gridColumn: '1 / -1', height: '520px' }}>
+          <div id="matricula-por-programa" className="chart-card" style={{ gridColumn: '1 / -1', height: '520px' }}>
             <div className="chart-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -832,7 +842,7 @@ export const DashboardEducacionContinua = () => {
           </div>
 
           {/* Card 6: Tasa de aprobación por programa */}
-          <div className="chart-card" style={{ gridColumn: '1 / -1', minHeight: '380px', height: 'auto' }}>
+          <div id="tasa-aprobacion" className="chart-card" style={{ gridColumn: '1 / -1', minHeight: '380px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Award size={16} style={{ color: '#a855f7' }} />

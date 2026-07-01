@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
+import { getRoles } from '../../../services/piadiApi';
 
 const DEFAULT_ROLE_FILTER = 'Todos';
 
@@ -272,6 +273,11 @@ const downloadCsv = (filename, csv) => {
   URL.revokeObjectURL(url);
 };
 
+const resolveRoleName = (role) => {
+  if (typeof role === 'string') return toText(role, '');
+  return toText(role?.name || role?.nombre || role?.role || role?.rol, '');
+};
+
 export const useAuditoria = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -290,6 +296,7 @@ export const useAuditoria = () => {
 
   const [realCargaLogs, setRealCargaLogs] = useState([]);
   const [realSessionLogs, setRealSessionLogs] = useState([]);
+  const [apiRoleOptions, setApiRoleOptions] = useState([]);
 
   useEffect(() => {
     const token = sessionStorage.getItem('auth_token');
@@ -313,13 +320,30 @@ export const useAuditoria = () => {
     fetchLogs('session', setRealSessionLogs);
   }, []);
 
-  const roleOptions = useMemo(() => {
-    // Fuente temporal: cuando exista la API de roles, reemplazar por la llamada real.
+  useEffect(() => {
+    getRoles()
+      .then((response) => {
+        const roles = Array.isArray(response)
+          ? response
+          : response?.data?.roles || response?.data || response?.roles || [];
+        const names = roles
+          .map(resolveRoleName)
+          .filter((role) => !isEmptyValue(role));
+        setApiRoleOptions([...new Set(names)].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })));
+      })
+      .catch(() => {
+        setApiRoleOptions([]);
+      });
+  }, []);
+
+  const logRoleOptions = useMemo(() => {
     const roles = [...realCargaLogs, ...realSessionLogs]
       .map((log) => log.rol)
       .filter((role) => !isEmptyValue(role));
     return [...new Set(roles)].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
   }, [realCargaLogs, realSessionLogs]);
+
+  const roleOptions = apiRoleOptions.length > 0 ? apiRoleOptions : logRoleOptions;
 
   useEffect(() => {
     if (filterRole !== DEFAULT_ROLE_FILTER && !roleOptions.includes(filterRole)) {

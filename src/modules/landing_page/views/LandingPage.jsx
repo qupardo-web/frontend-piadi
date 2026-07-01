@@ -57,6 +57,11 @@ export const LandingPage = () => {
     handleDrawerToggle,
   } = useLandingPage();
 
+  const handleKpiCardClick = (targetHash) => {
+    const hash = targetHash ? `#${targetHash}` : '';
+    navigate(`/dashboard-educacion-continua${hash}`);
+  };
+
   // =========================================================================
   // SUB-COMPONENTE: CONTENIDO DEL SIDEBAR (REUTILIZABLE)
   // =========================================================================
@@ -252,6 +257,20 @@ export const LandingPage = () => {
         {/* =========================================================================
             SECCIÓN 3: TARJETAS KPI (METRICAS DINÁMICAS)
             ========================================================================= */}
+        <Box
+          sx={{
+            bgcolor: '#FFFFFF',
+            border: '1px solid #E5E7EB',
+            borderRadius: 3,
+            px: 2.5,
+            py: 1.5,
+          }}
+        >
+          <Typography variant="body2" sx={{ color: '#475569', fontWeight: 600 }}>
+            Información correspondiente al año {currentData.year}, construida a partir de los datos cargados para Educación Continua.
+          </Typography>
+        </Box>
+
         <Grid container spacing={3}>
           {currentData.kpis.map((kpi, index) => {
             const cardStyle = kpi.isBlue 
@@ -263,7 +282,25 @@ export const LandingPage = () => {
 
             return (
               <Grid item xs={12} sm={6} md={3} key={`${activeTab}-kpi-${index}`}>
-                <Card sx={cardStyle}>
+                <Card
+                  sx={{
+                    ...cardStyle,
+                    cursor: 'pointer',
+                    '&:focus-visible': {
+                      outline: '2px solid #0F4AFF',
+                      outlineOffset: 2,
+                    },
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleKpiCardClick(kpi.targetHash)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleKpiCardClick(kpi.targetHash);
+                    }
+                  }}
+                >
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                       <Typography 
