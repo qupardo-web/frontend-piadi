@@ -212,7 +212,7 @@ export const DashboardEducacionContinua = () => {
     const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
     if (!target) return;
     window.setTimeout(() => {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
   }, [location.hash]);
 
