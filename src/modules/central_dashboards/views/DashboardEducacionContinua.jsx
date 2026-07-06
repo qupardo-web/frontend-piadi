@@ -635,13 +635,13 @@ export const DashboardEducacionContinua = () => {
                   <Icon size={16} style={{ color: card.color }} />
                 </div>
                 <div className="kpi-value" style={{ color: card.color }}>
-                  {card.val26 != null ? card.fmt(card.val26) : apiLoading ? '...' : '—'}
+                  {card.valHasta != null ? card.fmt(card.valHasta) : apiLoading ? '...' : '—'}
                 </div>
                 <div className="kpi-trend" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  {card.val23 != null && (
-                    <span style={{ color: '#64748b' }}>2023: {card.fmt(card.val23)}</span>
+                  {card.valDesde != null && card.yHasta !== card.yDesde && (
+                    <span style={{ color: '#64748b' }}>{card.yDesde}: {card.fmt(card.valDesde)}</span>
                   )}
-                  {card.evo != null && (
+                  {card.evo != null && card.yHasta !== card.yDesde && (
                     <span style={{ color: evoPos ? '#10B981' : '#ef4444', fontWeight: 700 }}>
                       {evoPos ? '↑' : '↓'} {Math.abs(card.evo)}%
                     </span>
