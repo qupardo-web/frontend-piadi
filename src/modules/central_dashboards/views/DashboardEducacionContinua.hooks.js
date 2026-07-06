@@ -136,8 +136,16 @@ export const useDashboardEducacionContinua = () => {
       extraParams.startMonth = monthRange.join(',');
     }
 
-    const seriesParams = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta, ...extraParams };
-    const breakdownParams = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta, ...extraParams };
+    const baseParams = {};
+    if (cohorteDesde === cohorteHasta) {
+      baseParams.year = cohorteDesde;
+    } else {
+      baseParams.fromYear = cohorteDesde;
+      baseParams.toYear = cohorteHasta;
+    }
+
+    const seriesParams = { department: 'educacion_continua', ...baseParams, ...extraParams };
+    const breakdownParams = { department: 'educacion_continua', ...baseParams, ...extraParams };
 
     Promise.all([
       getDashboardSummary(apiParams).catch(() => null),
@@ -221,7 +229,13 @@ export const useDashboardEducacionContinua = () => {
 
   // Perfil del participante — todas las dimensiones al cargar
   useEffect(() => {
-    const bp = { department: 'educacion_continua', fromYear: cohorteDesde, toYear: cohorteHasta };
+    const bp = { department: 'educacion_continua' };
+    if (cohorteDesde === cohorteHasta) {
+      bp.year = cohorteDesde;
+    } else {
+      bp.fromYear = cohorteDesde;
+      bp.toYear = cohorteHasta;
+    }
     const dims = [
       { key: 'region', groupBy: 'region' },
       { key: 'sector', groupBy: 'sectorEconomico' },
@@ -338,19 +352,50 @@ export const useDashboardEducacionContinua = () => {
   }), [apiSummary]);
 
   const kpiCardsData = useMemo(() => {
-    const getVal = (series, year) => series?.find(p => Number(p.year) === year)?.value ?? null;
-    const evo = (v26, v23) => (v23 != null && v26 != null && v23 !== 0) ? parseFloat(((v26 - v23) / v23 * 100).toFixed(1)) : null;
-    const o26 = getVal(apiOfertaSeries, 2026); const o23 = getVal(apiOfertaSeries, 2023);
-    const d26 = getVal(apiDictadosSeries, 2026); const d23 = getVal(apiDictadosSeries, 2023);
-    const m26 = getVal(apiMatriculaSeries, 2026); const m23 = getVal(apiMatriculaSeries, 2023);
-    const i26 = getVal(apiIngresosSeries, 2026); const i23 = getVal(apiIngresosSeries, 2023);
+    const yHasta = Number(cohorteHasta);
+    const yDesde = Number(cohorteDesde);
+    
+    // Función para obtener la suma de los valores de la serie en el rango seleccionado
+    const getRangeSum = (series) => {
+      if (!series) return null;
+      const filtered = series.filter(p => {
+        const yr = Number(p.year);
+        return yr >= yDesde && yr <= yHasta;
+      });
+      if (!filtered.length) return null;
+      return filtered.reduce((acc, curr) => acc + (curr.value ?? 0), 0);
+    };
+
+    const getValForYear = (series, year) => series?.find(p => Number(p.year) === year)?.value ?? null;
+
+    // Los valores principales de las tarjetas serán el total acumulado en el rango seleccionado
+    const oVal = apiSummary?.oferta_programada?.value ?? getRangeSum(apiOfertaSeries);
+    const dVal = apiSummary?.cursos_dictados?.value ?? getRangeSum(apiDictadosSeries);
+    const mVal = apiSummary?.matricula_por_programa?.value ?? getRangeSum(apiMatriculaSeries);
+    const iVal = apiSummary?.ingresos_generados?.value ?? getRangeSum(apiIngresosSeries);
+
+    // Para la evolución, comparamos el último año con el primero en el rango
+    const evo = (key, series) => {
+      if (apiSummary?.[key]?.evolution != null) {
+        return apiSummary[key].evolution;
+      }
+      const vHasta = getValForYear(series, yHasta);
+      const vDesde = getValForYear(series, yDesde);
+      return (vDesde != null && vHasta != null && vDesde !== 0) ? parseFloat(((vHasta - vDesde) / vDesde * 100).toFixed(1)) : null;
+    };
+
+    const oDesde = getValForYear(apiOfertaSeries, yDesde);
+    const dDesde = getValForYear(apiDictadosSeries, yDesde);
+    const mDesde = getValForYear(apiMatriculaSeries, yDesde);
+    const iDesde = getValForYear(apiIngresosSeries, yDesde);
+
     return [
-      { key: 'oferta', label: 'Oferta programada', Icon: BookOpen, color: '#1E2875', borderColor: '#1E2875', val26: o26, val23: o23, evo: evo(o26, o23), fmt: v => v != null ? String(v) : null },
-      { key: 'dictados', label: 'Cursos dictados', Icon: CheckCircle, color: '#047857', borderColor: '#10B981', val26: d26, val23: d23, evo: evo(d26, d23), fmt: v => v != null ? String(v) : null },
-      { key: 'matricula', label: 'Matrícula total', Icon: Users, color: '#6d28d9', borderColor: '#8b5cf6', val26: m26, val23: m23, evo: evo(m26, m23), fmt: v => v != null ? Number(v).toLocaleString('es-CL') : null },
-      { key: 'ingresos', label: 'Ingresos netos', Icon: DollarSign, color: '#b45309', borderColor: '#F59E0B', val26: i26, val23: i23, evo: evo(i26, i23), fmt: v => v != null ? `$${Number(v).toLocaleString('es-CL')}` : null },
+      { key: 'oferta', label: 'Oferta programada', Icon: BookOpen, color: '#1E2875', borderColor: '#1E2875', valHasta: oVal, valDesde: oDesde, yHasta, yDesde, evo: evo('oferta_programada', apiOfertaSeries), fmt: v => v != null ? String(v) : null },
+      { key: 'dictados', label: 'Cursos dictados', Icon: CheckCircle, color: '#047857', borderColor: '#10B981', valHasta: dVal, valDesde: dDesde, yHasta, yDesde, evo: evo('cursos_dictados', apiDictadosSeries), fmt: v => v != null ? String(v) : null },
+      { key: 'matricula', label: 'Matrícula total', Icon: Users, color: '#6d28d9', borderColor: '#8b5cf6', valHasta: mVal, valDesde: mDesde, yHasta, yDesde, evo: evo('matricula_por_programa', apiMatriculaSeries), fmt: v => v != null ? Number(v).toLocaleString('es-CL') : null },
+      { key: 'ingresos', label: 'Ingresos netos', Icon: DollarSign, color: '#b45309', borderColor: '#F59E0B', valHasta: iVal, valDesde: iDesde, yHasta, yDesde, evo: evo('ingresos_generados', apiIngresosSeries), fmt: v => v != null ? `$${Number(v).toLocaleString('es-CL')}` : null },
     ];
-  }, [apiOfertaSeries, apiDictadosSeries, apiMatriculaSeries, apiIngresosSeries]);
+  }, [apiOfertaSeries, apiDictadosSeries, apiMatriculaSeries, apiIngresosSeries, apiSummary, cohorteDesde, cohorteHasta]);
 
   const uniqueParticipantsData = useMemo(() => {
     const map = new Map();
