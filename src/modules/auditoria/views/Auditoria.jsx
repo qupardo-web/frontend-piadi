@@ -52,6 +52,7 @@ import {
   Description as DescriptionIcon,
   ExpandMore as ExpandMoreIcon,
   Close as CloseIcon,
+  Adjust as TargetIcon,
 } from '@mui/icons-material';
 
 export const Auditoria = () => {
@@ -156,6 +157,7 @@ export const Auditoria = () => {
           {[
             { text: 'Inicio', icon: <HomeIcon />, path: '/' },
             { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
+            { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
           ].filter((item) => {

@@ -38,7 +38,7 @@ import {
 import {
   Home as HomeIcon,
   Dashboard as DashboardIcon,
-  TrackChanges as MetasIcon,
+  Adjust as TargetIcon,
   UploadFile as CargaIcon,
   Shield as AuditoriaIcon,
   TableChart as TablaIcon,
@@ -355,6 +355,7 @@ export const DashboardVcM = () => {
           {[
             { text: 'Inicio', icon: <HomeIcon />, path: '/' },
             { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
+            { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
           ].filter((item) => {

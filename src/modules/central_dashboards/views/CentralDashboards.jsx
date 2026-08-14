@@ -40,6 +40,7 @@ import {
   Lightbulb as LightbulbIcon,
   School as SchoolIcon,
   Favorite as FavoriteIcon,
+  Adjust as TargetIcon,
 } from '@mui/icons-material';
 
 const getDepartmentMeta = (key) => {
@@ -106,6 +107,7 @@ export const CentralDashboards = () => {
           {[
             { text: 'Inicio', icon: <HomeIcon />, path: '/' },
             { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
+            { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
           ].filter((item) => {
