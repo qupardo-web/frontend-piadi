@@ -39,6 +39,7 @@ import { LandingPage } from './modules/landing_page';
 import { CargaDatos, RepositorioArchivos } from './modules/carga_datos';
 import { Auditoria } from './modules/auditoria';
 import { CentralDashboards, DashboardEducacionContinua, DashboardVcM } from './modules/central_dashboards';
+import { VisualizacionMetas, MetaForm } from './modules/metas';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 
@@ -523,6 +524,39 @@ function App() {
               element={
                 <ProtectedRoute>
                   <RepositorioArchivos />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 
+              RUTA: /metas
+              Ruta protegida para la vista de Visualización de Metas.
+            */}
+            <Route 
+              path="/metas" 
+              element={
+                <ProtectedRoute>
+                  <VisualizacionMetas />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 
+              RUTA: /meta-form (Crear y editar metas)
+            */}
+            <Route 
+              path="/meta-form" 
+              element={
+                <ProtectedRoute>
+                  <MetaForm />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/meta-form/:id" 
+              element={
+                <ProtectedRoute>
+                  <MetaForm />
                 </ProtectedRoute>
               } 
             />
