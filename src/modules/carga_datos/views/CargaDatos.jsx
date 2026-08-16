@@ -30,6 +30,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Grid,
+  Tooltip,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -88,6 +89,8 @@ export const CargaDatos = () => {
     handleDrop,
     handleCloseDialog,
     handleUploadSubmit,
+    handleRetryUpload,
+    selectedTemplateMetadata,
   } = useCargaDatos();
 
   // Paginación lógica simple de cargas (5 por página)
@@ -603,6 +606,35 @@ export const CargaDatos = () => {
                   );
                 })}
               </Box>
+              
+              {selectedTemplateMetadata && (
+                <Box sx={{ 
+                  mt: 2.5, 
+                  p: 2, 
+                  bgcolor: '#F8FAFC', 
+                  border: '1px solid #E2E8F0', 
+                  borderRadius: '8px',
+                  fontFamily: "'Inter', sans-serif"
+                }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875', mb: 1.5, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Campos y Hojas Requeridas en el Excel:
+                  </Typography>
+                  <Grid container spacing={1.5}>
+                    {selectedTemplateMetadata.hojas.map((hoja, hIdx) => (
+                      <Grid item xs={12} sm={6} key={hIdx}>
+                        <Box sx={{ bgcolor: '#ffffff', p: 1.5, borderRadius: '6px', border: '1px solid #E2E8F0', height: '100%' }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1DC2A0', mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '12px' }}>
+                            📁 Hoja: {hoja.nombre}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#475569', fontSize: '11.5px', lineHeight: 1.45 }}>
+                            <strong>Columnas obligatorias:</strong> {hoja.columnas.join(', ')}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
 
               {/* 2. Carga tu archivo */}
               <Box sx={{ 
@@ -685,32 +717,65 @@ export const CargaDatos = () => {
 
               {/* Alertas de error en caso de fallo estructural o celdas vacías */}
               {uploadError && (
-                <Alert 
-                  severity="error" 
-                  sx={{ 
-                    mt: 3, 
-                    fontFamily: "'Inter', sans-serif",
-                    borderRadius: '8px',
-                    border: '1px solid #FCA5A5',
-                    bgcolor: '#FEF2F2',
-                    '& .MuiAlert-message': { width: '100%' }
-                  }}
-                >
-                  <Typography sx={{ fontWeight: 600, fontSize: '15px', color: '#991B1B', mb: uploadErrorDetails.length > 0 ? 1 : 0 }}>
-                    {uploadError}
-                  </Typography>
-                  {uploadErrorDetails.length > 0 && (
-                    <Box component="ul" sx={{ pl: 2.5, m: 0, color: '#991B1B', fontSize: '13px' }}>
-                      {uploadErrorDetails.map((detail, idx) => (
-                        <li key={idx} style={{ marginBottom: '4px' }}>
-                          <strong>Hoja:</strong> {detail.sheet || 'General'} | 
-                          <strong> Celda:</strong> {detail.row ? `Fila ${detail.row}` : ''}{detail.column ? `, Columna ${detail.column}` : ''} | 
-                          <strong> Fallo:</strong> {detail.message}
-                        </li>
-                      ))}
-                    </Box>
-                  )}
-                </Alert>
+                <>
+                  <Alert 
+                    severity="error" 
+                    sx={{ 
+                      mt: 3, 
+                      fontFamily: "'Inter', sans-serif",
+                      borderRadius: '8px',
+                      border: '1px solid #FCA5A5',
+                      bgcolor: '#FEF2F2',
+                      '& .MuiAlert-message': { width: '100%' }
+                    }}
+                  >
+                    {uploadErrorDetails.length > 0 ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                        {uploadErrorDetails.map((detail, idx) => (
+                          <Typography 
+                            key={idx} 
+                            sx={{ 
+                              fontSize: '13px', 
+                              color: '#991B1B', 
+                              fontFamily: "'Inter', sans-serif",
+                              lineHeight: 1.4
+                            }}
+                          >
+                            <strong>Hoja:</strong> {detail.sheet || detail.hoja || 'General'} | 
+                            <strong> Celda:</strong> {detail.row || detail.fila ? `Fila ${detail.row || detail.fila}` : ''}{(detail.column || detail.celda) ? `, Columna ${detail.column || detail.celda}` : ''} | 
+                            <strong> Fallo:</strong> {detail.message}
+                          </Typography>
+                        ))}
+                      </Box>
+                    ) : (
+                      <Typography sx={{ fontWeight: 600, fontSize: '15px', color: '#991B1B' }}>
+                        {uploadError}
+                      </Typography>
+                    )}
+                  </Alert>
+                  
+                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={handleRetryUpload}
+                      sx={{ 
+                        fontFamily: "'Inter', sans-serif", 
+                        textTransform: 'none', 
+                        fontWeight: 600,
+                        borderColor: '#FCA5A5',
+                        color: '#991B1B',
+                        '&:hover': {
+                          borderColor: '#EF4444',
+                          bgcolor: 'rgba(239, 68, 68, 0.04)'
+                        }
+                      }}
+                    >
+                      Corregir y reintentar
+                    </Button>
+                  </Box>
+                </>
               )}
             </>
           )}

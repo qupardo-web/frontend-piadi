@@ -4,6 +4,90 @@ import { useAuth } from '../../auth';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+export const TEMPLATE_METADATA = {
+  'matricula y estudiantes': {
+    hojas: [
+      {
+        nombre: 'Matrícula',
+        columnas: ['Año', 'Semestre', 'Rut Alumno', 'Nombre Completo', 'Sexo', 'Edad', 'Carrera', 'Jornada', 'Tipo Ingreso']
+      }
+    ]
+  },
+  'caracterizacion estudiante': {
+    hojas: [
+      {
+        nombre: 'Caracterización',
+        columnas: ['Rut Alumno', 'Nivel Socioeconómico', 'Comuna Residencia', 'Tipo Colegio Procedencia', 'Situación Familiar']
+      }
+    ]
+  },
+  'rendimiento academico': {
+    hojas: [
+      {
+        nombre: 'Rendimiento',
+        columnas: ['Año', 'Semestre', 'Código Asignatura', 'Sección', 'Rut Alumno', 'Nota Final', 'Asistencia', 'Aprobado']
+      }
+    ]
+  },
+  'educacion continua': {
+    hojas: [
+      {
+        nombre: 'Base Programas',
+        columnas: ['ID Programa', 'Año', 'Semestre', 'Área', 'Programa', 'Tipo', 'Modalidad', 'Horas', 'Cupos Programados']
+      },
+      {
+        nombre: 'Participantes Detalle',
+        columnas: ['ID Participante', 'RUT', 'Nombre', 'Apellido Paterno', 'ID Inscripción', 'ID Programa', 'Año', 'Semestre']
+      }
+    ]
+  },
+  'vinculacion con el medio': {
+    hojas: [
+      {
+        nombre: 'Convenios',
+        columnas: [
+          'ID Convenio', 'Contraparte', 'RUT Contraparte', 'Sector', 'Tipo convenio',
+          'Año firma', 'Fecha firma', 'Fecha término', 'Estado', 'Área vinculada',
+          'Contacto', 'Región', 'Comuna', 'Responsable ECAS', 'Objetivo / alcance', 'Evidencia'
+        ]
+      },
+      {
+        nombre: 'Actividades VcM',
+        columnas: [
+          'ID Actividad', 'Fecha', 'Año', 'Mes', 'Línea VcM', 'Tipo actividad',
+          'Nombre actividad', 'Institución / contraparte', 'Sector', 'Responsable',
+          'Región', 'Comuna', 'Modalidad', 'Público objetivo', 'Participantes externos',
+          'Participantes internos', 'Total participantes', 'Horas', 'Convenio asociado', 'Reporta a VcM'
+        ]
+      },
+      {
+        nombre: 'Participacion detalle',
+        columnas: [
+          'ID Participación', 'ID Actividad', 'Año', 'Fecha', 'Tipo actividad',
+          'Institución', 'Tipo participante', 'Interno / Externo', 'Mujeres', 'Hombres',
+          'Total personas', 'Comuna', 'Región'
+        ]
+      },
+      {
+        nombre: 'Articulaciones TP',
+        columnas: [
+          'ID Articulación', 'Año', 'Fecha', 'Colegio / Liceo TP', 'Comuna', 'Región',
+          'Especialidad TP', 'Plataforma / foco', 'Tipo articulación', 'Estudiantes TP',
+          'Docentes TP', 'Nivel', 'Responsable ECAS', 'Producto / evidencia', 'Estado'
+        ]
+      }
+    ]
+  },
+  'innovacion': {
+    hojas: [
+      {
+        nombre: 'Proyectos',
+        columnas: ['ID Proyecto', 'Año', 'Nombre Proyecto', 'Investigador Principal', 'Financiamiento Externo', 'Docentes Involucrados']
+      }
+    ]
+  }
+};
+
 export const getTemplateColor = (roleName) => {
   if (!roleName) return '#1E2875';
   const name = roleName.toLowerCase();
@@ -306,6 +390,24 @@ export const useCargaDatos = () => {
     }
   };
 
+  const handleRetryUpload = () => {
+    setSelectedFile(null);
+    setUploadError('');
+    setUploadErrorDetails([]);
+    setUploading(false);
+  };
+
+  const getSelectedTemplateMetadata = () => {
+    if (!selectedTemplate) return null;
+    const tmpl = templates.find(t => t.id === selectedTemplate);
+    if (!tmpl) return null;
+    const nameKey = tmpl.name.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/con el/g, 'con el')
+      .trim();
+    return TEMPLATE_METADATA[nameKey] || null;
+  };
+
   return {
     navigate,
     user,
@@ -340,5 +442,7 @@ export const useCargaDatos = () => {
     handleDrop,
     handleCloseDialog,
     handleUploadSubmit,
+    handleRetryUpload,
+    selectedTemplateMetadata: getSelectedTemplateMetadata(),
   };
 };
