@@ -74,6 +74,8 @@ export const useCentralDashboards = () => {
   const handleOpenDashboard = (id) => {
     if (id === 'educacion_continua') {
       navigate('/dashboard-educacion-continua');
+    } else if (id === 'vinculacion_medio') {
+      navigate('/dashboard-vcm');
     } else {
       navigate('/dashboard-crud');
     }
