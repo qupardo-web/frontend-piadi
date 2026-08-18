@@ -7,7 +7,8 @@ const LANDING_YEAR = 2026;
 
 // Mapeo de colores específicos por departamento.
 export const DEPARTMENT_COLORS = {
-  0: '#46D19F', // Educación Continua (Turquesa claro)
+  educacion_continua: '#46D19F',
+  vinculacion_medio: '#E27800',
 };
 
 export const useLandingPage = () => {
@@ -19,19 +20,13 @@ export const useLandingPage = () => {
   // Estado para controlar la apertura del menú lateral en móviles
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openHelpDialog, setOpenHelpDialog] = useState(false); // Estado para abrir el Centro de Ayuda
-  const [ecApiData, setEcApiData] = useState(null);
+  const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
-    getDashboardSummary({ department: 'educacion_continua', year: LANDING_YEAR })
+    getDashboardSummary({ year: LANDING_YEAR })
       .then(res => {
         if (!res?.success || !res.data) return;
-        // Formato real: data.departments[0].cards[{ indicatorKey, value, hasData }]
-        const deptData = res.data?.departments?.find(d => d.departmentId === 'educacion_continua');
-        const cards = deptData?.cards ?? [];
-        if (!cards.some(c => c.hasData)) return;
-        const map = {};
-        cards.forEach(c => { map[c.indicatorKey] = c; });
-        setEcApiData(map);
+        setDepartments(res.data.departments ?? []);
       })
       .catch(() => {});
   }, []);
@@ -44,31 +39,25 @@ export const useLandingPage = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  // Solo Educación Continua — Resumen eliminado (sin endpoint real disponible)
-  const currentData = (() => {
-    const get = (key) => ecApiData?.[key]?.value;
-    const oferta = get('oferta_programada');
-    const dictados = get('cursos_dictados');
-    const ejecucion = get('tasa_ejecucion');
-    const matricula = get('matricula_por_programa');
-    const aprobacion = get('tasa_aprobacion');
-    const ingresos = get('ingresos_generados');
-    return {
-      year: LANDING_YEAR,
-      kpis: [
-        { title: 'Oferta programada', value: oferta != null ? String(oferta) : 'Sin datos', trend: '↑', trendDesc: `programas ${LANDING_YEAR}`, isBlue: true, targetHash: 'oferta-programada' },
-        { title: 'Cursos dictados', value: dictados != null ? String(dictados) : 'Sin datos', trend: '↑', trendDesc: `ejecutados ${LANDING_YEAR}`, isBlue: false, targetHash: 'cursos-dictados' },
-        { title: 'Tasa de ejecución', value: ejecucion != null ? `${ejecucion}%` : 'Sin datos', trend: '↑', trendDesc: 'cursos ejecutados', isBlue: false, targetHash: 'tasa-ejecucion' },
-        { title: 'Matrícula total', value: matricula != null ? Number(matricula).toLocaleString('es-CL') : 'Sin datos', trend: '↑', trendDesc: `participantes ${LANDING_YEAR}`, isBlue: true, targetHash: 'matricula-por-programa' },
-        { title: 'Tasa de aprobación', value: aprobacion != null ? `${aprobacion}%` : 'Sin datos', trend: '↑', trendDesc: 'aprobados del total', isBlue: false, targetHash: 'tasa-aprobacion' },
-        { title: 'Ingresos netos', value: ingresos != null ? `$${Number(ingresos).toLocaleString('es-CL')}` : 'Sin datos', trend: '↑', trendDesc: 'CLP facturados', isBlue: false, targetHash: 'ingresos-generados' },
-      ],
-      goals: []
-    };
-  })();
+  const currentDepartment = departments[activeTab];
+  const currentData = {
+    year: LANDING_YEAR,
+    departmentId: currentDepartment?.departmentId,
+    departmentName: currentDepartment?.name || 'departamento seleccionado',
+    kpis: (currentDepartment?.cards ?? []).map((card, index) => ({
+      ...card,
+      value: card.hasData
+        ? (card.formattedValue ?? card.value)
+        : 'No hay datos cargados',
+      trend: '',
+      trendDesc: card.unit || '',
+      isBlue: index % 3 === 0,
+      targetHash: card.indicatorKey?.replaceAll('_', '-'),
+    })),
+  };
   
   // Obtiene el color de fondo personalizado para este departamento
-  const deptColor = DEPARTMENT_COLORS[activeTab] || '#1E2875';
+  const deptColor = DEPARTMENT_COLORS[currentData.departmentId] || '#1E2875';
 
   // Forzamos el color del texto a blanco para todas las tarjetas de color
   const isLight = false;
@@ -114,6 +103,7 @@ export const useLandingPage = () => {
     setMobileOpen,
     openHelpDialog,
     setOpenHelpDialog,
+    departments,
     currentData,
     deptColor,
     isLight,

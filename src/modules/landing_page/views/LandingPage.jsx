@@ -49,6 +49,7 @@ export const LandingPage = () => {
     mobileOpen,
     openHelpDialog,
     setOpenHelpDialog,
+    departments,
     currentData,
     deptColor,
     isLight,
@@ -60,7 +61,10 @@ export const LandingPage = () => {
 
   const handleKpiCardClick = (targetHash) => {
     const hash = targetHash ? `#${targetHash}` : '';
-    navigate(`/dashboard-educacion-continua${hash}`);
+    const dashboardPath = currentData.departmentId === 'vinculacion_medio'
+      ? '/dashboard-vcm'
+      : '/dashboard-educacion-continua';
+    navigate(`${dashboardPath}${hash}`);
   };
 
   // =========================================================================
@@ -252,7 +256,9 @@ export const LandingPage = () => {
             scrollButtons="auto"
             sx={styles.tabsList}
           >
-            <Tab label="Educación Continua" />
+            {departments.map((department) => (
+              <Tab key={department.departmentId} label={department.name} />
+            ))}
           </Tabs>
         </Box>
 
@@ -269,7 +275,7 @@ export const LandingPage = () => {
           }}
         >
           <Typography variant="body2" sx={{ color: '#475569', fontWeight: 600 }}>
-            Información correspondiente al año {currentData.year}, construida a partir de los datos cargados para Educación Continua.
+            Información correspondiente al año {currentData.year}, construida a partir de los datos cargados para {currentData.departmentName}.
           </Typography>
         </Box>
 
