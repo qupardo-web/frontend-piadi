@@ -62,10 +62,6 @@ const getDepartmentMeta = (key) => {
   }
 };
 
-const canViewDepartment = (departmentKey, userRole) => (
-  departmentKey !== 'vinculacion_medio' || userRole === 'Vinculación Con El Medio'
-);
-
 export const CentralDashboards = () => {
   const {
     navigate,
@@ -266,7 +262,7 @@ export const CentralDashboards = () => {
               <Typography color="error">Error al cargar departamentos: {error}</Typography>
             </Grid>
           ) : (
-            departments.filter((dept) => canViewDepartment(dept.key, user?.role)).map((dept) => {
+            departments.map((dept) => {
               const meta = getDepartmentMeta(dept.key);
               return (
                 <Grid item xs={12} sm={6} md={4} key={dept.id}>
