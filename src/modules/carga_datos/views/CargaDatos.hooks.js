@@ -14,7 +14,7 @@ export const isVcmTemplate = (template) => (
 
 export const canViewTemplate = (template, userRole) => {
   if (isVcmTemplate(template)) {
-    return userRole === VCM_ROLE;
+    return [VCM_ROLE, 'Rector'].includes(userRole);
   }
 
   if (['Rector', 'Administrador', 'Director de Administración'].includes(userRole)) {
