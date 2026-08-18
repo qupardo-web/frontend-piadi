@@ -3,6 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const VCM_ROLE = 'Vinculación Con El Medio';
+const VCM_TEMPLATE_NAME = 'Vinculación Con El Medio';
+
+const normalizeName = (value) => String(value || '').trim().toLocaleLowerCase('es');
+
+export const isVcmTemplate = (template) => (
+  normalizeName(template?.name) === normalizeName(VCM_TEMPLATE_NAME)
+);
+
+export const canViewTemplate = (template, userRole) => {
+  if (isVcmTemplate(template)) {
+    return userRole === VCM_ROLE;
+  }
+
+  if (['Rector', 'Administrador', 'Director de Administración'].includes(userRole)) {
+    return true;
+  }
+
+  return template.role?.name === userRole;
+};
 
 export const TEMPLATE_METADATA = {
   'matricula y estudiantes': {
@@ -212,17 +232,7 @@ export const useCargaDatos = () => {
       .catch(() => {});
   }, [templates]);
 
-  // Filtrado de plantillas por rol (Rector y administradores ven todas)
-  const filteredTemplates = templates.filter((tmpl) => {
-    if (
-      user?.role === 'Rector' || 
-      user?.role === 'Administrador' || 
-      user?.role === 'Director de Administración'
-    ) {
-      return true;
-    }
-    return tmpl.role?.name === user?.role;
-  });
+  const filteredTemplates = templates.filter((template) => canViewTemplate(template, user?.role));
 
   // Datos de las Preguntas Frecuentes (FAQ) del Centro de Ayuda
   const faqData = [
@@ -375,6 +385,10 @@ export const useCargaDatos = () => {
           setSuccessSummary(data.resumen || null);
           setUploadSuccess(true);
         } else {
+          if (response.status === 403) {
+            setUploadError('No tienes permiso para cargar datos en este departamento');
+            return;
+          }
           // Si el servidor retorna errores de validación estructurados
           setUploadError(data.message || data.error || 'Error en la estructura del archivo.');
           if (data.errores) {
