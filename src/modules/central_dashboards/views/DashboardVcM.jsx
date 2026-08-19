@@ -532,11 +532,15 @@ export const DashboardVcM = () => {
               valueLabelDisplay="auto"
               sx={styles.ageSliderStyle}
             />
+            {/* Indicador del rango seleccionado */}
+            <Typography variant="body2" sx={{ textAlign: 'center', mt: 1.5, fontWeight: 600, color: '#1E2875', fontSize: '13px' }}>
+              {cohorteDesde === cohorteHasta ? cohorteDesde : `${cohorteDesde} - ${cohorteHasta}`}
+            </Typography>
           </Box>
         </Box>
 
         {/* Accordion: Convenios (default expanded) */}
-        <Accordion defaultExpanded sx={{ boxShadow: 'none', border: 'none', '&:before': { display: 'none' } }}>
+        <Accordion defaultExpanded sx={{ boxShadow: 'none', border: 'none', mt: -1.5, '&:before': { display: 'none' } }}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ p: 0, minHeight: 0, '& .MuiAccordionSummary-content': { my: 1 } }}>
             <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
               Convenios
@@ -817,6 +821,10 @@ export const DashboardVcM = () => {
         .sortable-th:hover {
           background-color: #F1F5F9;
         }
+        /* Forzar que las líneas del grid y de los ejes sean lisas y continuas */
+        .collapsible-body {
+          padding: 24px 30px !important;
+        }
       `}} />
 
       {/* Navigation Bars */}
@@ -970,7 +978,7 @@ export const DashboardVcM = () => {
         {/* ----------------- SECCIÓN 1: Total de convenios vigentes ----------------- */}
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec1')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <ChevronDown style={{ transform: sectionsOpen.sec1 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <Award size={20} style={{ color: '#E27800' }} />
               Total de convenios vigentes
@@ -992,6 +1000,7 @@ export const DashboardVcM = () => {
                     <Box sx={{ height: 260, width: '100%' }}>
                       {getFilteredYears(datasetsSec1['Año']).length > 0 ? (
                         <BarChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ scaleType: 'band', data: getFilteredYears(datasetsSec1['Año']).map(d => d.label) }]}
                           series={[{ 
                             data: getFilteredYears(datasetsSec1['Año']).map(d => d.value),
@@ -1058,6 +1067,7 @@ export const DashboardVcM = () => {
 
                       {sec1Segment === 'Tipo' && (
                         <BarChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec1.Tipo.map(d => d.label), 
@@ -1068,7 +1078,7 @@ export const DashboardVcM = () => {
                             },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
-                              if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
+                                if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
                               return value;
                             }
                           }]}
@@ -1116,6 +1126,7 @@ export const DashboardVcM = () => {
 
                       {sec1Segment === 'Área vinculada' && (
                         <BarChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec1['Área vinculada'].map(d => d.label), 
@@ -1157,7 +1168,7 @@ export const DashboardVcM = () => {
         {/* ----------------- SECCIÓN 2: Nuevos convenios firmados ----------------- */}
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec2')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <ChevronDown style={{ transform: sectionsOpen.sec2 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <TrendingUp size={20} style={{ color: '#E27800' }} />
               Nuevos convenios firmados
@@ -1179,6 +1190,7 @@ export const DashboardVcM = () => {
                     <Box sx={{ height: 260, width: '100%' }}>
                       {getFilteredYears(datasetsSec2['Año']).length > 0 ? (
                         <BarChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ scaleType: 'band', data: getFilteredYears(datasetsSec2['Año']).map(d => d.label) }]}
                           series={[{ 
                             data: getFilteredYears(datasetsSec2['Año']).map(d => d.value),
@@ -1233,6 +1245,7 @@ export const DashboardVcM = () => {
                     <Box sx={{ height: 260 }}>
                       {sec2Segment === 'Sector' && (
                         <BarChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec2.Sector.map(d => d.label), 
@@ -1266,6 +1279,7 @@ export const DashboardVcM = () => {
 
                       {sec2Segment === 'Tipo' && (
                         <BarChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec2.Tipo.map(d => d.label), 
@@ -1299,6 +1313,7 @@ export const DashboardVcM = () => {
 
                       {sec2Segment === 'Responsable' && (
                         <BarChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec2.Responsable.map(d => d.label), 
@@ -1336,7 +1351,7 @@ export const DashboardVcM = () => {
         {/* ----------------- SECCIÓN 3: Convenios por sector ----------------- */}
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec3')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <ChevronDown style={{ transform: sectionsOpen.sec3 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <Layers size={20} style={{ color: '#E27800' }} />
               Convenios por sector
@@ -1427,7 +1442,7 @@ export const DashboardVcM = () => {
         {/* ----------------- SECCIÓN 4: Actividades VcM ----------------- */}
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec4')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <ChevronDown style={{ transform: sectionsOpen.sec4 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <CalendarLucide size={20} style={{ color: '#E27800' }} />
               Actividades VcM
@@ -1449,6 +1464,7 @@ export const DashboardVcM = () => {
                     <Box sx={{ height: 260, width: '100%' }}>
                       {getFilteredYears(datasetsSec4['Año']).length > 0 ? (
                         <LineChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ scaleType: 'band', data: getFilteredYears(datasetsSec4['Año']).map(d => d.label) }]}
                           series={[{ 
                             data: getFilteredYears(datasetsSec4['Año']).map(d => d.value),
@@ -1502,7 +1518,7 @@ export const DashboardVcM = () => {
                     <Box sx={{ minHeight: 260 }}>
                       {sec4Segment === 'Línea VcM' && (
                         <BarChart
-                          grid={{ vertical: false, horizontal: false }}
+                          grid={{ horizontal: false, vertical: false }}
                           xAxis={[{ max: Math.max(...datasetsSec4['Línea VcM'].map(d => d.value), 0) * 1.15 + 2 }]}
                           yAxis={[{ 
                             scaleType: 'band', 
@@ -1535,7 +1551,7 @@ export const DashboardVcM = () => {
 
                       {sec4Segment === 'Modalidad' && (
                         <BarChart
-                          grid={{ vertical: false, horizontal: false }}
+                          grid={{ horizontal: false, vertical: false }}
                           xAxis={[{ max: Math.max(...datasetsSec4.Modalidad.map(d => d.value), 0) * 1.15 + 2 }]}
                           yAxis={[{ 
                             scaleType: 'band', 
@@ -1656,14 +1672,14 @@ export const DashboardVcM = () => {
         {/* ----------------- SECCIÓN 5: Participantes en actividades VcM ----------------- */}
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec5')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <ChevronDown style={{ transform: sectionsOpen.sec5 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <Users size={20} style={{ color: '#E27800' }} />
               Participantes en actividades VcM
             </h2>
           </div>
           {sectionsOpen.sec5 && (
-            <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
+            <div className="collapsible-body" style={{ padding: '20px', paddingBottom: '35px', borderTop: '1px solid #E0E0E0' }}>
               {isNoData ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
                   Sin datos disponibles
@@ -1678,6 +1694,7 @@ export const DashboardVcM = () => {
                     <Box sx={{ height: 260, width: '100%' }}>
                       {getFilteredYears(datasetsSec5['Año']).length > 0 ? (
                         <BarChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ scaleType: 'band', data: getFilteredYears(datasetsSec5['Año']).map(d => d.label) }]}
                           series={[
                             { data: getFilteredYears(datasetsSec5['Año']).map(d => d.interno), label: 'Interno', color: '#2196F3', stack: 'total' },
@@ -1726,10 +1743,10 @@ export const DashboardVcM = () => {
                       </ToggleButtonGroup>
                     </Box>
 
-                    <Box sx={{ minHeight: 260 }}>
+                    <Box sx={{ minHeight: 260, pb: 2 }}>
                       {sec5Segment === 'Público objetivo' && (
                         <BarChart
-                          grid={{ vertical: false, horizontal: false }}
+                          grid={{ horizontal: false, vertical: false }}
                           xAxis={[{ max: Math.max(...datasetsSec5['Público objetivo'].map(d => d.value), 0) * 1.15 + 10 }]}
                           yAxis={[{ 
                             scaleType: 'band', 
@@ -1850,7 +1867,7 @@ export const DashboardVcM = () => {
         {/* ----------------- SECCIÓN 6: Articulaciones TP ejecutadas ----------------- */}
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec6')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <ChevronDown style={{ transform: sectionsOpen.sec6 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <GraduationCap size={20} style={{ color: '#E27800' }} />
               Articulaciones TP ejecutadas
@@ -1872,6 +1889,7 @@ export const DashboardVcM = () => {
                     <Box sx={{ height: 260, width: '100%' }}>
                       {getFilteredYears(datasetsSec6['Año']).length > 0 ? (
                         <LineChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ scaleType: 'band', data: getFilteredYears(datasetsSec6['Año']).map(d => d.label) }]}
                           series={[{ 
                             data: getFilteredYears(datasetsSec6['Año']).map(d => d.value),
@@ -1925,6 +1943,7 @@ export const DashboardVcM = () => {
                     <Box sx={{ minHeight: 260 }}>
                       {sec6Segment === 'Plataforma' && (
                         <BarChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec6.Plataforma.map(d => d.label), 
@@ -1958,6 +1977,7 @@ export const DashboardVcM = () => {
 
                       {sec6Segment === 'Tipo' && (
                         <BarChart
+                          grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec6.Tipo.map(d => d.label), 
