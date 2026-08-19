@@ -79,11 +79,11 @@ export const styles = {
     mb: 0.8,
     borderRadius: 2,
     cursor: 'pointer',
-    bgcolor: isSelected ? '#E27800' : 'transparent', // Naranja para VcM
+    bgcolor: isSelected ? '#1DC2A0' : 'transparent', 
     color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)',
     transition: 'all 0.2s ease-in-out',
     '&:hover': {
-      bgcolor: isSelected ? '#E27800' : 'rgba(255, 255, 255, 0.05)',
+      bgcolor: isSelected ? '#1DC2A0' : 'rgba(255, 255, 255, 0.05)',
       color: '#ffffff',
     },
   }),
@@ -122,7 +122,7 @@ export const styles = {
   userAvatar: {
     width: 36,
     height: 36,
-    bgcolor: '#E27800', // Naranja para VcM
+    bgcolor: '#1DC2A0', 
     fontSize: '0.9rem',
   },
 

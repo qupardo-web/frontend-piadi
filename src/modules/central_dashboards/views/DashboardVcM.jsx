@@ -140,6 +140,21 @@ const dashboardLightTheme = createTheme({
 
 export const DashboardVcM = () => {
   const catColors = ['#E27800', '#2196F3', '#4CAF50', '#9C27B0', '#FF5722', '#607D8B'];
+  const getSectorColor = (label) => {
+    const clean = String(label).toLowerCase().trim();
+    if (clean.includes('público') || clean.includes('publico')) return '#E27800'; // Naranja
+    if (clean.includes('privado')) return '#2196F3'; // Azul
+    if (clean.includes('ong') || clean.includes('fundación') || clean.includes('fundacion')) return '#4CAF50'; // Verde
+    if (clean.includes('academia')) return '#9C27B0'; // Morado
+    if (clean.includes('comunidad') || clean.includes('educación tp') || clean.includes('edtp')) return '#FF5722'; // Coral
+    return '#607D8B'; // Gris
+  };
+  const getSexoColor = (label) => {
+    const clean = String(label).toLowerCase().trim();
+    if (clean.includes('femenino') || clean.includes('mujer') || clean.includes('femenina')) return '#E91E63'; // Fucsia/Rosa
+    if (clean.includes('masculino') || clean.includes('hombre')) return '#2196F3'; // Azul
+    return '#9E9E9E'; // Gris
+  };
   const getAxisMax = (val) => {
     if (val <= 0) return 10;
     if (val <= 50) return Math.ceil((val + 5) / 10) * 10 + 2;
@@ -221,6 +236,9 @@ export const DashboardVcM = () => {
     dynamicTipos,
     dynamicModalidades,
     dynamicSemestres,
+    dynamicLineas,
+    dynamicPlataformas,
+    dynamicTiposArticulacion,
     activeMenu,
     handleDrawerToggle,
     handleResetFilters,
@@ -258,13 +276,53 @@ export const DashboardVcM = () => {
     recurrenceFreqDist,
     uniqueParticipantsTotal,
     recurrenciaStats,
+    apiFilters,
     apiPerfilMap,
+    apiSummary,
+    apiLoading,
+    apiError,
+    hasRealData,
+    apiConveniosActivosSeries,
+    apiTotalConveniosSeries,
+    apiActividadesRealizadasSeries,
+    apiParticipacionesSeries,
+    apiArticulacionesTPSeries,
   } = useDashboardVcM();
 
-  const [simulateNoData, setSimulateNoData] = React.useState(false);
+  const sectorsList = apiFilters?.filters?.sectores?.length
+    ? apiFilters.filters.sectores.map(s => {
+        let val = s.toLowerCase();
+        if (val.includes('público') || val.includes('publico')) val = 'publico';
+        return { label: s, val };
+      })
+    : [
+        { label: 'Público', val: 'publico' },
+        { label: 'Privado', val: 'privado' },
+        { label: 'ONG / Fundación', val: 'ong' },
+        { label: 'Academia', val: 'academia' },
+        { label: 'Educación TP', val: 'edtp' }
+      ];
+
+  const modalidadesList = apiFilters?.filters?.modalidades?.length
+    ? apiFilters.filters.modalidades.map(m => {
+        let val = m.toLowerCase();
+        if (val.includes('híbrida') || val.includes('hibrida')) val = 'hibrida';
+        return { label: m, val };
+      })
+    : [
+        { label: 'Presencial', val: 'presencial' },
+        { label: 'Online', val: 'online' },
+        { label: 'Híbrida', val: 'hibrida' }
+      ];
+
+  const availableYears = apiFilters?.filters?.years ?? [];
+  const minYear = availableYears.length ? Math.min(...availableYears) : 2023;
+  const maxYear = availableYears.length ? Math.max(...availableYears) : 2026;
+
+  const isNoData = !hasRealData;
 
   const renderDataOrPlaceholder = (hasData, component, height = 240) => {
-    if (!hasData || simulateNoData) {
+    if (!hasData || isNoData) {
       return (
         <Box sx={{ 
           display: 'flex', 
@@ -462,10 +520,10 @@ export const DashboardVcM = () => {
                 setCohorteDesde(String(val[0]));
                 setCohorteHasta(String(val[1]));
               }}
-              min={2023}
-              max={2026}
+              min={minYear}
+              max={maxYear}
               step={1}
-              marks={[
+              marks={availableYears.length ? availableYears.map(y => ({ value: y, label: String(y) })) : [
                 { value: 2023, label: '2023' },
                 { value: 2024, label: '2024' },
                 { value: 2025, label: '2025' },
@@ -492,13 +550,7 @@ export const DashboardVcM = () => {
                 Sector
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {[
-                  { label: 'Público', val: 'publico' },
-                  { label: 'Privado', val: 'privado' },
-                  { label: 'ONG / Fundación', val: 'ong' },
-                  { label: 'Academia', val: 'academia' },
-                  { label: 'Educación TP', val: 'edtp' }
-                ].map((chip) => (
+                {sectorsList.map((chip) => (
                   <FilterChip
                     key={chip.val}
                     label={chip.label}
@@ -515,15 +567,7 @@ export const DashboardVcM = () => {
                 Tipo de convenio
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {[
-                  { label: 'Colaboración', val: 'colaboracion' },
-                  { label: 'Práctica', val: 'practica' },
-                  { label: 'Pasantía', val: 'pasantia' },
-                  { label: 'Articulación', val: 'articulacion' },
-                  { label: 'Empleabilidad', val: 'empleabilidad' },
-                  { label: 'Capacitación', val: 'capacitacion' },
-                  { label: 'Certificación laboral', val: 'certificacion' }
-                ].map((chip) => (
+                {dynamicTipos.map((chip) => (
                   <FilterChip
                     key={chip.val}
                     label={chip.label}
@@ -573,14 +617,7 @@ export const DashboardVcM = () => {
                 Línea VcM
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {[
-                  { label: 'Admisión y orientación', val: 'admision' },
-                  { label: 'Articulación TP', val: 'tp' },
-                  { label: 'Empleabilidad y prácticas', val: 'empleabilidad' },
-                  { label: 'Transferencia disciplinar', val: 'disciplinar' },
-                  { label: 'Certificación y competencias', val: 'certificacion' },
-                  { label: 'Relacionamiento territorial', val: 'territorial' }
-                ].map((chip) => (
+                {dynamicLineas.map((chip) => (
                   <FilterChip
                     key={chip.val}
                     label={chip.label}
@@ -597,11 +634,7 @@ export const DashboardVcM = () => {
                 Modalidad
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {[
-                  { label: 'Presencial', val: 'presencial' },
-                  { label: 'Online sincrónica', val: 'online' },
-                  { label: 'Híbrida', val: 'hibrida' }
-                ].map((chip) => (
+                {modalidadesList.map((chip) => (
                   <FilterChip
                     key={chip.val}
                     label={chip.label}
@@ -630,12 +663,7 @@ export const DashboardVcM = () => {
                 Plataforma
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {[
-                  { label: 'SAP', val: 'sap' },
-                  { label: 'Defontana', val: 'defontana' },
-                  { label: 'Excel aplicado', val: 'excel' },
-                  { label: 'Power BI', val: 'powerbi' }
-                ].map((chip) => (
+                {dynamicPlataformas.map((chip) => (
                   <FilterChip
                     key={chip.val}
                     label={chip.label}
@@ -652,14 +680,7 @@ export const DashboardVcM = () => {
                 Tipo articulación
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {[
-                  { label: 'Taller aplicado', val: 'taller' },
-                  { label: 'Visita técnica', val: 'visita' },
-                  { label: 'Clase demostrativa', val: 'clase' },
-                  { label: 'Articulación curricular', val: 'curricular' },
-                  { label: 'Mesa técnico-pedagógica', val: 'mesa' },
-                  { label: 'Certificación interna', val: 'certint' }
-                ].map((chip) => (
+                {dynamicTiposArticulacion.map((chip) => (
                   <FilterChip
                     key={chip.val}
                     label={chip.label}
@@ -883,25 +904,7 @@ export const DashboardVcM = () => {
               </Box>
             </Box>
 
-            {/* Switch para simular Base de Datos vacía */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#FFFFFF', p: '6px 16px', borderRadius: '20px', border: '1px solid #E2E8F0', alignSelf: { xs: 'flex-start', md: 'center' } }}>
-              <FormControlLabel
-                control={
-                  <Switch 
-                    checked={simulateNoData} 
-                    onChange={(e) => setSimulateNoData(e.target.checked)} 
-                    color="warning"
-                    size="small"
-                  />
-                }
-                label={
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E2875', fontSize: '13px' }}>
-                    Simular Sin Datos
-                  </Typography>
-                }
-                sx={{ m: 0 }}
-              />
-            </Box>
+
           </Box>
         </Box>
 
@@ -936,7 +939,7 @@ export const DashboardVcM = () => {
                         {kpi.title}
                       </Typography>
                       <Typography variant="h4" sx={styles.kpiCardHeaderVal}>
-                        {simulateNoData ? '-' : kpi.value}
+                        {apiLoading ? '...' : (isNoData ? '-' : kpi.value)}
                       </Typography>
                     </Box>
                     <Box sx={styles.kpiCardHeaderIcon(kpi.color)}>
@@ -947,9 +950,9 @@ export const DashboardVcM = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
                     {cohorteDesde !== cohorteHasta ? (
                       <Typography variant="caption" sx={styles.kpiCardFooterLabel}>
-                        vs Periodo anterior ({cohorteDesde}): {simulateNoData ? '-' : kpi.baseVal} {' '}
-                        <Box component="span" sx={styles.kpiEvoBadge(simulateNoData ? true : kpi.isPositive)}>
-                          {simulateNoData ? '→' : (kpi.isPositive ? '↑' : '↓')} {simulateNoData ? '-' : kpi.evolution}
+                        vs Periodo anterior ({cohorteDesde}): {isNoData ? '-' : kpi.baseVal} {' '}
+                        <Box component="span" sx={styles.kpiEvoBadge(isNoData ? true : kpi.isPositive)}>
+                          {isNoData ? '→' : (kpi.isPositive ? '↑' : '↓')} {isNoData ? '-' : kpi.evolution}
                         </Box>
                       </Typography>
                     ) : (
@@ -975,7 +978,7 @@ export const DashboardVcM = () => {
           </div>
           {sectionsOpen.sec1 && (
             <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
-              {simulateNoData ? (
+              {isNoData ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
                   Sin datos disponibles
                 </Box>
@@ -1044,7 +1047,7 @@ export const DashboardVcM = () => {
                       {sec1Segment === 'Sector' && (
                         <PieChart
                           series={[{
-                            data: datasetsSec1.Sector.map((d, i) => ({ id: i, value: d.value, label: d.label, color: catColors[i % catColors.length] })),
+                            data: datasetsSec1.Sector.filter(d => d.value > 0).map((d, i) => ({ id: i, value: d.value, label: d.label, color: getSectorColor(d.label) })),
                             innerRadius: 40,
                             outerRadius: 80,
                           }]}
@@ -1058,7 +1061,11 @@ export const DashboardVcM = () => {
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec1.Tipo.map(d => d.label), 
-                            colorMap: { type: 'ordinal', colors: catColors },
+                            colorMap: { 
+                              type: 'ordinal', 
+                              values: ['Admisión y orientación', 'Articulación TP', 'Empleabilidad y prácticas', 'Transferencia disciplinar', 'Certificación y competencias', 'Relacionamiento territorial', 'Vínculo Académico', 'Extensión'],
+                              colors: ['#E27800', '#2196F3', '#4CAF50', '#9C27B0', '#FF5722', '#607D8B', '#009688', '#795548']
+                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
@@ -1112,7 +1119,11 @@ export const DashboardVcM = () => {
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec1['Área vinculada'].map(d => d.label), 
-                            colorMap: { type: 'ordinal', colors: catColors },
+                            colorMap: { 
+                              type: 'ordinal', 
+                              values: ['Presencial', 'Híbrida', 'Online', 'Online sincrónica'],
+                              colors: ['#E27800', '#4CAF50', '#2196F3', '#2196F3']
+                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
@@ -1154,7 +1165,7 @@ export const DashboardVcM = () => {
           </div>
           {sectionsOpen.sec2 && (
             <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
-              {simulateNoData ? (
+              {isNoData ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
                   Sin datos disponibles
                 </Box>
@@ -1225,7 +1236,11 @@ export const DashboardVcM = () => {
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec2.Sector.map(d => d.label), 
-                            colorMap: { type: 'ordinal', colors: catColors },
+                            colorMap: { 
+                              type: 'ordinal', 
+                              values: ['Administración', 'Finanzas', 'Social', 'Ingeniería', 'Salud', 'Educación', 'Ambiental'],
+                              colors: ['#E27800', '#2196F3', '#4CAF50', '#9C27B0', '#FF5722', '#607D8B', '#00BCD4']
+                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
@@ -1254,7 +1269,11 @@ export const DashboardVcM = () => {
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec2.Tipo.map(d => d.label), 
-                            colorMap: { type: 'ordinal', colors: catColors },
+                            colorMap: { 
+                              type: 'ordinal', 
+                              values: ['Marco', 'Específico', 'Colaboración'],
+                              colors: ['#E27800', '#2196F3', '#4CAF50']
+                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
@@ -1325,7 +1344,7 @@ export const DashboardVcM = () => {
           </div>
           {sectionsOpen.sec3 && (
             <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
-              {simulateNoData ? (
+              {isNoData ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
                   Sin datos disponibles
                 </Box>
@@ -1336,7 +1355,7 @@ export const DashboardVcM = () => {
                     <Box sx={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                       <PieChart
                         series={[{
-                          data: datasetsSec3.map((d, i) => ({ id: i, value: d.vigentes, label: d.label, color: catColors[i % catColors.length] })),
+                          data: datasetsSec3.filter(d => d.vigentes > 0).map((d, i) => ({ id: i, value: d.vigentes, label: d.label, color: getSectorColor(d.label) })),
                           innerRadius: 50,
                           outerRadius: 90,
                           paddingAngle: 2,
@@ -1416,7 +1435,7 @@ export const DashboardVcM = () => {
           </div>
           {sectionsOpen.sec4 && (
             <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
-              {simulateNoData ? (
+              {isNoData ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
                   Sin datos disponibles
                 </Box>
@@ -1489,7 +1508,11 @@ export const DashboardVcM = () => {
                             scaleType: 'band', 
                             data: datasetsSec4['Línea VcM'].map(d => d.label), 
                             width: isMobile ? 55 : 120, 
-                            colorMap: { type: 'ordinal', colors: catColors },
+                            colorMap: { 
+                              type: 'ordinal', 
+                              values: ['Admisión y orientación', 'Articulación TP', 'Empleabilidad y prácticas', 'Transferencia disciplinar', 'Certificación y competencias', 'Relacionamiento territorial', 'Vínculo Académico', 'Extensión'],
+                              colors: ['#E27800', '#2196F3', '#4CAF50', '#9C27B0', '#FF5722', '#607D8B', '#009688', '#795548']
+                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 9) {
@@ -1518,7 +1541,11 @@ export const DashboardVcM = () => {
                             scaleType: 'band', 
                             data: datasetsSec4.Modalidad.map(d => d.label), 
                             width: isMobile ? 55 : 110, 
-                            colorMap: { type: 'ordinal', colors: catColors },
+                            colorMap: { 
+                              type: 'ordinal', 
+                              values: ['Presencial', 'Híbrida', 'Online', 'Online sincrónica'],
+                              colors: ['#E27800', '#4CAF50', '#2196F3', '#2196F3']
+                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 9) {
@@ -1637,7 +1664,7 @@ export const DashboardVcM = () => {
           </div>
           {sectionsOpen.sec5 && (
             <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
-              {simulateNoData ? (
+              {isNoData ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
                   Sin datos disponibles
                 </Box>
@@ -1653,8 +1680,8 @@ export const DashboardVcM = () => {
                         <BarChart
                           xAxis={[{ scaleType: 'band', data: getFilteredYears(datasetsSec5['Año']).map(d => d.label) }]}
                           series={[
-                            { data: getFilteredYears(datasetsSec5['Año']).map(d => d.interno), label: 'Interno', color: '#2196F3', stack: 'total', barLabel: 'value' },
-                            { data: getFilteredYears(datasetsSec5['Año']).map(d => d.externo), label: 'Externo', color: '#4CAF50', stack: 'total', barLabel: 'value' }
+                            { data: getFilteredYears(datasetsSec5['Año']).map(d => d.interno), label: 'Interno', color: '#2196F3', stack: 'total' },
+                            { data: getFilteredYears(datasetsSec5['Año']).map(d => d.externo), label: 'Externo', color: '#4CAF50', stack: 'total' }
                           ]}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...getFilteredYears(datasetsSec5['Año']).map(d => d.interno + d.externo), 0)), 
@@ -1733,7 +1760,7 @@ export const DashboardVcM = () => {
                         <Box sx={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                           <PieChart
                             series={[{
-                              data: datasetsSec5.Sexo.map((d, i) => ({ id: i, value: d.value, label: d.label, color: catColors[(i + 2) % catColors.length] })),
+                              data: datasetsSec5.Sexo.map((d, i) => ({ id: i, value: d.value, label: d.label, color: getSexoColor(d.label) })),
                               innerRadius: 50,
                               outerRadius: 90,
                               paddingAngle: 2,
@@ -1831,7 +1858,7 @@ export const DashboardVcM = () => {
           </div>
           {sectionsOpen.sec6 && (
             <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
-              {simulateNoData ? (
+              {isNoData ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
                   Sin datos disponibles
                 </Box>
@@ -1901,7 +1928,11 @@ export const DashboardVcM = () => {
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec6.Plataforma.map(d => d.label), 
-                            colorMap: { type: 'ordinal', colors: catColors },
+                            colorMap: { 
+                              type: 'ordinal', 
+                              values: ['SAP', 'Defontana', 'Excel', 'Excel aplicado', 'Power BI', 'PowerBI'],
+                              colors: ['#3F51B5', '#009688', '#4CAF50', '#4CAF50', '#FFC107', '#FFC107']
+                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
@@ -1930,7 +1961,14 @@ export const DashboardVcM = () => {
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec6.Tipo.map(d => d.label), 
-                            colorMap: { type: 'ordinal', colors: catColors },
+                            colorMap: { 
+                              type: 'ordinal', 
+                              values: [
+                                'Reconocimiento de aprendizajes', 'Alternancia', 'Taller práctico', 
+                                'Charla técnica', 'Feria TP', 'Mesa sectorial', 'Reconocimiento'
+                              ],
+                              colors: ['#E27800', '#2196F3', '#4CAF50', '#9C27B0', '#FF5722', '#607D8B', '#E27800']
+                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
