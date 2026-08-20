@@ -102,6 +102,13 @@ export const useDashboardVcM = () => {
       .then((res) => {
         if (res.success && res.data) {
           setApiFilters(res.data);
+          const years = res.data?.filters?.years ?? [];
+          if (years.length > 0) {
+            const min = String(Math.min(...years));
+            const max = String(Math.max(...years));
+            setCohorteDesde(min);
+            setCohorteHasta(max);
+          }
         }
       })
       .catch((err) => console.error('Error cargando filtros del departamento VcM:', err));
@@ -161,6 +168,8 @@ export const useDashboardVcM = () => {
       artTipo,
       artCol
     ]) => {
+      console.log('VcM Backend API Response Debug:', { summary, conveniosActivos, totalConvenios, participaciones });
+
       if (summary?.success && summary.data) {
         const deptData = summary.data?.departments?.find(d => d.departmentId === 'vinculacion_medio');
         const cards = deptData?.cards ?? [];
@@ -427,18 +436,69 @@ export const useDashboardVcM = () => {
 
   // Lista de KPIs en formato tarjeta (3 tarjetas de referencia)
   const kpiCardsData = useMemo(() => {
-    const activeVal = apiSummary?.convenios_activos?.formattedValue ?? apiSummary?.convenios_activos?.value ?? kpiStats.conveniosVigentes.val;
-    const newVal = apiSummary?.total_convenios?.formattedValue ?? apiSummary?.total_convenios?.value ?? kpiStats.nuevosConvenios.val;
-    const partVal = apiSummary?.participaciones?.formattedValue ?? apiSummary?.participaciones?.value ?? kpiStats.participantes.val;
+    const yHasta = Number(cohorteHasta) || 2026;
+    const yDesde = Number(cohorteDesde) || 2023;
+
+    const getValForYear = (series, year) => {
+      if (!series) return null;
+      // Trata de buscar por year o period
+      const match = series.find(p => Number(p.year ?? p.period ?? p.label) === year);
+      return match ? (match.value ?? match.val) : null;
+    };
+
+    const getEvoForSeries = (series, kpiKey) => {
+      const vHasta = getValForYear(series, yHasta);
+      const vDesde = getValForYear(series, yDesde);
+      if (vDesde != null && vHasta != null && vDesde !== 0) {
+        const diff = vHasta - vDesde;
+        const pct = Math.round((diff / vDesde) * 100);
+        return {
+          baseVal: vDesde,
+          evolution: `${pct >= 0 ? '+' : ''}${pct}%`,
+          isPositive: pct >= 0,
+          hasEvo: true
+        };
+      }
+      // Si la serie tiene datos reales cargados pero no se puede comparar en el rango seleccionado, mostrar N/A real.
+      if (series && series.length > 0) {
+        return {
+          baseVal: series[0]?.value ?? series[0]?.val ?? '-',
+          evolution: 'N/A',
+          isPositive: true,
+          hasEvo: false
+        };
+      }
+      // Retorna valores de kpiStats si no hay datos de serie cargados en absoluto en el backend (simulación inicial)
+      return {
+        baseVal: kpiStats[kpiKey].baseVal,
+        evolution: kpiStats[kpiKey].evolution,
+        isPositive: kpiStats[kpiKey].isPositive,
+        hasEvo: true
+      };
+    };
+
+    const activeCard = apiSummary?.convenios_activos;
+    const newCard = apiSummary?.total_convenios;
+    const partCard = apiSummary?.participaciones;
+
+    const activeVal = activeCard?.formattedValue ?? activeCard?.value ?? kpiStats.conveniosVigentes.val;
+    const activeEvoData = getEvoForSeries(apiConveniosActivosSeries, 'conveniosVigentes');
+
+    const newVal = newCard?.formattedValue ?? newCard?.value ?? kpiStats.nuevosConvenios.val;
+    const newEvoData = getEvoForSeries(apiTotalConveniosSeries, 'nuevosConvenios');
+
+    const partVal = partCard?.formattedValue ?? partCard?.value ?? kpiStats.participantes.val;
+    const partEvoData = getEvoForSeries(apiParticipacionesSeries, 'participantes');
 
     return [
       {
         key: 'convenios_vigentes',
         title: 'Total de convenios vigentes',
         value: activeVal,
-        baseVal: kpiStats.conveniosVigentes.baseVal,
-        evolution: kpiStats.conveniosVigentes.evolution,
-        isPositive: kpiStats.conveniosVigentes.isPositive,
+        baseVal: activeEvoData.baseVal,
+        evolution: activeEvoData.evolution,
+        isPositive: activeEvoData.isPositive,
+        hasEvo: activeEvoData.hasEvo,
         icon: Award,
         color: '#E27800',
       },
@@ -446,9 +506,10 @@ export const useDashboardVcM = () => {
         key: 'nuevos_convenios',
         title: 'Nuevos convenios firmados',
         value: newVal,
-        baseVal: kpiStats.nuevosConvenios.baseVal,
-        evolution: kpiStats.nuevosConvenios.evolution,
-        isPositive: kpiStats.nuevosConvenios.isPositive,
+        baseVal: newEvoData.baseVal,
+        evolution: newEvoData.evolution,
+        isPositive: newEvoData.isPositive,
+        hasEvo: newEvoData.hasEvo,
         icon: Briefcase,
         color: '#2196F3',
       },
@@ -456,14 +517,15 @@ export const useDashboardVcM = () => {
         key: 'total_participantes',
         title: 'Total de participantes VcM',
         value: typeof partVal === 'number' ? partVal.toLocaleString('es-CL') : partVal,
-        baseVal: kpiStats.participantes.baseVal.toLocaleString('es-CL'),
-        evolution: kpiStats.participantes.evolution,
-        isPositive: kpiStats.participantes.isPositive,
+        baseVal: typeof partEvoData.baseVal === 'number' ? partEvoData.baseVal.toLocaleString('es-CL') : partEvoData.baseVal,
+        evolution: partEvoData.evolution,
+        isPositive: partEvoData.isPositive,
+        hasEvo: partEvoData.hasEvo,
         icon: Users,
         color: '#4CAF50',
       }
     ];
-  }, [kpiStats, apiSummary]);
+  }, [kpiStats, apiSummary, apiConveniosActivosSeries, apiTotalConveniosSeries, apiParticipacionesSeries, cohorteDesde, cohorteHasta]);
 
   // Datos del grÃ¡fico de Oferta de Actividades (EvoluciÃ³n Temporal)
   const ofertaChartData = useMemo(() => {
