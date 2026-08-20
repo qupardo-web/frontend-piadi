@@ -197,6 +197,13 @@ export const DashboardVcM = () => {
   };
   const location = useLocation();
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
+  const [filtersCollapsed, setFiltersCollapsed] = React.useState(false);
+  
+  // Estados locales para controlar los acordeones de los filtros
+  const [openConvenios, setOpenConvenios] = React.useState(true);
+  const [openActividades, setOpenActividades] = React.useState(true);
+  const [openArticulacion, setOpenArticulacion] = React.useState(true);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const {
@@ -708,7 +715,7 @@ export const DashboardVcM = () => {
           onClick={handleResetFilters}
           sx={styles.resetFiltersButton}
         >
-          Limpiar Filtros
+          Restablecer filtros
         </Button>
       </Box>
     </Box>
@@ -903,7 +910,7 @@ export const DashboardVcM = () => {
                 <PublicIcon />
               </Box>
               <Box>
-                 <Typography variant="h1" sx={styles.panelTitle}>
+                 <Typography variant="h5" sx={styles.panelTitle}>
                   Dashboard de Vinculación con el Medio
                 </Typography>
                 <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
@@ -979,10 +986,10 @@ export const DashboardVcM = () => {
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec1')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ChevronDown style={{ transform: sectionsOpen.sec1 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <Award size={20} style={{ color: '#E27800' }} />
               Total de convenios vigentes
             </h2>
+            <ChevronDown style={{ transform: sectionsOpen.sec1 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms', color: '#1E2875' }} size={18} />
           </div>
           {sectionsOpen.sec1 && (
             <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
@@ -1169,10 +1176,10 @@ export const DashboardVcM = () => {
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec2')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ChevronDown style={{ transform: sectionsOpen.sec2 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <TrendingUp size={20} style={{ color: '#E27800' }} />
               Nuevos convenios firmados
             </h2>
+            <ChevronDown style={{ transform: sectionsOpen.sec2 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms', color: '#1E2875' }} size={18} />
           </div>
           {sectionsOpen.sec2 && (
             <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
@@ -1352,10 +1359,10 @@ export const DashboardVcM = () => {
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec3')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ChevronDown style={{ transform: sectionsOpen.sec3 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <Layers size={20} style={{ color: '#E27800' }} />
               Convenios por sector
             </h2>
+            <ChevronDown style={{ transform: sectionsOpen.sec3 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms', color: '#1E2875' }} size={18} />
           </div>
           {sectionsOpen.sec3 && (
             <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
@@ -1443,10 +1450,10 @@ export const DashboardVcM = () => {
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec4')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ChevronDown style={{ transform: sectionsOpen.sec4 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <CalendarLucide size={20} style={{ color: '#E27800' }} />
               Actividades VcM
             </h2>
+            <ChevronDown style={{ transform: sectionsOpen.sec4 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms', color: '#1E2875' }} size={18} />
           </div>
           {sectionsOpen.sec4 && (
             <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
@@ -1673,10 +1680,10 @@ export const DashboardVcM = () => {
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec5')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ChevronDown style={{ transform: sectionsOpen.sec5 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <Users size={20} style={{ color: '#E27800' }} />
               Participantes en actividades VcM
             </h2>
+            <ChevronDown style={{ transform: sectionsOpen.sec5 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms', color: '#1E2875' }} size={18} />
           </div>
           {sectionsOpen.sec5 && (
             <div className="collapsible-body" style={{ padding: '20px', paddingBottom: '35px', borderTop: '1px solid #E0E0E0' }}>
@@ -1868,10 +1875,10 @@ export const DashboardVcM = () => {
         <div className="collapsible-card" style={{ marginTop: '20px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec6')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ChevronDown style={{ transform: sectionsOpen.sec6 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms' }} size={18} />
               <GraduationCap size={20} style={{ color: '#E27800' }} />
               Articulaciones TP ejecutadas
             </h2>
+            <ChevronDown style={{ transform: sectionsOpen.sec6 ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms', color: '#1E2875' }} size={18} />
           </div>
           {sectionsOpen.sec6 && (
             <div className="collapsible-body" style={{ padding: '20px', borderTop: '1px solid #E0E0E0' }}>
@@ -2084,14 +2091,285 @@ export const DashboardVcM = () => {
         {filtersContent}
       </Drawer>
 
+      {/* Sidebar colapsable para Desktop integrado con el diseño */}
       <Box
         component="aside"
         sx={{
-          ...styles.filtersSidebar,
-          display: { xs: 'none', md: 'flex' }
+          width: filtersCollapsed ? '40px' : '290px',
+          height: filtersCollapsed ? '40px' : 'calc(100vh - 40px)',
+          transition: 'width 250ms cubic-bezier(0.4, 0, 0.2, 1), height 250ms cubic-bezier(0.4, 0, 0.2, 1), background-color 250ms',
+          display: { xs: 'none', md: 'flex' },
+          flexDirection: 'column',
+          position: 'sticky',
+          top: '20px',
+          mr: '20px',
+          my: '20px',
+          borderRadius: filtersCollapsed ? '50%' : '16px',
+          overflow: 'hidden',
+          bgcolor: filtersCollapsed ? 'transparent' : '#FFFFFF',
+          border: filtersCollapsed ? 'none' : '1px solid #E2E8F0',
+          boxShadow: filtersCollapsed ? 'none' : '0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02)',
+          flexShrink: 0,
+          zIndex: 90,
         }}
       >
-        {filtersContent}
+        {/* Botón Toggle Colapsar/Expandir en la cabecera */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: filtersCollapsed ? 'center' : 'space-between',
+          p: filtersCollapsed ? '0px' : '16px 12px',
+          bgcolor: filtersCollapsed ? 'transparent' : '#F8FAFC',
+          borderBottom: filtersCollapsed ? 'none' : '1px solid #E2E8F0',
+          height: filtersCollapsed ? '40px' : '56px',
+          width: filtersCollapsed ? '40px' : '100%',
+          boxSizing: 'border-box'
+        }}>
+          {!filtersCollapsed && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <FilterIcon sx={{ color: '#E27800', fontSize: 18 }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875', fontSize: '14px' }}>
+                Filtros VcM
+              </Typography>
+            </Box>
+          )}
+          <IconButton 
+            onClick={() => setFiltersCollapsed(!filtersCollapsed)}
+            size="medium"
+            sx={{ 
+              color: '#1E2875',
+              width: filtersCollapsed ? '40px' : '32px',
+              height: filtersCollapsed ? '40px' : '32px',
+              bgcolor: filtersCollapsed ? '#FFFFFF' : 'rgba(30, 40, 117, 0.05)',
+              border: filtersCollapsed ? '1px solid #E2E8F0' : 'none',
+              boxShadow: filtersCollapsed ? '0 2px 4px rgba(0,0,0,0.08)' : 'none',
+              '&:hover': { bgcolor: filtersCollapsed ? '#F8FAFC' : 'rgba(30, 40, 117, 0.1)' }
+            }}
+          >
+            {filtersCollapsed ? <ChevronRightIcon /> : <ChevronRightIcon style={{ transform: 'rotate(180deg)', transition: 'transform 200ms' }} />}
+          </IconButton>
+        </Box>
+
+        {/* Contenido de los filtros (solo visible si no está colapsado) */}
+        <Box sx={{ 
+          flexGrow: 1, 
+          opacity: filtersCollapsed ? 0 : 1,
+          visibility: filtersCollapsed ? 'hidden' : 'visible',
+          transition: 'opacity 150ms ease-in-out, visibility 150ms ease-in-out',
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'calc(100% - 56px)',
+          overflow: 'hidden'
+        }}>
+          <Box sx={{ 
+            flexGrow: 1, 
+            overflowY: 'auto',
+            px: 2.5,
+            py: 2.5,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2.5
+          }}>
+            {/* Slider de Años */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.5px' }}>
+                Año
+              </Typography>
+              <Box sx={{ px: 1, mt: 0.5 }}>
+                <Slider
+                  value={[parseInt(cohorteDesde), parseInt(cohorteHasta)]}
+                  onChange={(e, val) => {
+                    setCohorteDesde(String(val[0]));
+                    setCohorteHasta(String(val[1]));
+                  }}
+                  min={minYear}
+                  max={maxYear}
+                  step={1}
+                  marks={availableYears.length ? availableYears.map(y => ({ value: y, label: String(y) })) : [
+                    { value: 2023, label: '2023' },
+                    { value: 2024, label: '2024' },
+                    { value: 2025, label: '2025' },
+                    { value: 2026, label: '2026' }
+                  ]}
+                  valueLabelDisplay="auto"
+                  sx={styles.ageSliderStyle}
+                />
+                <Typography variant="body2" sx={{ textAlign: 'center', mt: 1.5, fontWeight: 600, color: '#1E2875', fontSize: '13px' }}>
+                  {cohorteDesde === cohorteHasta ? cohorteDesde : `${cohorteDesde} - ${cohorteHasta}`}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Accordions de filtros */}
+            <Accordion 
+              expanded={openConvenios} 
+              onChange={(e, expanded) => setOpenConvenios(expanded)}
+              sx={{ boxShadow: 'none', border: 'none', mt: -0.5, margin: '0 !important', '&:before': { display: 'none' } }}
+            >
+              <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
+                <ChevronDown style={{ transform: openConvenios ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms', color: '#475569' }} size={16} />
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                  Convenios
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Sector
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                     {sectorsList.map((chip) => (
+                       <FilterChip
+                         key={chip.val}
+                         label={chip.label}
+                         selected={selectedSectores.includes(chip.val)}
+                         onClick={() => toggleChip(selectedSectores, setSelectedSectores, chip.val)}
+                       />
+                     ))}
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Tipo de convenio
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                     {dynamicTipos.map((chip) => (
+                       <FilterChip
+                         key={chip.val}
+                         label={chip.label}
+                         selected={selectedTiposConvenio.includes(chip.val)}
+                         onClick={() => toggleChip(selectedTiposConvenio, setSelectedTiposConvenio, chip.val)}
+                       />
+                     ))}
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Estado
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                    {['Activo', 'Cerrado'].map((lbl) => (
+                      <FilterChip
+                        key={lbl}
+                        label={lbl}
+                        selected={selectedEstados.includes(lbl.toLowerCase())}
+                        onClick={() => toggleChip(selectedEstados, setSelectedEstados, lbl.toLowerCase())}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion 
+              expanded={openActividades} 
+              onChange={(e, expanded) => setOpenActividades(expanded)}
+              sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', '&:before': { display: 'none' } }}
+            >
+              <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
+                <ChevronDown style={{ transform: openActividades ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms', color: '#475569' }} size={16} />
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                  Actividades
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Línea VcM
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                     {dynamicLineas.map((chip) => (
+                       <FilterChip
+                         key={chip.val}
+                         label={chip.label}
+                         selected={selectedLineas.includes(chip.val)}
+                         onClick={() => toggleChip(selectedLineas, setSelectedLineas, chip.val)}
+                       />
+                     ))}
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Modalidad
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                     {modalidadesList.map((chip) => (
+                       <FilterChip
+                         key={chip.val}
+                         label={chip.label}
+                         selected={selectedModalidades.includes(chip.val)}
+                         onClick={() => toggleChip(selectedModalidades, setSelectedModalidades, chip.val)}
+                       />
+                     ))}
+                  </Box>
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion 
+              expanded={openArticulacion} 
+              onChange={(e, expanded) => setOpenArticulacion(expanded)}
+              sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', '&:before': { display: 'none' } }}
+            >
+              <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
+                <ChevronDown style={{ transform: openArticulacion ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms', color: '#475569' }} size={16} />
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                  Articulación TP
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Plataforma Foco
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                     {dynamicPlataformas.map((chip) => (
+                       <FilterChip
+                         key={chip.val}
+                         label={chip.label}
+                         selected={selectedPlataformas.includes(chip.val)}
+                         onClick={() => toggleChip(selectedPlataformas, setSelectedPlataformas, chip.val)}
+                       />
+                     ))}
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Tipo de articulación
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                     {dynamicTiposArticulacion.map((chip) => (
+                       <FilterChip
+                         key={chip.val}
+                         label={chip.label}
+                         selected={selectedTiposArticulacion.includes(chip.val)}
+                         onClick={() => toggleChip(selectedTiposArticulacion, setSelectedTiposArticulacion, chip.val)}
+                       />
+                     ))}
+                  </Box>
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+          </Box>
+
+          {/* Footer Reset Button */}
+          <Box sx={{ p: 2, borderTop: '1px solid #E2E8F0', bgcolor: '#F8FAFC' }}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={<ResetIcon />}
+              onClick={handleResetFilters}
+              fullWidth
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: '8px',
+              }}
+            >
+              Restablecer filtros
+            </Button>
+          </Box>
+        </Box>
       </Box>
       </Box>
     </ThemeProvider>
