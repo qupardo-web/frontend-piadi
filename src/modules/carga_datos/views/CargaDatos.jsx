@@ -260,15 +260,34 @@ export const CargaDatos = () => {
           ========================================================================= */}
       <Box sx={styles.contentArea}>
         
-        {/* Fila superior: Cabecera con Sesión Activa */}
-        <Box sx={styles.headerRow}>
-          <Box>
-            <Typography variant="h5" sx={styles.panelTitle}>
+        {/* Cabecera del Panel Principal */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 1 }}>
+          {/* Breadcrumbs */}
+          <Box sx={styles.breadcrumbsContainer}>
+            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/')}>
+              Inicio
+            </Typography>
+            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
+            <Typography variant="body1" sx={{ color: '#1E2875', fontWeight: 600 }}>
               Carga de datos
             </Typography>
-            <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
-              Sube y actualiza los indicadores institucionales mediante archivos de plantilla.
-            </Typography>
+          </Box>
+
+          {/* Fila superior: Cabecera con Sesión Activa */}
+          <Box sx={styles.headerRow}>
+            <Box sx={styles.panelHeader}>
+              <Box sx={styles.panelIconContainer}>
+                <CargaIcon />
+              </Box>
+              <Box>
+                <Typography variant="h5" sx={styles.panelTitle}>
+                  Carga de datos
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
+                  Sube y actualiza los indicadores institucionales mediante archivos de plantilla.
+                </Typography>
+              </Box>
+            </Box>
           </Box>
         </Box>
 

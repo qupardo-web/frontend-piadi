@@ -468,6 +468,15 @@ export const useDashboardVcM = () => {
           hasEvo: false
         };
       }
+      // Si estamos en modo de datos reales pero no hay serie, retornar N/A
+      if (hasRealData) {
+        return {
+          baseVal: '-',
+          evolution: 'N/A',
+          isPositive: true,
+          hasEvo: false
+        };
+      }
       // Retorna valores de kpiStats si no hay datos de serie cargados en absoluto en el backend (simulación inicial)
       return {
         baseVal: kpiStats[kpiKey].baseVal,
@@ -481,13 +490,19 @@ export const useDashboardVcM = () => {
     const newCard = apiSummary?.total_convenios;
     const partCard = apiSummary?.participaciones;
 
-    const activeVal = activeCard?.formattedValue ?? activeCard?.value ?? kpiStats.conveniosVigentes.val;
+    const activeVal = hasRealData
+      ? (activeCard?.formattedValue ?? activeCard?.value ?? 0)
+      : kpiStats.conveniosVigentes.val;
     const activeEvoData = getEvoForSeries(apiConveniosActivosSeries, 'conveniosVigentes');
 
-    const newVal = newCard?.formattedValue ?? newCard?.value ?? kpiStats.nuevosConvenios.val;
+    const newVal = hasRealData
+      ? (newCard?.formattedValue ?? newCard?.value ?? 0)
+      : kpiStats.nuevosConvenios.val;
     const newEvoData = getEvoForSeries(apiTotalConveniosSeries, 'nuevosConvenios');
 
-    const partVal = partCard?.formattedValue ?? partCard?.value ?? kpiStats.participantes.val;
+    const partVal = hasRealData
+      ? (partCard?.formattedValue ?? partCard?.value ?? 0)
+      : kpiStats.participantes.val;
     const partEvoData = getEvoForSeries(apiParticipacionesSeries, 'participantes');
 
     return [
@@ -525,7 +540,7 @@ export const useDashboardVcM = () => {
         color: '#4CAF50',
       }
     ];
-  }, [kpiStats, apiSummary, apiConveniosActivosSeries, apiTotalConveniosSeries, apiParticipacionesSeries, cohorteDesde, cohorteHasta]);
+  }, [kpiStats, apiSummary, apiConveniosActivosSeries, apiTotalConveniosSeries, apiParticipacionesSeries, cohorteDesde, cohorteHasta, hasRealData]);
 
   // Datos del grÃ¡fico de Oferta de Actividades (EvoluciÃ³n Temporal)
   const ofertaChartData = useMemo(() => {

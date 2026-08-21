@@ -750,8 +750,8 @@ export const DashboardVcM = () => {
         }
         .vcm-dashboard .MuiChartsGrid-line {
           stroke: #CBD5E1 !important;
-          stroke-width: 1px !important;
-          stroke-dasharray: 3 3 !important;
+          stroke-width: 1.5px !important;
+          stroke-dasharray: none !important;
         }
         .vcm-dashboard .MuiToggleButtonGroup-root {
           background-color: #F1F5F9 !important;
@@ -884,22 +884,22 @@ export const DashboardVcM = () => {
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <Box sx={styles.breadcrumbsContainer}>
             <Typography 
-              variant="body2" 
+              variant="body1" 
               onClick={() => navigate('/')}
-              sx={{ color: '#6B7280', fontWeight: 500, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+              sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
             >
               Inicio
             </Typography>
-            <ChevronRightIcon sx={{ fontSize: 14 }} />
+            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
             <Typography 
-              variant="body2" 
+              variant="body1" 
               onClick={() => navigate('/dashboard')}
-              sx={{ color: '#6B7280', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+              sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
             >
-              Central de dashboards
+              Central de Dashboards
             </Typography>
-            <ChevronRightIcon sx={{ fontSize: 14 }} />
-            <Typography variant="body2" sx={{ color: '#1E2875', fontWeight: 700 }}>
+            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
+            <Typography variant="body1" sx={{ color: '#1E2875', fontWeight: 600 }}>
               Vinculación con el medio
             </Typography>
           </Box>
