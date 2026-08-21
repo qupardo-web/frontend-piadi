@@ -246,6 +246,21 @@ export const RepositorioArchivos = () => {
         
         {/* Cabecera de la Página */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {/* Breadcrumbs */}
+          <Box sx={styles.breadcrumbsContainer}>
+            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/')}>
+              Inicio
+            </Typography>
+            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
+            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/carga-datos')}>
+              Carga de datos
+            </Typography>
+            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
+            <Typography variant="body1" sx={{ color: '#1E2875', fontWeight: 600 }}>
+              Repositorio
+            </Typography>
+          </Box>
+
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
             <Box sx={styles.panelHeader}>
               <Box sx={styles.panelIconContainer}>
@@ -260,21 +275,6 @@ export const RepositorioArchivos = () => {
                 </Typography>
               </Box>
             </Box>
-          </Box>
-
-          {/* Breadcrumbs */}
-          <Box sx={styles.breadcrumbsContainer}>
-            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/')}>
-              Inicio
-            </Typography>
-            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
-            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/carga-datos')}>
-              Carga de datos
-            </Typography>
-            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
-            <Typography variant="body1" sx={{ color: '#1E2875', fontWeight: 600 }}>
-              Repositorio
-            </Typography>
           </Box>
         </Box>
 
