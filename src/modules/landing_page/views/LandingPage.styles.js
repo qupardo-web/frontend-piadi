@@ -230,6 +230,24 @@ export const styles = {
         color: '#1E2875',
       },
     },
+    '& .MuiTabs-scrollButtons': {
+      color: '#1E2875',
+      width: 32,
+      height: 32,
+      borderRadius: '50%',
+      border: '1px solid #E5E7EB',
+      bgcolor: '#FFFFFF',
+      transition: 'background-color 150ms ease-out, border-color 150ms ease-out, opacity 150ms ease-out',
+      '&:hover': {
+        bgcolor: '#F0F1FF',
+        borderColor: '#C7C9F0',
+      },
+      '&.Mui-disabled': {
+        opacity: 0.35,
+      },
+      alignSelf: 'center',
+      mx: 1,
+    },
   },
 
   // -------------------------------------------------------------------------

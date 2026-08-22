@@ -41,6 +41,7 @@ import {
   Check as CheckIcon,
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
+  SwapHoriz as RangeIcon,
 } from '@mui/icons-material';
 
 export const MetaForm = () => {
@@ -99,6 +100,8 @@ export const MetaForm = () => {
     handleDeleteMetric,
     handleSaveMeta,
     handleOpenPreview,
+    departmentsList,
+    kpisList,
   } = useMetaForm();
 
   // Ref and click outside listener to close autocomplete dropdown
@@ -369,12 +372,11 @@ export const MetaForm = () => {
                   sx={styles.select(errors.departamento)}
                 >
                   <option value="">Selecciona una dirección</option>
-                  <option value="Admisión">Admisión</option>
-                  <option value="Relaciones Estudiantiles">Relaciones Estudiantiles</option>
-                  <option value="Desarrollo Curricular">Desarrollo Curricular</option>
-                  <option value="Innovación">Innovación</option>
-                  <option value="Educación Continua">Educación Continua</option>
-                  <option value="Vinculación con el Medio">Vinculación con el Medio</option>
+                  {departmentsList.map((dept) => (
+                    <option key={dept.key} value={dept.key}>
+                      {dept.name}
+                    </option>
+                  ))}
                 </Box>
                 {errors.departamento && <Typography sx={styles.fieldError}>Selecciona un departamento</Typography>}
               </Box>
@@ -705,7 +707,7 @@ export const MetaForm = () => {
                 component="button"
                 type="button"
                 onClick={() => setMetricComportamiento('debe-superar')}
-                sx={styles.compBtn(metricComportamiento === 'debe-superar', true)}
+                sx={styles.compBtn(metricComportamiento === 'debe-superar', 'debe-superar')}
               >
                 <TrendingUpIcon sx={{ fontSize: 16, mr: 0.5 }} />
                 Debe superar
@@ -714,10 +716,19 @@ export const MetaForm = () => {
                 component="button"
                 type="button"
                 onClick={() => setMetricComportamiento('no-debe-superar')}
-                sx={styles.compBtn(metricComportamiento === 'no-debe-superar', false)}
+                sx={styles.compBtn(metricComportamiento === 'no-debe-superar', 'no-debe-superar')}
               >
                 <TrendingDownIcon sx={{ fontSize: 16, mr: 0.5 }} />
                 No debe superar
+              </Box>
+              <Box
+                component="button"
+                type="button"
+                onClick={() => setMetricComportamiento('debe-mantenerse-en-rango')}
+                sx={styles.compBtn(metricComportamiento === 'debe-mantenerse-en-rango', 'debe-mantenerse-en-rango')}
+              >
+                <RangeIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                En Rango
               </Box>
             </Box>
           </Box>

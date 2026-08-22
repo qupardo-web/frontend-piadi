@@ -746,18 +746,28 @@ export const styles = {
 
   compToggle: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
+    gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
     gap: 2,
   },
 
-  compBtn: (isActive, isDebeSuperar) => {
+  compBtn: (isActive, type) => {
     let activeBorder = '#d1d5db';
     let activeBg = '#ffffff';
     let activeColor = '#475569';
     if (isActive) {
-      activeBorder = isDebeSuperar ? '#22c55e' : '#ef4444';
-      activeBg = isDebeSuperar ? '#f0fdf4' : '#fef2f2';
-      activeColor = isDebeSuperar ? '#15803d' : '#b91c1c';
+      if (type === 'debe-superar' || type === true) {
+        activeBorder = '#22c55e';
+        activeBg = '#f0fdf4';
+        activeColor = '#15803d';
+      } else if (type === 'no-debe-superar' || type === false) {
+        activeBorder = '#ef4444';
+        activeBg = '#fef2f2';
+        activeColor = '#b91c1c';
+      } else if (type === 'debe-mantenerse-en-rango') {
+        activeBorder = '#3b82f6';
+        activeBg = '#eff6ff';
+        activeColor = '#1d4ed8';
+      }
     }
     return {
       display: 'inline-flex',
