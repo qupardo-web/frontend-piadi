@@ -25,6 +25,9 @@ export const getDashboardSummary = (params) =>
 export const getDepartmentKpis = (deptKey) =>
   apiFetch(`/api/departments/${deptKey}/kpis`);
 
+export const getDepartments = () =>
+  apiFetch('/api/departments');
+
 export const getDepartmentFilters = (deptKey) =>
   apiFetch(`/api/departments/${deptKey}/filters`);
 

@@ -5,6 +5,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth';
+import { getDepartments, getDepartmentKpis } from '../../../services/piadiApi';
 
 export const METRICAS_POOL = [
   'Total de deserciones', 
@@ -52,6 +53,10 @@ export const useMetaForm = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState('Metas');
 
+  // Dynamic Data Lists
+  const [departmentsList, setDepartmentsList] = useState([]);
+  const [kpisList, setKpisList] = useState([]);
+
   // Form Fields State
   const [nombre, setNombre] = useState('');
   const [departamento, setDepartamento] = useState('');
@@ -61,6 +66,43 @@ export const useMetaForm = () => {
   const [prioridad, setPrioridad] = useState('media');
   const [creadaPor, setCreadaPor] = useState('');
   const [metricas, setMetricas] = useState([]);
+
+  // Load departments from database on mount
+  useEffect(() => {
+    const fetchDepts = async () => {
+      try {
+        const res = await getDepartments();
+        if (res.success && Array.isArray(res.data)) {
+          setDepartmentsList(res.data);
+        }
+      } catch (err) {
+        console.error('Error fetching departments:', err);
+      }
+    };
+    fetchDepts();
+  }, []);
+
+  // Load KPIs whenever the selected department changes
+  useEffect(() => {
+    if (!departamento) {
+      setKpisList([]);
+      return;
+    }
+    const fetchKpis = async () => {
+      try {
+        const res = await getDepartmentKpis(departamento);
+        if (res.success && res.data && Array.isArray(res.data.kpis)) {
+          setKpisList(res.data.kpis);
+        } else {
+          setKpisList([]);
+        }
+      } catch (err) {
+        console.error('Error fetching KPIs:', err);
+        setKpisList([]);
+      }
+    };
+    fetchKpis();
+  }, [departamento]);
 
   // Load Edit Data if applicable
   useEffect(() => {
@@ -117,9 +159,10 @@ export const useMetaForm = () => {
 
   // Filter metrics pool for search
   const filteredMetricsPool = useMemo(() => {
-    if (!metricSearch) return METRICAS_POOL;
-    return METRICAS_POOL.filter(m => m.toLowerCase().includes(metricSearch.toLowerCase()));
-  }, [metricSearch]);
+    const pool = kpisList.map(k => k.name);
+    if (!metricSearch) return pool;
+    return pool.filter(m => m.toLowerCase().includes(metricSearch.toLowerCase()));
+  }, [kpisList, metricSearch]);
 
   // Navigation Sidebar trigger
   const handleDrawerToggle = () => {
@@ -176,9 +219,11 @@ export const useMetaForm = () => {
       return;
     }
 
+    const selectedKpiObj = kpisList.find(k => k.name === metricNombre);
     const payload = {
       id: editMetricIndex !== null ? metricas[editMetricIndex].id : Date.now(),
       nombre: metricNombre,
+      key: selectedKpiObj ? selectedKpiObj.key : '',
       aporte: valAporte,
       comportamiento: metricComportamiento,
       valor: Number(metricValor),
@@ -244,6 +289,8 @@ export const useMetaForm = () => {
     handleDrawerToggle,
     modo,
     setModo,
+    departmentsList,
+    kpisList,
     nombre,
     setNombre,
     departamento,
