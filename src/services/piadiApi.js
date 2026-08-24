@@ -42,3 +42,23 @@ export const getIndicatorSeries = (key, params) =>
 
 export const getIndicatorBreakdown = (key, params) =>
   apiFetch(`/api/indicators/${key}/breakdown${buildParams(params)}`);
+
+async function apiMutate(path, method, body) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (res.status === 204) return { success: true };
+  return res.json();
+}
+
+export const createMeta = (body) => apiMutate('/api/metas', 'POST', body);
+export const updateMeta = (id, body) => apiMutate(`/api/metas/${id}`, 'PUT', body);
+export const getMetas = (params) => apiFetch(`/api/metas${buildParams(params)}`);
+export const getMetaById = (id) => apiFetch(`/api/metas/${id}`);
+export const deleteMeta = (id) => apiMutate(`/api/metas/${id}`, 'DELETE');
