@@ -1,9 +1,9 @@
 // =========================================================================
-// COMPONENTE: MetaForm.jsx
+// COMPONENTE: MetaEditForm.jsx
 // =========================================================================
 
 import React from 'react';
-import { useMetaForm } from './MetaForm.hooks';
+import { useMetaEditForm } from './MetaEditForm.hooks';
 import { styles } from './MetaForm.styles';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
@@ -46,7 +46,7 @@ import {
   SwapHoriz as RangeIcon,
 } from '@mui/icons-material';
 
-export const MetaForm = () => {
+export const MetaEditForm = () => {
   const {
     navigate,
     user,
@@ -106,7 +106,7 @@ export const MetaForm = () => {
     showSuccessAlert,
     setShowSuccessAlert,
     successMsg,
-  } = useMetaForm();
+  } = useMetaEditForm();
 
   // Ref and click outside listener to close autocomplete dropdown
   const comboboxRef = React.useRef(null);
@@ -122,7 +122,7 @@ export const MetaForm = () => {
     };
   }, [setMetricDropdownOpen]);
 
-  // Sidebar navigation menu options (matching layout)
+  // Sidebar navigation menu options
   const navItems = [
     { text: 'Inicio', icon: <HomeIcon />, path: '/' },
     { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
@@ -271,7 +271,7 @@ export const MetaForm = () => {
         {sidebarContent}
       </Drawer>
 
-      {/* Content Area */}
+      {/* Main Content Area */}
       <Box component="main" sx={styles.contentArea}>
         {/* Cabecera de la Página */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 4 }}>
@@ -286,7 +286,7 @@ export const MetaForm = () => {
             </Typography>
             <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
             <Box component="span" sx={styles.breadcrumbCurrent}>
-              Nueva Meta
+              Editar Meta
             </Box>
           </Box>
 
@@ -297,10 +297,10 @@ export const MetaForm = () => {
               </Box>
               <Box>
                 <Typography variant="h5" sx={styles.pageTitle}>
-                  Nueva Meta
+                  Editar Meta
                 </Typography>
                 <Typography variant="body2" sx={styles.pageSubtitle}>
-                  Registra una nueva meta institucional con sus métricas asociadas
+                  Modifica los parámetros y métricas de la meta seleccionada
                 </Typography>
               </Box>
             </Box>
@@ -480,7 +480,7 @@ export const MetaForm = () => {
               </Box>
             )}
 
-            {/* Metrics Table */}
+            {/* Render metrics table if metricas count > 0 */}
             {metricas.length > 0 ? (
               <Box sx={styles.tableContainer}>
                 <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -496,19 +496,23 @@ export const MetaForm = () => {
                   <Box component="tbody">
                     {metricas.map((m, index) => (
                       <Box component="tr" key={m.id} sx={{ borderBottom: '1px solid #e5e7eb', '&:last-child': { borderBottom: 'none' } }}>
-                        <Box component="td" sx={{ ...styles.td, fontWeight: 500 }}>{m.nombre}</Box>
+                        <Box component="td" sx={{ ...styles.td, fontWeight: 500 }}>
+                          {kpisList.find(k => k.key === m.key)?.name || m.nombre || m.key}
+                        </Box>
                         <Box component="td" sx={styles.td}>
                           <Box sx={styles.badge('aporte')}>{m.aporte}%</Box>
                         </Box>
                         <Box component="td" sx={styles.td}>
                           {m.comportamiento === 'debe-superar' ? (
                             <Box sx={styles.badge('sup')}>Debe superar</Box>
+                          ) : m.comportamiento === 'debe-mantenerse-en-rango' ? (
+                            <Box sx={styles.badge('rango')}>En Rango</Box>
                           ) : (
                             <Box sx={styles.badge('nosup')}>No debe superar</Box>
                           )}
                         </Box>
                         <Box component="td" sx={styles.td}>
-                          {m.valor}{m.tipoValor === 'porcentual' ? '%' : ''}
+                          {m.valor}{m.tipoValor === 'porcentual' || m.tipoValor === 'porcentaje' ? '%' : ''}
                         </Box>
                         <Box component="td" sx={{ ...styles.td, textAlign: 'right' }}>
                           <Box sx={styles.actionBtns}>
@@ -521,7 +525,7 @@ export const MetaForm = () => {
                             </IconButton>
                             <IconButton 
                               onClick={() => handleDeleteMetric(index)}
-                              sx={{ color: '#dc2626', '&:hover': { bgcolor: '#fef2f2' } }}
+                              sx={{ color: '#EF4444', '&:hover': { bgcolor: '#fef2f2' } }}
                               size="small"
                             >
                               <DeleteIcon sx={{ fontSize: 16 }} />
@@ -544,8 +548,8 @@ export const MetaForm = () => {
             )}
           </Box>
 
-          {/* Section 3: Auditoría (Solo si es edición) */}
-          {modo === 'editar' && creadaPor && (
+          {/* Section 3: Auditoría */}
+          {creadaPor && (
             <Box sx={styles.formSection}>
               <Typography variant="h6" sx={styles.sectionTitle}>
                 Auditoría
@@ -723,8 +727,17 @@ export const MetaForm = () => {
               Valor esperado <span style={styles.required}>*</span>
             </Typography>
             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+              <Box 
+                component="input"
+                type="number"
+                id="metric-valor-input"
+                placeholder="Ej: 40"
+                value={metricValor}
+                onChange={(e) => setMetricValor(e.target.value)}
+                sx={{ ...styles.input(false), flex: 1 }}
+              />
               <Box sx={styles.valorTipo} role="group" aria-label="Tipo de valor">
-                <Box 
+                <Box
                   component="button"
                   type="button"
                   onClick={() => setMetricValorTipo('numerico')}
@@ -732,156 +745,123 @@ export const MetaForm = () => {
                 >
                   Numérico
                 </Box>
-                <Box 
+                <Box
                   component="button"
                   type="button"
-                  onClick={() => setMetricValorTipo('porcentual')}
-                  sx={styles.valorTipoBtn(metricValorTipo === 'porcentual')}
+                  onClick={() => setMetricValorTipo('porcentaje')}
+                  sx={styles.valorTipoBtn(metricValorTipo === 'porcentaje')}
                 >
-                  Porcentual
+                  Porcentaje
                 </Box>
-              </Box>
-              <Box sx={{ ...styles.inputWithIcon, flex: 1 }}>
-                <Box 
-                  component="input"
-                  type="number"
-                  id="metric-valor-input"
-                  placeholder="0"
-                  value={metricValor}
-                  onChange={(e) => setMetricValor(e.target.value)}
-                  sx={styles.input(false)}
-                />
-                <span style={styles.inputSuffix}>{metricValorTipo === 'porcentual' ? '%' : '#'}</span>
               </Box>
             </Box>
           </Box>
 
-          {/* Modal Error Message */}
           {metricModalError && (
-            <Box sx={{ ...styles.metricasWarn, mb: 0 }}>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', color: '#ef4444', mt: 1 }}>
               <WarningIcon sx={{ fontSize: 16 }} />
-              <Typography variant="body2">{metricModalError}</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>{metricModalError}</Typography>
             </Box>
           )}
 
-          {/* Save Metric Actions */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 1.5 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 2 }}>
             <Box
               component="button"
-              type="button"
               onClick={() => setMetricModalOpen(false)}
               sx={styles.btnCancelar}
             >
-              <CloseIcon sx={{ fontSize: 16, mr: 0.5 }} />
               Cancelar
             </Box>
             <Box
               component="button"
-              type="button"
               onClick={handleSaveMetric}
               sx={styles.btnGuardar}
             >
-              <AddIcon sx={{ fontSize: 16, mr: 0.5 }} />
-              Añadir métrica
+              Guardar métrica
             </Box>
           </Box>
         </DialogContent>
       </Dialog>
 
       {/* =========================================================================
-          MODAL: VISTA PREVIA / RESUMEN
+          MODAL: VISTA PREVIA DE META
           ========================================================================= */}
       <Dialog
         open={previewModalOpen}
         onClose={() => setPreviewModalOpen(false)}
         maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 4, p: 1, bgcolor: '#ffffff', color: '#111827', border: '1px solid #e5e7eb' } }}
+        PaperProps={{ sx: { borderRadius: 4, p: 2, bgcolor: '#ffffff', color: '#111827', border: '1px solid #e5e7eb' } }}
       >
-        <DialogTitle sx={{ fontWeight: 700, py: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          Resumen de la meta
+        <DialogTitle sx={{ fontWeight: 700, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Vista previa de la meta
           <IconButton onClick={() => setPreviewModalOpen(false)} size="small">
             <CloseIcon />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 3 }}>
-          <Box sx={styles.prevSummary}>
-            <Box sx={styles.prevGrid}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
+          <Box sx={{ bgcolor: '#f9fafb', borderRadius: 3, p: 3, border: '1px solid #f3f4f6' }}>
+            <Typography variant="subtitle2" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 700, fontSize: '11px', mb: 1 }}>
+              Detalles Generales
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#1e293b', mb: 2 }}>
+              {nombre}
+            </Typography>
+            
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2.5 }}>
               <Box>
-                <Typography sx={styles.prevLabel}>Nombre de la meta</Typography>
-                <Typography sx={styles.prevVal}>{nombre}</Typography>
-              </Box>
-              <Box>
-                <Typography sx={styles.prevLabel}>Dirección / Depto</Typography>
-                <Typography sx={styles.prevVal}>{departamento}</Typography>
-              </Box>
-              <Box>
-                <Typography sx={styles.prevLabel}>Comportamiento esperado</Typography>
-                <Typography sx={styles.prevVal}>
-                  {comportamiento === 'no-debe-superar' ? 'No debe superar' : comportamiento === 'debe-alcanzar-o-superar' ? 'Debe alcanzar o superar' : comportamiento === 'debe-mantenerse-en-rango' ? 'Debe mantenerse en rango' : 'Debe reducirse'}
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>Dirección / Departamento</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+                  {departmentsList.find(d => d.key === departamento)?.name || departamento}
                 </Typography>
               </Box>
               <Box>
-                <Typography sx={styles.prevLabel}>Prioridad</Typography>
-                <Box sx={{ mt: 0.5 }}>
-                  <Box sx={styles.prioridadBadge(prioridad, true)}>
-                    <span className="dot" />
-                    <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{prioridad}</span>
-                  </Box>
-                </Box>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>Comportamiento General</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155', textTransform: 'capitalize' }}>
+                  {comportamiento?.replace(/-/g, ' ')}
+                </Typography>
               </Box>
               <Box>
-                <Typography sx={styles.prevLabel}>Fecha Inicio</Typography>
-                <Typography sx={styles.prevVal}>{inicio}</Typography>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>Período de vigencia</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+                  Desde {inicio} hasta {limite}
+                </Typography>
               </Box>
               <Box>
-                <Typography sx={styles.prevLabel}>Fecha Límite</Typography>
-                <Typography sx={styles.prevVal}>{limite}</Typography>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>Prioridad</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: prioridad === 'alta' ? '#ef4444' : prioridad === 'media' ? '#3b82f6' : '#10b981' }}>
+                  {prioridad === 'alta' ? 'Alta' : prioridad === 'media' ? 'Media' : 'Baja'}
+                </Typography>
               </Box>
             </Box>
+          </Box>
 
-            <Divider />
-
-            <Typography variant="body2" sx={{ fontWeight: 700, color: '#111827' }}>
-              Métricas Asociadas
+          <Box>
+            <Typography variant="subtitle2" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 700, fontSize: '11px', mb: 2 }}>
+              Métricas y Ponderaciones ({totalAporte}% de 100%)
             </Typography>
-
-            <Box sx={styles.tableContainer}>
-              <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-                <Box component="thead">
-                  <Box component="tr">
-                    <Box component="th" sx={styles.th}>Nombre métrica</Box>
-                    <Box component="th" sx={styles.th}>Aporte</Box>
-                    <Box component="th" sx={styles.th}>Comportamiento</Box>
-                    <Box component="th" sx={styles.th}>Esperado</Box>
-                    <Box component="th" sx={styles.th}>Estado</Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {metricas.map((m) => {
+                const isSuperar = m.comportamiento === 'debe-superar' || m.comportamiento === 'debe-mantenerse-en-rango';
+                return (
+                  <Box key={m.id} sx={{ border: '1px solid #e2e8f0', borderRadius: 3, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                        {kpisList.find(k => k.key === m.key)?.name || m.nombre || m.key}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b' }}>
+                        Aporte: {m.aporte}% | Comportamiento: {m.comportamiento === 'debe-superar' ? 'Debe superar' : m.comportamiento === 'debe-mantenerse-en-rango' ? 'En Rango' : 'No debe superar'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: 'right' }}>
+                      <Typography variant="body1" sx={{ fontWeight: 700, color: isSuperar ? '#15803d' : '#b91c1c' }}>
+                        {m.valor} {m.tipoValor === 'porcentaje' ? '%' : ''}
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-                <Box component="tbody">
-                  {metricas.map((m) => {
-                    const total = totalAporte;
-                    const estado = total === 100 ? 'ok' : total < 100 ? 'incompleta' : 'excede';
-                    const estadoLabel = total === 100 ? '100% ok' : total < 100 ? '<100% incompleta' : '>100% excede';
-                    
-                    return (
-                      <Box component="tr" key={m.id} sx={{ borderBottom: '1px solid #e5e7eb', '&:last-child': { borderBottom: 'none' } }}>
-                        <Box component="td" sx={styles.td}>{m.nombre}</Box>
-                        <Box component="td" sx={styles.td}>{m.aporte}%</Box>
-                        <Box component="td" sx={styles.td}>
-                          {m.comportamiento === 'debe-superar' ? 'Debe superar' : 'No debe superar'}
-                        </Box>
-                        <Box component="td" sx={styles.td}>
-                          {m.valor}{m.tipoValor === 'porcentual' ? '%' : ''}
-                        </Box>
-                        <Box component="td" sx={styles.td}>
-                          <Box sx={styles.badge(estado)}>{estadoLabel}</Box>
-                        </Box>
-                      </Box>
-                    );
-                  })}
-                </Box>
-              </Box>
+                );
+              })}
             </Box>
           </Box>
 

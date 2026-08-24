@@ -1,15 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
-
-const INITIAL_METAS = [
-  { id: 1, nombre: 'Total de 200 matriculados en cursos', area: 'Vicerrectoría Académica', estado: 'completada', actual: 240, objetivo: 200, progreso: 120.00, departamento: 'Admisión', prioridad: 'media', inicio: '2025-08-01', fechaLimite: '2026-06-14' },
-  { id: 2, nombre: 'Total de 20 cursos ejecutados', area: 'Dir. Educación Continua', estado: 'en-curso', actual: 8, objetivo: 20, progreso: 40.00, departamento: 'Educación Continua', prioridad: 'alta', inicio: '2025-09-01', fechaLimite: '2026-08-20' },
-  { id: 3, nombre: 'Reducir tasa de abandono bajo 30%', area: 'Dir. Relaciones Estudiantiles', estado: 'alerta', actual: 35, objetivo: 30, progreso: 85.00, departamento: 'Relaciones Estudiantiles', prioridad: 'alta', inicio: '2025-10-01', fechaLimite: '2026-06-14' },
-  { id: 4, nombre: 'Aumentar matrícula nueva 15% Primavera', area: 'Vicerrectoría Académica', estado: 'en-curso', actual: 850, objetivo: 1250, progreso: 68.00, departamento: 'Admisión', prioridad: 'media', inicio: '2026-01-01', fechaLimite: '2026-07-31' },
-  { id: 5, nombre: 'Alcanzar 80% estudiantes con beneficios', area: 'Vicerrectoría Académica', estado: 'completada', actual: 2880, objetivo: 3200, progreso: 90.00, departamento: 'Admisión', prioridad: 'baja', inicio: '2025-07-01', fechaLimite: '2026-06-30' },
-  { id: 6, nombre: 'Reducir deserción primer año bajo 20%', area: 'Vicerrectoría Académica', estado: 'alerta', actual: 28, objetivo: 20, progreso: 45.00, departamento: 'Admisión', prioridad: 'alta', inicio: '2026-01-15', fechaLimite: '2026-12-31' }
-];
+import { getMetas, deleteMeta } from '../../../services/piadiApi';
 
 const PRIORIDAD_RANK = { alta: 0, media: 1, baja: 2 };
 
@@ -17,10 +9,72 @@ export const useVisualizacionMetas = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
+  // Dynamic metas state from backend
+  const [metas, setMetas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchBackendMetas = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await getMetas();
+      if (res.success && Array.isArray(res.data)) {
+        const DEPT_MAP = {
+          'educacion_continua': 'Educación Continua',
+          'vinculacion_medio': 'Vinculación con el Medio',
+          'admision': 'Admisión',
+          'relaciones_estudiantiles': 'Relaciones Estudiantiles',
+          'desarrollo_curricular': 'Desarrollo Curricular',
+          'innovacion': 'Innovación'
+        };
+
+        const mapped = res.data.map(m => {
+          // Map backend status to frontend state
+          let estado = 'en-curso';
+          if (m.status === 'cumplida') estado = 'completada';
+          else if (m.status === 'en_riesgo' || m.status === 'no_cumplida') estado = 'alerta';
+
+          // First metric values or fallback to header valorMeta
+          const actual = m.metrics?.[0]?.currentValue !== undefined ? Number(m.metrics[0].currentValue) : 0;
+          const objetivo = Number(m.valorMeta || m.metrics?.[0]?.targetValue || 0);
+
+          const deptName = DEPT_MAP[m.departmentId] || m.departmentId || 'Institucional';
+
+          return {
+            id: m.id,
+            nombre: m.nombre || `Meta de ${deptName}`,
+            area: deptName,
+            departamento: deptName,
+            estado: estado,
+            actual: actual,
+            objetivo: objetivo,
+            progreso: Number(m.totalProgress || 0),
+            prioridad: m.prioridad || 'media',
+            inicio: m.fechaInicio || m.inicio || '',
+            fechaLimite: m.fechaLimite || m.limite || ''
+          };
+        });
+        setMetas(mapped);
+      }
+    } catch (err) {
+      console.error('Error loading metas:', err);
+      setError('No se pudieron obtener las metas desde el servidor.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBackendMetas();
+  }, []);
+
   // Navigation and menus
   const [activeMenu, setActiveMenu] = useState('Metas');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openHelpDialog, setOpenHelpDialog] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [metaToDelete, setMetaToDelete] = useState(null);
 
   // Filter Collapse
   const [filtersVisible, setFiltersVisible] = useState(true);
@@ -78,7 +132,7 @@ export const useVisualizacionMetas = () => {
   const processedMetas = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     
-    const filtered = INITIAL_METAS.filter(m => {
+    const filtered = metas.filter(m => {
       if (q && !m.nombre.toLowerCase().includes(q) && !m.area.toLowerCase().includes(q)) return false;
       if (filtroDepartamento !== 'todas' && m.departamento !== filtroDepartamento) return false;
       if (filtroEstado !== 'todos' && m.estado !== filtroEstado) return false;
@@ -88,7 +142,7 @@ export const useVisualizacionMetas = () => {
     });
 
     return filtered.sort(compareMetas);
-  }, [searchQuery, filtroDepartamento, filtroEstado, filtroDesde, filtroHasta, sortField, sortDir]);
+  }, [metas, searchQuery, filtroDepartamento, filtroEstado, filtroDesde, filtroHasta, sortField, sortDir]);
 
   // Reset pagination on filter or search changes
   useEffect(() => {
@@ -153,6 +207,29 @@ export const useVisualizacionMetas = () => {
     }
   ];
 
+  const handleOpenDeleteDialog = (metaId) => {
+    setMetaToDelete(metaId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setMetaToDelete(null);
+    setDeleteDialogOpen(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!metaToDelete) return;
+    try {
+      await deleteMeta(metaToDelete);
+      await fetchBackendMetas();
+    } catch (err) {
+      console.error('Error deleting meta:', err);
+      alert('Hubo un error al eliminar la meta en el servidor.');
+    } finally {
+      handleCloseDeleteDialog();
+    }
+  };
+
   return {
     navigate,
     user,
@@ -187,7 +264,14 @@ export const useVisualizacionMetas = () => {
     totalPages,
     paginatedMetas,
     totalMetas: processedMetas.length,
-    totalMetasOriginal: INITIAL_METAS.length,
+    totalMetasOriginal: metas.length,
+    loading,
+    error,
+    deleteDialogOpen,
+    metaToDelete,
+    handleOpenDeleteDialog,
+    handleCloseDeleteDialog,
+    handleConfirmDelete,
     handleDrawerToggle,
     fmtFecha,
     diasHasta,

@@ -484,6 +484,13 @@ export const styles = {
     flexWrap: { xs: 'wrap', sm: 'nowrap' },
   },
 
+  metaHeadRight: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 1,
+  },
+
   metaCardTitle: {
     fontFamily: "'Plus Jakarta Sans', sans-serif",
     fontSize: '18px',

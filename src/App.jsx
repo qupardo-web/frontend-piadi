@@ -39,7 +39,7 @@ import { LandingPage } from './modules/landing_page';
 import { CargaDatos, RepositorioArchivos } from './modules/carga_datos';
 import { Auditoria } from './modules/auditoria';
 import { CentralDashboards, DashboardEducacionContinua, DashboardVcM } from './modules/central_dashboards';
-import { VisualizacionMetas, MetaForm } from './modules/metas';
+import { VisualizacionMetas, MetaForm, MetaEditForm } from './modules/metas';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 
@@ -556,7 +556,7 @@ function App() {
               path="/meta-form/:id" 
               element={
                 <ProtectedRoute>
-                  <MetaForm />
+                  <MetaEditForm />
                 </ProtectedRoute>
               } 
             />

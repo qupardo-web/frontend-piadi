@@ -86,6 +86,12 @@ export const VisualizacionMetas = () => {
     fmtFecha,
     diasHasta,
     faqData,
+    loading,
+    error,
+    deleteDialogOpen,
+    handleOpenDeleteDialog,
+    handleCloseDeleteDialog,
+    handleConfirmDelete,
   } = useVisualizacionMetas();
 
   // Sidebar navigation menu options
@@ -447,7 +453,25 @@ export const VisualizacionMetas = () => {
 
         {/* Metas List Grid */}
         <Box sx={styles.metasGrid}>
-          {paginatedMetas.length === 0 ? (
+          {loading ? (
+            /* Loading State */
+            <Box sx={styles.emptyState}>
+              <Typography variant="h6" sx={styles.emptyStateTitle}>
+                Cargando metas...
+              </Typography>
+            </Box>
+          ) : error ? (
+            /* Error State */
+            <Box sx={styles.emptyState}>
+              <WarningIcon sx={{ fontSize: 48, color: '#ef4444' }} />
+              <Typography variant="h6" sx={{ ...styles.emptyStateTitle, color: '#ef4444' }}>
+                Error al cargar metas
+              </Typography>
+              <Typography variant="body2" sx={styles.emptyStateText}>
+                {error}
+              </Typography>
+            </Box>
+          ) : paginatedMetas.length === 0 ? (
             /* Empty State */
             <Box sx={styles.emptyState}>
               <TargetIcon sx={{ fontSize: 48, color: '#d1d5db' }} />
@@ -512,12 +536,14 @@ export const VisualizacionMetas = () => {
                         <Button 
                           sx={styles.iconActionBtn('edit')}
                           aria-label="Editar meta"
+                          onClick={() => navigate(`/meta-form/${meta.id}`)}
                         >
                           <EditIcon sx={{ fontSize: 16 }} />
                         </Button>
                         <Button 
                           sx={styles.iconActionBtn('delete')}
                           aria-label="Eliminar meta"
+                          onClick={() => handleOpenDeleteDialog(meta.id)}
                         >
                           <DeleteIcon sx={{ fontSize: 16 }} />
                         </Button>
@@ -697,6 +723,72 @@ export const VisualizacionMetas = () => {
                 Las metas en estado "Requiere atención" (alerta) tienen un progreso significativamente inferior al esperado para su fecha límite. ¡Revísalas periódicamente!
               </Typography>
             </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog 
+        open={deleteDialogOpen} 
+        onClose={handleCloseDeleteDialog}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, p: 2, bgcolor: '#ffffff', color: '#111827', textAlign: 'center' } }}
+      >
+        <DialogTitle sx={{ m: 0, p: 1, display: 'flex', justifyContent: 'flex-end', pb: 0 }}>
+          <IconButton onClick={handleCloseDeleteDialog} size="small" sx={{ color: '#6b7280' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pb: 3, pt: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ width: 60, height: 60, borderRadius: '50%', bgcolor: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', mb: 1 }}>
+            <WarningIcon sx={{ fontSize: 36 }} />
+          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827', fontFamily: "'Inter', sans-serif" }}>
+            ¿Eliminar esta meta?
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#6b7280', fontFamily: "'Inter', sans-serif" }}>
+            Esta acción es permanente y eliminará todas las métricas y ponderaciones asociadas.
+          </Typography>
+          
+          <Box sx={{ display: 'flex', gap: 2, mt: 2, width: '100%' }}>
+            <Button
+              onClick={handleCloseDeleteDialog}
+              variant="outlined"
+              fullWidth
+              sx={{
+                textTransform: 'none',
+                borderRadius: 2,
+                fontWeight: 600,
+                color: '#4b5563',
+                borderColor: '#d1d5db',
+                fontFamily: "'Inter', sans-serif",
+                '&:hover': {
+                  bgcolor: '#f3f4f6',
+                  borderColor: '#9ca3af',
+                }
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmDelete}
+              variant="contained"
+              fullWidth
+              sx={{
+                bgcolor: '#ef4444',
+                color: '#ffffff',
+                textTransform: 'none',
+                borderRadius: 2,
+                fontWeight: 600,
+                fontFamily: "'Inter', sans-serif",
+                '&:hover': {
+                  bgcolor: '#dc2626',
+                }
+              }}
+            >
+              Eliminar
+            </Button>
           </Box>
         </DialogContent>
       </Dialog>

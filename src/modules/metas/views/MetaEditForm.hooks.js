@@ -1,39 +1,19 @@
 // =========================================================================
-// ARCHIVO DE HOOKS: MetaForm.hooks.js
+// ARCHIVO DE HOOKS: MetaEditForm.hooks.js
 // =========================================================================
 
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth';
-import { getDepartments, getDepartmentKpis, createMeta, updateMeta } from '../../../services/piadiApi';
+import { getDepartments, getDepartmentKpis, updateMeta, getMetaById } from '../../../services/piadiApi';
 
-export const METRICAS_POOL = [
-  'Total de deserciones', 
-  'Tasa de abandono', 
-  'Matriculados nuevos', 
-  'Estudiantes con beneficios',
-  'Cursos ejecutados', 
-  'Actividades VcM', 
-  'Participantes en actividades', 
-  'Convenios vigentes',
-  'Convenios firmados', 
-  'Articulaciones TP', 
-  'Docentes capacitados', 
-  'Titulados ECAS',
-  'Empresas vinculadas', 
-  'Visitas técnicas', 
-  'Charlas especializadas', 
-  'Proyectos de innovación',
-  'Estudiantes EMTP', 
-  'Apoderados participantes'
-];
-
-export const useMetaForm = () => {
+export const useMetaEditForm = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  // Modo is always 'crear'
-  const modo = 'crear';
+  // Mode is always 'editar'
+  const modo = 'editar';
 
   // Sidebar controls
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -52,6 +32,32 @@ export const useMetaForm = () => {
   const [prioridad, setPrioridad] = useState('media');
   const [creadaPor, setCreadaPor] = useState('');
   const [metricas, setMetricas] = useState([]);
+
+  // Form validation errors
+  const [errors, setErrors] = useState({
+    nombre: false,
+    departamento: false,
+    inicio: false,
+    limite: false,
+  });
+  const [showSaveAlert, setShowSaveAlert] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // Modals Visibility
+  const [metricModalOpen, setMetricModalOpen] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [editMetricIndex, setEditMetricIndex] = useState(null);
+
+  // Metric Form State (Inside Modal)
+  const [metricSearch, setMetricSearch] = useState('');
+  const [metricNombre, setMetricNombre] = useState('');
+  const [metricDropdownOpen, setMetricDropdownOpen] = useState(false);
+  const [metricAporte, setMetricAporte] = useState('');
+  const [metricComportamiento, setMetricComportamiento] = useState('no-debe-superar');
+  const [metricValorTipo, setMetricValorTipo] = useState('numerico');
+  const [metricValor, setMetricValor] = useState('');
+  const [metricModalError, setMetricModalError] = useState(null);
 
   // Load departments from database on mount
   useEffect(() => {
@@ -90,43 +96,45 @@ export const useMetaForm = () => {
     fetchKpis();
   }, [departamento]);
 
-  // Initialize default creation form fields
+  // Load meta data from backend
   useEffect(() => {
-    setNombre('');
-    setDepartamento('');
-    setComportamiento('no-debe-superar');
-    setInicio('');
-    setLimite('');
-    setPrioridad('media');
-    setCreadaPor(user?.username || 'Jane Doe');
-    setMetricas([]);
-  }, [user]);
-
-  // Form validation errors
-  const [errors, setErrors] = useState({
-    nombre: false,
-    departamento: false,
-    inicio: false,
-    limite: false,
-  });
-  const [showSaveAlert, setShowSaveAlert] = useState(false);
-  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [successMsg, setSuccessMsg] = useState('');
-
-  // Modals Visibility
-  const [metricModalOpen, setMetricModalOpen] = useState(false);
-  const [previewModalOpen, setPreviewModalOpen] = useState(false);
-  const [editMetricIndex, setEditMetricIndex] = useState(null);
-
-  // Metric Form State (Inside Modal)
-  const [metricSearch, setMetricSearch] = useState('');
-  const [metricNombre, setMetricNombre] = useState('');
-  const [metricDropdownOpen, setMetricDropdownOpen] = useState(false);
-  const [metricAporte, setMetricAporte] = useState('');
-  const [metricComportamiento, setMetricComportamiento] = useState('no-debe-superar');
-  const [metricValorTipo, setMetricValorTipo] = useState('numerico');
-  const [metricValor, setMetricValor] = useState('');
-  const [metricModalError, setMetricModalError] = useState(null);
+    if (!id) return;
+    const fetchMeta = async () => {
+      try {
+        const res = await getMetaById(id);
+        if (res.success && res.data) {
+          const m = res.data;
+          setNombre(m.nombre || '');
+          setDepartamento(m.departmentId || '');
+          setComportamiento(m.comportamiento || 'no-debe-superar');
+          const formatToInputDate = (dateStr) => {
+            if (!dateStr) return '';
+            return dateStr.split(/[T ]/)[0];
+          };
+          setInicio(formatToInputDate(m.fechaInicio || m.inicio));
+          setLimite(formatToInputDate(m.fechaLimite || m.limite));
+          setPrioridad(m.prioridad || 'media');
+          setCreadaPor(`Usuario ID: ${m.creatorId || 'N/A'}`);
+          
+          if (Array.isArray(m.metrics)) {
+            const mappedMetrics = m.metrics.map((metric, index) => ({
+              id: metric.id || index,
+              nombre: metric.indicatorKey, // resolved dynamically in render using kpisList
+              key: metric.indicatorKey,
+              aporte: Number(metric.weight || 0),
+              comportamiento: metric.behavior,
+              valor: Number(metric.targetValue || 0),
+              tipoValor: metric.valueType === 'percentage' ? 'porcentaje' : 'numerico'
+            }));
+            setMetricas(mappedMetrics);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching meta from backend:', err);
+      }
+    };
+    fetchMeta();
+  }, [id]);
 
   // Compute Total Metrics Aporte Percentage
   const totalAporte = useMemo(() => {
@@ -161,8 +169,10 @@ export const useMetaForm = () => {
   const handleOpenEditMetric = (index) => {
     const item = metricas[index];
     setEditMetricIndex(index);
-    setMetricSearch(item.nombre);
-    setMetricNombre(item.nombre);
+    const kpiObj = kpisList.find(k => k.key === item.key);
+    const prettyName = kpiObj ? kpiObj.name : (item.nombre || item.key);
+    setMetricSearch(prettyName);
+    setMetricNombre(prettyName);
     setMetricAporte(item.aporte);
     setMetricComportamiento(item.comportamiento);
     setMetricValorTipo(item.tipoValor);
@@ -223,7 +233,7 @@ export const useMetaForm = () => {
     setMetricas(copy);
   };
 
-  // Form Actions (Save, Preview, Mode change)
+  // Form Actions
   const validateForm = () => {
     const nextErrors = {
       nombre: !nombre.trim(),
@@ -248,7 +258,7 @@ export const useMetaForm = () => {
     try {
       const payload = {
         departmentId: departamento || null,
-        anio: 2026, // Default 2026 as requested by the user
+        anio: 2026,
         periodo: 'Anual',
         nombre: nombre,
         inicio: inicio || null,
@@ -264,28 +274,10 @@ export const useMetaForm = () => {
         }))
       };
 
-      if (modo === 'crear') {
-        await createMeta(payload);
-      } else {
-        await updateMeta(id, payload);
-      }
+      await updateMeta(id, payload);
 
-      setSuccessMsg(modo === 'crear' ? 'Meta creada con éxito' : 'Meta guardada con éxito');
+      setSuccessMsg('Meta guardada con éxito');
       setShowSuccessAlert(true);
-
-      // Limpiar campos del formulario
-      setNombre('');
-      setDepartamento('');
-      setComportamiento('no-debe-superar');
-      setInicio('');
-      setLimite('');
-      setPrioridad('media');
-      setMetricas([]);
-
-      if (modo === 'editar') {
-        setModo('crear');
-        navigate('/meta-form');
-      }
     } catch (err) {
       console.error('Error saving meta:', err);
       alert('Hubo un error al guardar la meta en el servidor.');
