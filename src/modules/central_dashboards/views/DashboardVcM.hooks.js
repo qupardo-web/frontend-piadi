@@ -119,12 +119,25 @@ export const useDashboardVcM = () => {
     const seriesParams = { ...apiParams };
     const breakdownParams = { ...apiParams };
     
+    // Si se selecciona un unico año que no es el minimo, solicitamos el rango desde el año anterior 
+    // para tener los datos de comparacion y poder calcular la evolucion en los graficos y tarjetas
+    const desde = parseInt(cohorteDesde);
+    const hasta = parseInt(cohorteHasta);
+    const years = apiFilters?.filters?.years ?? [2023, 2024, 2025, 2026];
+    const minAvailableYear = years.length > 0 ? Math.min(...years) : 2023;
+    
+    if (desde === hasta && desde > minAvailableYear) {
+      delete seriesParams.year;
+      seriesParams.fromYear = String(desde - 1);
+      seriesParams.toYear = String(hasta);
+    }
+    
     Promise.all([
       getDashboardSummary(apiParams).catch(() => null),
       getIndicatorSeries('convenios_activos', seriesParams).catch(() => null),
       getIndicatorSeries('total_convenios', seriesParams).catch(() => null),
       getIndicatorSeries('actividades_realizadas', seriesParams).catch(() => null),
-      getIndicatorSeries('participaciones', seriesParams).catch(() => null),
+      getIndicatorSeries('participaciones', { ...seriesParams, groupBy: 'internosExternos' }).catch(() => null),
       getIndicatorSeries('articulaciones_tp', seriesParams).catch(() => null),
       getIndicatorBreakdown('convenios_activos', { ...breakdownParams, groupBy: 'sector' }).catch(() => null),
       getIndicatorBreakdown('convenios_activos', { ...breakdownParams, groupBy: 'tipoConvenio' }).catch(() => null),
@@ -183,7 +196,7 @@ export const useDashboardVcM = () => {
       if (conveniosActivos?.success) setApiConveniosActivosSeries(conveniosActivos.data?.points?.length > 0 ? conveniosActivos.data.points : null);
       if (totalConvenios?.success) setApiTotalConveniosSeries(totalConvenios.data?.points?.length > 0 ? totalConvenios.data.points : null);
       if (actividadesRealizadas?.success) setApiActividadesRealizadasSeries(actividadesRealizadas.data?.points?.length > 0 ? actividadesRealizadas.data.points : null);
-      if (participaciones?.success) setApiParticipacionesSeries(participaciones.data?.points?.length > 0 ? participaciones.data.points : null);
+      if (participaciones?.success) setApiParticipacionesSeries(participaciones.data?.series?.length > 0 ? participaciones.data.series : null);
       if (articulaciones?.success) setApiArticulacionesTPSeries(articulaciones.data?.points?.length > 0 ? articulaciones.data.points : null);
       
       if (convSector?.success && convSector.data?.items?.length) setApiConveniosSector(convSector.data);
@@ -207,7 +220,7 @@ export const useDashboardVcM = () => {
       console.error('Error fetching VcM indicators:', err);
       setApiError(err.message);
     }).finally(() => setApiLoading(false));
-  }, [apiParams]);
+  }, [apiParams, apiFilters, cohorteDesde, cohorteHasta]);
 
   // ESTADOS DE CONTROL DE VISTA DE GRÁFICOS Y SECCIONES
   const [sectionsOpen, setSectionsOpen] = useState({
@@ -439,6 +452,9 @@ export const useDashboardVcM = () => {
     const yHasta = Number(cohorteHasta) || 2026;
     const yDesde = Number(cohorteDesde) || 2023;
 
+    const years = apiFilters?.filters?.years ?? [2023, 2024, 2025, 2026];
+    const minAvailableYear = years.length > 0 ? Math.min(...years) : 2023;
+
     const getValForYear = (series, year) => {
       if (!series) return null;
       // Trata de buscar por year o period
@@ -447,8 +463,32 @@ export const useDashboardVcM = () => {
     };
 
     const getEvoForSeries = (series, kpiKey) => {
+      let compareYear = yDesde;
+      let isBaseline = false;
+      let isSingleYear = yDesde === yHasta;
+      
+      if (isSingleYear) {
+        if (yDesde === minAvailableYear) {
+          isBaseline = true;
+        } else {
+          compareYear = yDesde - 1;
+        }
+      }
+      
+      if (isBaseline) {
+        return {
+          baseVal: null,
+          evolution: 'Línea base',
+          isPositive: true,
+          hasEvo: false,
+          isBaseline: true,
+          compareYearLabel: String(yDesde)
+        };
+      }
+      
       const vHasta = getValForYear(series, yHasta);
-      const vDesde = getValForYear(series, yDesde);
+      const vDesde = getValForYear(series, compareYear);
+      
       if (vDesde != null && vHasta != null && vDesde !== 0) {
         const diff = vHasta - vDesde;
         const pct = Math.round((diff / vDesde) * 100);
@@ -456,33 +496,56 @@ export const useDashboardVcM = () => {
           baseVal: vDesde,
           evolution: `${pct >= 0 ? '+' : ''}${pct}%`,
           isPositive: pct >= 0,
-          hasEvo: true
+          hasEvo: true,
+          isBaseline: false,
+          compareYearLabel: String(compareYear)
         };
       }
-      // Si la serie tiene datos reales cargados pero no se puede comparar en el rango seleccionado, mostrar N/A real.
-      if (series && series.length > 0) {
+      
+      if (!series || series.length === 0) {
+        if (isSingleYear) {
+          const simValHasta = kpiStats[kpiKey].val;
+          const simValDesde = Math.round(simValHasta * 0.85);
+          const diff = simValHasta - simValDesde;
+          const pct = Math.round((diff / simValDesde) * 100);
+          return {
+            baseVal: simValDesde,
+            evolution: `${pct >= 0 ? '+' : ''}${pct}%`,
+            isPositive: pct >= 0,
+            hasEvo: true,
+            isBaseline: false,
+            compareYearLabel: String(compareYear)
+          };
+        }
+        
         return {
-          baseVal: series[0]?.value ?? series[0]?.val ?? '-',
-          evolution: 'N/A',
-          isPositive: true,
-          hasEvo: false
+          baseVal: kpiStats[kpiKey].baseVal,
+          evolution: kpiStats[kpiKey].evolution,
+          isPositive: kpiStats[kpiKey].isPositive,
+          hasEvo: true,
+          isBaseline: false,
+          compareYearLabel: String(yDesde)
         };
       }
-      // Si estamos en modo de datos reales pero no hay serie, retornar N/A
+      
       if (hasRealData) {
         return {
           baseVal: '-',
           evolution: 'N/A',
           isPositive: true,
-          hasEvo: false
+          hasEvo: false,
+          isBaseline: false,
+          compareYearLabel: String(compareYear)
         };
       }
-      // Retorna valores de kpiStats si no hay datos de serie cargados en absoluto en el backend (simulación inicial)
+      
       return {
-        baseVal: kpiStats[kpiKey].baseVal,
-        evolution: kpiStats[kpiKey].evolution,
-        isPositive: kpiStats[kpiKey].isPositive,
-        hasEvo: true
+        baseVal: series[0]?.value ?? series[0]?.val ?? '-',
+        evolution: 'N/A',
+        isPositive: true,
+        hasEvo: false,
+        isBaseline: false,
+        compareYearLabel: String(compareYear)
       };
     };
 
@@ -500,10 +563,28 @@ export const useDashboardVcM = () => {
       : kpiStats.nuevosConvenios.val;
     const newEvoData = getEvoForSeries(apiTotalConveniosSeries, 'nuevosConvenios');
 
+    const flatPartPoints = (() => {
+      if (!apiParticipacionesSeries || !Array.isArray(apiParticipacionesSeries)) return null;
+      const yearsMap = {};
+      apiParticipacionesSeries.forEach(s => {
+        s.points?.forEach(p => {
+          const yr = Number(p.year ?? p.period ?? p.label);
+          const val = Number(p.value ?? p.val ?? 0);
+          if (yr) {
+            yearsMap[yr] = (yearsMap[yr] || 0) + val;
+          }
+        });
+      });
+      return Object.keys(yearsMap).map(yr => ({
+        year: Number(yr),
+        value: yearsMap[yr]
+      }));
+    })();
+
     const partVal = hasRealData
       ? (partCard?.formattedValue ?? partCard?.value ?? 0)
       : kpiStats.participantes.val;
-    const partEvoData = getEvoForSeries(apiParticipacionesSeries, 'participantes');
+    const partEvoData = getEvoForSeries(flatPartPoints, 'participantes');
 
     return [
       {
@@ -514,6 +595,8 @@ export const useDashboardVcM = () => {
         evolution: activeEvoData.evolution,
         isPositive: activeEvoData.isPositive,
         hasEvo: activeEvoData.hasEvo,
+        isBaseline: activeEvoData.isBaseline,
+        compareYearLabel: activeEvoData.compareYearLabel,
         icon: Award,
         color: '#E27800',
       },
@@ -525,6 +608,8 @@ export const useDashboardVcM = () => {
         evolution: newEvoData.evolution,
         isPositive: newEvoData.isPositive,
         hasEvo: newEvoData.hasEvo,
+        isBaseline: newEvoData.isBaseline,
+        compareYearLabel: newEvoData.compareYearLabel,
         icon: Briefcase,
         color: '#2196F3',
       },
@@ -536,11 +621,13 @@ export const useDashboardVcM = () => {
         evolution: partEvoData.evolution,
         isPositive: partEvoData.isPositive,
         hasEvo: partEvoData.hasEvo,
+        isBaseline: partEvoData.isBaseline,
+        compareYearLabel: partEvoData.compareYearLabel,
         icon: Users,
         color: '#4CAF50',
       }
     ];
-  }, [kpiStats, apiSummary, apiConveniosActivosSeries, apiTotalConveniosSeries, apiParticipacionesSeries, cohorteDesde, cohorteHasta, hasRealData]);
+  }, [kpiStats, apiSummary, apiConveniosActivosSeries, apiTotalConveniosSeries, apiParticipacionesSeries, cohorteDesde, cohorteHasta, hasRealData, apiFilters]);
 
   // Datos del grÃ¡fico de Oferta de Actividades (EvoluciÃ³n Temporal)
   const ofertaChartData = useMemo(() => {
@@ -1190,14 +1277,45 @@ export const useDashboardVcM = () => {
     if (selectedModalidades.length > 0) multiplier *= (selectedModalidades.length / 3) * 1.1;
     multiplier = Math.min(1.0, Math.max(0.15, multiplier));
 
-    const participacionesAnio = apiParticipacionesSeries
-      ? apiParticipacionesSeries.map(p => ({ label: String(p.year ?? p.period ?? ''), externo: p.value, interno: 0 }))
-      : [
-          { label: '2022', interno: Math.round(450 * multiplier), externo: Math.round(320 * multiplier) },
-          { label: '2023', interno: Math.round(580 * multiplier), externo: Math.round(420 * multiplier) },
-          { label: '2024', interno: Math.round(710 * multiplier), externo: Math.round(530 * multiplier) },
-          { label: '2025', interno: Math.round(890 * multiplier), externo: Math.round(760 * multiplier) }
-        ];
+    const participacionesAnio = (() => {
+      if (apiParticipacionesSeries && Array.isArray(apiParticipacionesSeries)) {
+        const yearsSet = new Set();
+        apiParticipacionesSeries.forEach(s => {
+          s.points?.forEach(p => {
+            const yr = String(p.year ?? p.period ?? p.label ?? '');
+            if (yr) yearsSet.add(yr);
+          });
+        });
+        
+        const yearsSorted = [...yearsSet].sort((a, b) => Number(a) - Number(b));
+        
+        return yearsSorted.map(year => {
+          let interno = 0;
+          let externo = 0;
+          
+          apiParticipacionesSeries.forEach(s => {
+            const labelLower = (s.label || '').toLowerCase();
+            const matchPoint = s.points?.find(p => String(p.year ?? p.period ?? p.label ?? '') === year);
+            const val = matchPoint ? (matchPoint.value ?? matchPoint.val ?? 0) : 0;
+            
+            if (labelLower.includes('interno')) {
+              interno += val;
+            } else {
+              externo += val;
+            }
+          });
+          
+          return { label: year, interno, externo };
+        });
+      }
+      
+      return [
+        { label: '2022', interno: Math.round(450 * multiplier), externo: Math.round(320 * multiplier) },
+        { label: '2023', interno: Math.round(580 * multiplier), externo: Math.round(420 * multiplier) },
+        { label: '2024', interno: Math.round(710 * multiplier), externo: Math.round(530 * multiplier) },
+        { label: '2025', interno: Math.round(890 * multiplier), externo: Math.round(760 * multiplier) }
+      ];
+    })();
 
     const participacionesTipo = apiParticipacionesTipo?.items?.length
       ? apiParticipacionesTipo.items.map(i => ({ label: i.label, value: i.value }))
@@ -1211,9 +1329,18 @@ export const useDashboardVcM = () => {
           { label: 'Equipos directivos TP', value: Math.round(25 * multiplier) }
         ];
 
-    const participacionesTotal = apiParticipacionesSeries
-      ? apiParticipacionesSeries.reduce((sum, p) => sum + p.value, 0)
-      : null;
+    const participacionesTotal = (() => {
+      if (apiParticipacionesSeries && Array.isArray(apiParticipacionesSeries)) {
+        let sum = 0;
+        apiParticipacionesSeries.forEach(s => {
+          s.points?.forEach(p => {
+            sum += Number(p.value ?? p.val ?? 0);
+          });
+        });
+        return sum;
+      }
+      return null;
+    })();
 
     const rawSexo = [
       { label: 'Femenino', value: Math.round(860 * multiplier) },

@@ -93,6 +93,12 @@ export const CargaDatos = () => {
     selectedTemplateMetadata,
   } = useCargaDatos();
 
+  const [showMetadataHelp, setShowMetadataHelp] = React.useState(true);
+
+  React.useEffect(() => {
+    setShowMetadataHelp(true);
+  }, [selectedTemplate]);
+
   // Paginación lógica simple de cargas (5 por página)
   const itemsPerPage = 5;
   const totalPages = Math.ceil(uploads.length / itemsPerPage) || 1;
@@ -400,29 +406,36 @@ export const CargaDatos = () => {
           </Box>
 
           {/* Controles de Paginación */}
-          <Box sx={styles.paginationRow}>
-            <Typography sx={styles.paginationText}>
-              Página {currentPage} de {totalPages} ({uploads.length} cargas en total)
-            </Typography>
-            <Box sx={styles.paginationButtons}>
-              <IconButton 
-                size="small" 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                sx={styles.paginationIconButton}
-              >
-                <ChevronLeftIcon />
-              </IconButton>
-              <IconButton 
-                size="small"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                sx={styles.paginationIconButton}
-              >
-                <ChevronRightIcon />
-              </IconButton>
+          {uploads.length > 0 && (
+            <Box sx={styles.paginationRow}>
+              <Typography sx={styles.paginationText}>
+                {totalPages > 1 
+                  ? `Página ${currentPage} de ${totalPages} (${uploads.length} cargas en total)`
+                  : `${uploads.length} ${uploads.length === 1 ? 'carga registrada' : 'cargas registradas'}`
+                }
+              </Typography>
+              {totalPages > 1 && (
+                <Box sx={styles.paginationButtons}>
+                  <IconButton 
+                    size="small" 
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    sx={styles.paginationIconButton}
+                  >
+                    <ChevronLeftIcon />
+                  </IconButton>
+                  <IconButton 
+                    size="small"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    sx={styles.paginationIconButton}
+                  >
+                    <ChevronRightIcon />
+                  </IconButton>
+                </Box>
+              )}
             </Box>
-          </Box>
+          )}
         </Card>
       </Box>
 
@@ -625,16 +638,32 @@ export const CargaDatos = () => {
                 })}
               </Box>
               
-              {selectedTemplateMetadata && (
+              {showMetadataHelp && selectedTemplateMetadata && (
                 <Box sx={{ 
                   mt: 2.5, 
                   p: 2, 
                   bgcolor: '#F8FAFC', 
                   border: '1px solid #E2E8F0', 
                   borderRadius: '8px',
-                  fontFamily: "'Inter', sans-serif"
+                  fontFamily: "'Inter', sans-serif",
+                  position: 'relative'
                 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875', mb: 1.5, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <IconButton
+                    onClick={() => setShowMetadataHelp(false)}
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      color: '#64748b',
+                      p: 0.5,
+                      '&:hover': { color: '#EF4444' }
+                    }}
+                    aria-label="Cerrar detalles de plantilla"
+                  >
+                    <CloseIcon sx={{ fontSize: '18px' }} />
+                  </IconButton>
+                  
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875', mb: 1.5, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px', pr: 4 }}>
                     Campos y Hojas Requeridas en el Excel:
                   </Typography>
                   <Grid container spacing={1.5}>
@@ -771,28 +800,7 @@ export const CargaDatos = () => {
                       </Typography>
                     )}
                   </Alert>
-                  
-                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      onClick={handleRetryUpload}
-                      sx={{ 
-                        fontFamily: "'Inter', sans-serif", 
-                        textTransform: 'none', 
-                        fontWeight: 600,
-                        borderColor: '#FCA5A5',
-                        color: '#991B1B',
-                        '&:hover': {
-                          borderColor: '#EF4444',
-                          bgcolor: 'rgba(239, 68, 68, 0.04)'
-                        }
-                      }}
-                    >
-                      Corregir y reintentar
-                    </Button>
-                  </Box>
+                  {/* Botón corregir y reintentar removido por redundancia */}
                 </>
               )}
             </>

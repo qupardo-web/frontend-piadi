@@ -23,7 +23,8 @@ export const useCentralDashboards = () => {
         });
         const result = await response.json();
         if (result.success && Array.isArray(result.data)) {
-          setDepartments(result.data);
+          const filtered = result.data.filter(d => d.departmentId !== 'institucional' && d.key !== 'institucional' && d.id !== 'institucional');
+          setDepartments(filtered);
         } else {
           throw new Error('No se pudieron obtener los departamentos del servidor');
         }

@@ -149,6 +149,27 @@ export const DashboardVcM = () => {
     if (clean.includes('comunidad') || clean.includes('educación tp') || clean.includes('edtp')) return '#FF5722'; // Coral
     return '#607D8B'; // Gris
   };
+  const wrapText = (text, maxChars = 12) => {
+    if (!text) return '';
+    if (text.length <= maxChars) return text;
+    const words = text.split(' ');
+    let currentLine = '';
+    const lines = [];
+    words.forEach(word => {
+      if ((currentLine + word).length > maxChars) {
+        if (currentLine) {
+          lines.push(currentLine.trim());
+        }
+        currentLine = word + ' ';
+      } else {
+        currentLine += word + ' ';
+      }
+    });
+    if (currentLine) {
+      lines.push(currentLine.trim());
+    }
+    return lines.join('\n');
+  };
   const getSexoColor = (label) => {
     const clean = String(label).toLowerCase().trim();
     if (clean.includes('femenino') || clean.includes('mujer') || clean.includes('femenina')) return '#E91E63'; // Fucsia/Rosa
@@ -157,43 +178,21 @@ export const DashboardVcM = () => {
   };
   const getAxisMax = (val) => {
     if (val <= 0) return 10;
-    if (val <= 50) return Math.ceil((val + 5) / 10) * 10 + 2;
-    if (val <= 200) return Math.ceil((val + 15) / 20) * 20 + 5;
-    if (val <= 500) return Math.ceil((val + 30) / 100) * 100 + 10;
-    return Math.ceil((val + 100) / 500) * 500 + 20;
+    if (val <= 50) return Math.ceil(val / 10) * 10;
+    if (val <= 200) return Math.ceil(val / 40) * 40;
+    if (val <= 500) return Math.ceil(val / 100) * 100;
+    if (val <= 1500) return Math.ceil(val / 500) * 500;
+    if (val <= 4000) return Math.ceil(val / 1000) * 1000;
+    return Math.ceil(val / 2000) * 2000;
   };
   const getAxisTicks = (val) => {
-    if (val <= 0) return [0, 5, 10];
-    if (val <= 50) {
-      const maxTicks = Math.ceil((val + 5) / 10) * 10;
-      const ticks = [];
-      for (let i = 0; i <= maxTicks; i += 10) {
-        ticks.push(i);
-      }
-      return ticks;
-    }
-    if (val <= 200) {
-      const maxTicks = Math.ceil((val + 15) / 20) * 20;
-      const ticks = [];
-      for (let i = 0; i <= maxTicks; i += 20) {
-        ticks.push(i);
-      }
-      return ticks;
-    }
-    if (val <= 500) {
-      const maxTicks = Math.ceil((val + 30) / 100) * 100;
-      const ticks = [];
-      for (let i = 0; i <= maxTicks; i += 100) {
-        ticks.push(i);
-      }
-      return ticks;
-    }
-    const maxTicks = Math.ceil((val + 100) / 500) * 500;
-    const ticks = [];
-    for (let i = 0; i <= maxTicks; i += 500) {
-      ticks.push(i);
-    }
-    return ticks;
+    if (val <= 0) return 5;
+    if (val <= 50) return 10;
+    if (val <= 200) return 40;
+    if (val <= 500) return 100;
+    if (val <= 1500) return 500;
+    if (val <= 4000) return 1000;
+    return 2000;
   };
   const location = useLocation();
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
@@ -786,7 +785,7 @@ export const DashboardVcM = () => {
           border: 1px solid #E2E8F0;
           border-radius: 12px;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-          margin-bottom: 20px;
+          margin-bottom: 12px;
           overflow: hidden;
           transition: all 0.2s ease-in-out;
         }
@@ -928,7 +927,7 @@ export const DashboardVcM = () => {
           {kpiCardsData.map((kpi) => {
             const Icon = kpi.icon;
             return (
-              <Grid item xs={12} sm={6} md={4} key={kpi.key}>
+              <Grid item xs={12} sm={6} md={4} key={kpi.key} sx={{ display: 'flex' }}>
                 <Card 
                   id={kpi.key} 
                   sx={{ 
@@ -936,19 +935,21 @@ export const DashboardVcM = () => {
                     display: 'flex', 
                     flexDirection: 'column', 
                     justifyContent: 'space-between',
+                    flexGrow: 1,
+                    height: '100%',
                     minHeight: 120,
                     borderLeft: `4px solid ${kpi.color}`,
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
                       transform: 'translateY(-2px)',
-                      boxShadow: '0 8px 16px -4px rgba(226, 120, 0, 0.12)',
-                      borderColor: '#E27800'
+                      boxShadow: `0 8px 16px -4px ${kpi.color}1f`,
+                      borderColor: kpi.color
                     }
                   }}
                 >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="caption" sx={styles.kpiCardHeaderLabel}>
+                      <Typography variant="caption" sx={{ ...styles.kpiCardHeaderLabel, color: kpi.color }}>
                         {kpi.title}
                       </Typography>
                       <Typography variant="h4" sx={styles.kpiCardHeaderVal}>
@@ -961,16 +962,18 @@ export const DashboardVcM = () => {
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                    {cohorteDesde !== cohorteHasta ? (
+                    {kpi.isBaseline ? (
                       <Typography variant="caption" sx={styles.kpiCardFooterLabel}>
-                        vs Periodo anterior ({cohorteDesde}): {isNoData ? '-' : kpi.baseVal} {' '}
-                        <Box component="span" sx={styles.kpiEvoBadge(isNoData ? true : kpi.isPositive)}>
-                          {isNoData ? '→' : (kpi.isPositive ? '↑' : '↓')} {isNoData ? '-' : kpi.evolution}
-                        </Box>
+                        Año {cohorteDesde} es la línea base
                       </Typography>
                     ) : (
                       <Typography variant="caption" sx={styles.kpiCardFooterLabel}>
-                        Rango de cohorte único seleccionado
+                        vs Año anterior ({kpi.compareYearLabel}): {isNoData ? '-' : kpi.baseVal} {' '}
+                        {kpi.hasEvo && (
+                          <Box component="span" sx={styles.kpiEvoBadge(isNoData ? true : kpi.isPositive)}>
+                            {isNoData ? '→' : (kpi.isPositive ? '↑' : '↓')} {isNoData ? '-' : kpi.evolution}
+                          </Box>
+                        )}
                       </Typography>
                     )}
                   </Box>
@@ -981,9 +984,9 @@ export const DashboardVcM = () => {
         </Grid>
 
         {/* ----------------- SECCIÓN 1: Total de convenios vigentes ----------------- */}
-        <div className="collapsible-card" style={{ marginTop: '20px' }}>
+        <div className="collapsible-card" style={{ marginTop: '12px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec1')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 600, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Award size={20} style={{ color: '#E27800' }} />
               Total de convenios vigentes
             </h2>
@@ -1171,9 +1174,9 @@ export const DashboardVcM = () => {
         </div>
 
         {/* ----------------- SECCIÓN 2: Nuevos convenios firmados ----------------- */}
-        <div className="collapsible-card" style={{ marginTop: '20px' }}>
+        <div className="collapsible-card" style={{ marginTop: '12px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec2')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 600, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <TrendingUp size={20} style={{ color: '#E27800' }} />
               Nuevos convenios firmados
             </h2>
@@ -1354,9 +1357,9 @@ export const DashboardVcM = () => {
         </div>
 
         {/* ----------------- SECCIÓN 3: Convenios por sector ----------------- */}
-        <div className="collapsible-card" style={{ marginTop: '20px' }}>
+        <div className="collapsible-card" style={{ marginTop: '12px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec3')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 600, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Layers size={20} style={{ color: '#E27800' }} />
               Convenios por sector
             </h2>
@@ -1381,7 +1384,8 @@ export const DashboardVcM = () => {
                           paddingAngle: 2,
                           cornerRadius: 4,
                         }]}
-                        height={240}
+                        height={250}
+                        margin={{ top: 10, bottom: 50, left: 10, right: 10 }}
                         slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
                       />
 
@@ -1393,7 +1397,7 @@ export const DashboardVcM = () => {
                         alignItems: 'center', 
                         justifyContent: 'center',
                         pointerEvents: 'none',
-                        transform: 'translateY(-18px)'
+                        transform: 'translateY(-20px)'
                       }}>
                         <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#1E2875', lineHeight: 1 }}>
                           {datasetsSec3.reduce((sum, d) => sum + (d.vigentes || 0), 0)}
@@ -1445,9 +1449,9 @@ export const DashboardVcM = () => {
         </div>
 
         {/* ----------------- SECCIÓN 4: Actividades VcM ----------------- */}
-        <div className="collapsible-card" style={{ marginTop: '20px' }}>
+        <div className="collapsible-card" style={{ marginTop: '12px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec4')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 600, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <CalendarLucide size={20} style={{ color: '#E27800' }} />
               Actividades VcM
             </h2>
@@ -1478,9 +1482,9 @@ export const DashboardVcM = () => {
                             showMark: true
                           }]}
                           yAxis={[{ 
+                            min: 0,
                             max: getAxisMax(Math.max(...getFilteredYears(datasetsSec4['Año']).map(d => d.value), 0)), 
                             width: 35,
-                            domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...getFilteredYears(datasetsSec4['Año']).map(d => d.value), 0))
                           }]}
                           height={240}
@@ -1675,9 +1679,9 @@ export const DashboardVcM = () => {
         </div>
 
         {/* ----------------- SECCIÓN 5: Participantes en actividades VcM ----------------- */}
-        <div className="collapsible-card" style={{ marginTop: '20px' }}>
+        <div className="collapsible-card" style={{ marginTop: '12px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec5')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 600, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Users size={20} style={{ color: '#E27800' }} />
               Participantes en actividades VcM
             </h2>
@@ -1706,9 +1710,9 @@ export const DashboardVcM = () => {
                             { data: getFilteredYears(datasetsSec5['Año']).map(d => d.externo), label: 'Externo', color: '#4CAF50', stack: 'total' }
                           ]}
                           yAxis={[{ 
+                            min: 0,
                             max: getAxisMax(Math.max(...getFilteredYears(datasetsSec5['Año']).map(d => d.interno + d.externo), 0)), 
                             width: 45,
-                            domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...getFilteredYears(datasetsSec5['Año']).map(d => d.interno + d.externo), 0))
                           }]}
                           height={240}
@@ -1772,7 +1776,7 @@ export const DashboardVcM = () => {
                             barLabelPlacement: 'outside'
                           }]}
                           layout="horizontal"
-                          height={240}
+                          height={350}
                           margin={{ top: 10, right: 50, bottom: 45, left: isMobile ? 65 : 130 }}
                           slotProps={{ legend: { hidden: true } }}
                         />
@@ -1870,9 +1874,9 @@ export const DashboardVcM = () => {
         </div>
 
         {/* ----------------- SECCIÓN 6: Articulaciones TP ejecutadas ----------------- */}
-        <div className="collapsible-card" style={{ marginTop: '20px' }}>
+        <div className="collapsible-card" style={{ marginTop: '12px' }}>
           <div className="collapsible-header" onClick={() => toggleSection('sec6')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 600, color: '#1E2875', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <GraduationCap size={20} style={{ color: '#E27800' }} />
               Articulaciones TP ejecutadas
             </h2>
@@ -1903,9 +1907,9 @@ export const DashboardVcM = () => {
                             showMark: true
                           }]}
                           yAxis={[{ 
+                            min: 0,
                             max: getAxisMax(Math.max(...getFilteredYears(datasetsSec6['Año']).map(d => d.value), 0)), 
                             width: 35,
-                            domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...getFilteredYears(datasetsSec6['Año']).map(d => d.value), 0))
                           }]}
                           height={240}
@@ -1951,10 +1955,10 @@ export const DashboardVcM = () => {
                           grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
-                            data: datasetsSec6.Plataforma.map(d => d.label), 
+                            data: datasetsSec6.Plataforma.map(d => wrapText(d.label, 12)), 
                             colorMap: { 
                               type: 'ordinal', 
-                              values: ['SAP', 'Defontana', 'Excel', 'Excel aplicado', 'Power BI', 'PowerBI'],
+                              values: ['SAP', 'Defontana', 'Excel', 'Excel aplicado', 'Power BI', 'PowerBI'].map(v => wrapText(v, 12)),
                               colors: ['#3F51B5', '#009688', '#4CAF50', '#4CAF50', '#FFC107', '#FFC107']
                             },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
@@ -1975,7 +1979,7 @@ export const DashboardVcM = () => {
                             tickInterval: getAxisTicks(Math.max(...datasetsSec6.Plataforma.map(d => d.value), 0))
                           }]}
                           height={240}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 40 }}
+                          margin={{ top: 30, right: 10, bottom: 50, left: 40 }}
                           slotProps={{ legend: { hidden: true } }}
                         />
                       )}
@@ -1985,13 +1989,13 @@ export const DashboardVcM = () => {
                           grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
-                            data: datasetsSec6.Tipo.map(d => d.label), 
+                            data: datasetsSec6.Tipo.map(d => wrapText(d.label, 12)), 
                             colorMap: { 
                               type: 'ordinal', 
                               values: [
                                 'Reconocimiento de aprendizajes', 'Alternancia', 'Taller práctico', 
                                 'Charla técnica', 'Feria TP', 'Mesa sectorial', 'Reconocimiento'
-                              ],
+                              ].map(v => wrapText(v, 12)),
                               colors: ['#E27800', '#2196F3', '#4CAF50', '#9C27B0', '#FF5722', '#607D8B', '#E27800']
                             },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
@@ -2012,7 +2016,7 @@ export const DashboardVcM = () => {
                             tickInterval: getAxisTicks(Math.max(...datasetsSec6.Tipo.map(d => d.value), 0))
                           }]}
                           height={240}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 40 }}
+                          margin={{ top: 30, right: 10, bottom: 70, left: 40 }}
                           slotProps={{ legend: { hidden: true } }}
                         />
                       )}
