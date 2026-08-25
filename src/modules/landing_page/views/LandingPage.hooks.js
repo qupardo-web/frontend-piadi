@@ -32,7 +32,8 @@ export const useLandingPage = () => {
     getDashboardSummary()
       .then(res => {
         if (res?.success && res.data) {
-          setDepartments(res.data.departments ?? []);
+          const filtered = (res.data.departments ?? []).filter(d => d.departmentId !== 'institucional' && d.key !== 'institucional' && d.id !== 'institucional');
+          setDepartments(filtered);
         }
       })
       .catch(() => {});
@@ -100,10 +101,12 @@ export const useLandingPage = () => {
     ])
       .then(([resActive, resPrev]) => {
         if (resActive?.success && resActive.data) {
-          setDepartments(resActive.data.departments ?? []);
+          const filteredActive = (resActive.data.departments ?? []).filter(d => d.departmentId !== 'institucional' && d.key !== 'institucional' && d.id !== 'institucional');
+          setDepartments(filteredActive);
         }
         if (resPrev?.success && resPrev.data) {
-          setPrevYearDepartments(resPrev.data.departments ?? []);
+          const filteredPrev = (resPrev.data.departments ?? []).filter(d => d.departmentId !== 'institucional' && d.key !== 'institucional' && d.id !== 'institucional');
+          setPrevYearDepartments(filteredPrev);
         }
       })
       .catch(() => {});

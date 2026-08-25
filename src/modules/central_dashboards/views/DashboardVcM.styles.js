@@ -378,6 +378,7 @@ export const styles = {
   kpiCardHeaderVal: {
     fontWeight: 700,
     color: '#1e1b4b',
+    fontSize: '26px',
     mb: 0.5,
   },
   kpiCardHeaderIcon: (color) => ({

@@ -124,7 +124,7 @@ export const VisualizacionMetas = () => {
             component="img" 
             src={logoEcas} 
             alt="Logo ECAS" 
-            sx={{ width: 65, height: 43, objectFit: 'contain' }} 
+            sx={{ width: 32, height: 32, objectFit: 'contain' }} 
           />
           <Box>
             <Typography variant="subtitle1" sx={styles.logoTitle}>
