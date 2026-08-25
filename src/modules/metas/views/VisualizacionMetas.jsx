@@ -88,6 +88,7 @@ export const VisualizacionMetas = () => {
     faqData,
     loading,
     error,
+    kpis,
     deleteDialogOpen,
     handleOpenDeleteDialog,
     handleCloseDeleteDialog,
@@ -180,8 +181,8 @@ export const VisualizacionMetas = () => {
       {/* Sidebar Footer */}
       <Box sx={styles.bottomSection}>
         <Box onClick={logout} sx={styles.logoutButton}>
-          <LogoutIcon sx={{ color: 'rgba(255,255,255,0.7)' }} />
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#ffffff' }}>
+          <LogoutIcon />
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
             Cerrar Sesión
           </Typography>
         </Box>
@@ -257,7 +258,7 @@ export const VisualizacionMetas = () => {
       {/* Content Area */}
       <Box component="main" sx={styles.contentArea}>
         {/* Cabecera de la Página */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 4 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mb: 4 }}>
           {/* Breadcrumbs */}
           <Box sx={styles.breadcrumb}>
             <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' }, fontSize: '16px' }} onClick={() => navigate('/')}>
@@ -285,6 +286,44 @@ export const VisualizacionMetas = () => {
             </Box>
           </Box>
         </Box>
+
+        {/* KPIs globales (Solo Rectoría) */}
+        {user?.role === 'Rector' && (
+          <Box sx={styles.kpiRow}>
+            {/* Card 1: Total metas */}
+            <Box sx={styles.kpiCard}>
+              <Box sx={styles.kpiHeader}>
+                <Typography sx={styles.kpiLabel}>Total metas</Typography>
+                <Box sx={styles.kpiIcon}>
+                  <TargetIcon />
+                </Box>
+              </Box>
+              <Typography sx={styles.kpiValue}>{kpis.total}</Typography>
+            </Box>
+
+            {/* Card 2: % Cumplimiento institucional */}
+            <Box sx={styles.kpiCard}>
+              <Box sx={styles.kpiHeader}>
+                <Typography sx={styles.kpiLabel}>% Cumplimiento institucional</Typography>
+                <Box sx={styles.kpiIcon}>
+                  <CheckCircleIcon />
+                </Box>
+              </Box>
+              <Typography sx={styles.kpiValue}>{kpis.cumplimiento}%</Typography>
+            </Box>
+
+            {/* Card 3: Metas en riesgo */}
+            <Box sx={styles.kpiCard}>
+              <Box sx={styles.kpiHeader}>
+                <Typography sx={styles.kpiLabel}>Metas en riesgo</Typography>
+                <Box sx={styles.kpiIcon}>
+                  <WarningIcon />
+                </Box>
+              </Box>
+              <Typography sx={styles.kpiValue}>{kpis.riesgo}</Typography>
+            </Box>
+          </Box>
+        )}
 
         {/* Toolbar */}
         <Box sx={styles.toolbar}>

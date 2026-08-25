@@ -229,12 +229,12 @@ export const LandingPage = () => {
           ========================================================================= */}
       <Box sx={styles.contentArea}>
         {/* Cabecera y Bienvenida */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography variant="body2" sx={styles.welcomeText}>
-              Buenos días, {user?.username || 'John'} ✍️
-            </Typography>
-            
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Typography variant="body1" sx={{ color: '#6B7280', fontWeight: 500, fontSize: '16px' }}>
+            Buenos días, {user?.username || 'John'} ✍️
+          </Typography>
+          
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
             <Box sx={styles.panelHeader}>
               <Box sx={styles.panelIconContainer}>
                 <HomeIcon />
@@ -243,7 +243,7 @@ export const LandingPage = () => {
                 <Typography variant="h5" sx={styles.panelTitle}>
                   Panel de Inicio
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#64748b' }}>
+                <Typography variant="body2" sx={{ color: '#6B7280' }}>
                   Aquí encontrarás un resumen de tus metas y actividades institucionales.
                 </Typography>
               </Box>
@@ -330,9 +330,13 @@ export const LandingPage = () => {
             const trendColor = kpi.isBlue
               ? (isLight ? (isNegative ? '#B91C1C' : '#059669') : (isNegative ? '#F87171' : '#4ADE80'))
               : (isNegative ? '#EF4444' : '#10B981');
+            const valStr = String(kpi.value || '');
+            const fontSize = valStr.length > 12 
+              ? '20px' 
+              : (valStr.length > 9 ? '24px' : '30px');
             const valueStyle = kpi.isBlue 
-              ? [styles.kpiValue, { color: customTextColor }] 
-              : [styles.kpiValue, { color: '#1E2875' }];
+              ? [styles.kpiValue, { color: customTextColor, fontSize }] 
+              : [styles.kpiValue, { color: '#1E2875', fontSize }];
 
             return (
               <Grid item xs={12} sm={6} md={3} key={`${activeTab}-kpi-${index}`} sx={{ display: 'flex' }}>
@@ -393,13 +397,13 @@ export const LandingPage = () => {
                       />
                     </Box>
 
-                    {/* Bottom row: Value (left) and Trend (right) */}
-                    <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 1.5, mt: 'auto' }}>
+                    {/* Bottom layout: Value (left) and Trend/Comparison stacked (right) */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, mt: 'auto', width: '100%' }}>
                       <Typography variant="h3" sx={valueStyle}>
                         {kpi.value}
                       </Typography>
                       
-                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.25 }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5, flexShrink: 0 }}>
                         {kpi.trend ? (
                           <Box 
                             sx={{ 
@@ -438,11 +442,13 @@ export const LandingPage = () => {
                         <Typography 
                           variant="caption" 
                           sx={{ 
-                            fontSize: '13px',
+                            fontSize: '12px',
                             color: kpi.isBlue 
                               ? (isLight ? 'rgba(31, 41, 55, 0.7)' : 'rgba(255,255,255,0.85)') 
-                              : '#374151', 
-                            whiteSpace: 'nowrap'
+                              : '#6B7280', 
+                            textAlign: 'right',
+                            lineHeight: 1.2,
+                            maxWidth: '130px'
                           }}
                         >
                           {kpi.trendDesc}
@@ -472,9 +478,9 @@ export const LandingPage = () => {
         </Box>
 
         {/* =========================================================================
-            SECCIÓN 4: METAS PRIORITARIAS (ESTÁTICAS)
+            SECCIÓN 4: METAS PRIORITARIAS
             ========================================================================= */}
-        {currentData.metas && currentData.metas.length > 0 && (
+        {currentData.departmentId && (
           <Box sx={styles.metasSectionContainer}>
             <Box sx={styles.metasHeader}>
               <Box>
@@ -502,10 +508,7 @@ export const LandingPage = () => {
                   '&:hover': { bgcolor: '#1DC2A0' }
                 }}
                 onClick={() => {
-                  const dashboardPath = currentData.departmentId === 'vinculacion_medio'
-                    ? '/dashboard-vcm'
-                    : '/dashboard-educacion-continua';
-                  navigate(dashboardPath);
+                  navigate('/metas');
                 }}
               >
                 Ver todas las metas
@@ -513,117 +516,140 @@ export const LandingPage = () => {
               </Box>
             </Box>
 
-            <Grid container spacing={3}>
-              {currentData.metas.map((meta, index) => {
-                let borderLeftColor = '#10B981'; // completada
-                let statusLabel = 'Completada';
-                if (meta.estado === 'progreso') {
-                  borderLeftColor = '#3B82F6';
-                  statusLabel = 'En progreso';
-                } else if (meta.estado === 'atencion') {
-                  borderLeftColor = '#EF4444';
-                  statusLabel = 'Requiere atención';
-                }
+            {(currentData.metas || []).length === 0 ? (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                py: 6,
+                bgcolor: '#FFFFFF',
+                borderRadius: 3,
+                border: '1px solid #E5E7EB',
+                width: '100%',
+                gap: 1.5
+              }}>
+                <TargetIcon sx={{ fontSize: 48, color: '#d1d5db' }} />
+                <Typography variant="h6" sx={{ fontWeight: 600, color: '#1E2875', fontSize: '18px', fontFamily: "'Inter', sans-serif" }}>
+                  No se encontraron metas prioritarias
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#6B7280', fontFamily: "'Inter', sans-serif" }}>
+                  No hay metas de prioridad alta registradas para este departamento.
+                </Typography>
+              </Box>
+            ) : (
+              <Grid container spacing={3}>
+                {(currentData.metas || []).map((meta, index) => {
+                  let borderLeftColor = '#10B981'; // completada
+                  let statusLabel = 'Completada';
+                  if (meta.estado === 'progreso') {
+                    borderLeftColor = '#3B82F6';
+                    statusLabel = 'En progreso';
+                  } else if (meta.estado === 'atencion') {
+                    borderLeftColor = '#EF4444';
+                    statusLabel = 'Requiere atención';
+                  }
 
-                let priorityColor = '#EF4444';
-                let priorityBg = '#fef2f2';
-                let priorityLabel = 'Alta';
-                if (meta.prioridad === 'media') {
-                  priorityColor = '#F59E0B';
-                  priorityBg = '#fffbeb';
-                  priorityLabel = 'Media';
-                } else if (meta.prioridad === 'baja') {
-                  priorityColor = '#22C55E';
-                  priorityBg = '#f0fdf4';
-                  priorityLabel = 'Baja';
-                }
+                  let priorityColor = '#EF4444';
+                  let priorityBg = '#fef2f2';
+                  let priorityLabel = 'Alta';
+                  if (meta.prioridad === 'media') {
+                    priorityColor = '#F59E0B';
+                    priorityBg = '#fffbeb';
+                    priorityLabel = 'Media';
+                  } else if (meta.prioridad === 'baja') {
+                    priorityColor = '#22C55E';
+                    priorityBg = '#f0fdf4';
+                    priorityLabel = 'Baja';
+                  }
 
-                return (
-                  <Grid item xs={12} md={6} key={`meta-${index}`}>
-                    <Card sx={{ ...styles.metaCard, borderLeft: `4px solid ${borderLeftColor}` }}>
-                      <CardContent sx={styles.metaCardContent}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, gap: 1.5 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1E2875', fontFamily: "'Inter', sans-serif", fontSize: '18px', lineHeight: 1.3 }}>
-                            {meta.name}
-                          </Typography>
-                          <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
-                            <Box sx={styles.metaStatusBadge(meta.estado)}>
-                              {statusLabel}
-                            </Box>
-                            <Box sx={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 0.5,
-                              borderRadius: 999,
-                              px: 1.25,
-                              py: 0.5,
-                              fontSize: '11.5px',
-                              fontWeight: 600,
-                              color: priorityColor,
-                              bgcolor: priorityBg
-                            }}>
-                              <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: priorityColor }} />
-                              {priorityLabel}
-                            </Box>
-                          </Box>
-                        </Box>
-
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2.5 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                            <Typography variant="body2" sx={{ color: '#666666' }}>
-                              Progreso: <strong>{meta.actual}</strong> / {meta.objetivo}
+                  return (
+                    <Grid item xs={12} md={6} key={`meta-${index}`}>
+                      <Card sx={{ ...styles.metaCard, borderLeft: `4px solid ${borderLeftColor}` }}>
+                        <CardContent sx={styles.metaCardContent}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, gap: 1.5 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1E2875', fontFamily: "'Inter', sans-serif", fontSize: '18px', lineHeight: 1.3 }}>
+                              {meta.name}
                             </Typography>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875' }}>
-                              {meta.pct}%
-                            </Typography>
-                          </Box>
-                          <LinearProgress variant="determinate" value={Math.min(meta.pct, 100)} sx={styles.metaProgressBar(meta.estado)} />
-                        </Box>
-
-                        <Divider sx={{ my: 1.5 }} />
-
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
-                          <Box sx={{ display: 'flex', gap: 2.5, color: '#666666', fontSize: '12px' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <CalendarIcon sx={{ fontSize: '1.1rem', color: '#9CA3AF' }} />
-                              <span style={{ fontWeight: 500 }}>Fecha de inicio: {meta.inicio.slice(0, 7)}</span>
+                            <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                              <Box sx={styles.metaStatusBadge(meta.estado)}>
+                                {statusLabel}
+                              </Box>
+                              <Box sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                borderRadius: 999,
+                                px: 1.25,
+                                py: 0.5,
+                                fontSize: '11.5px',
+                                fontWeight: 600,
+                                color: priorityColor,
+                                bgcolor: priorityBg
+                              }}>
+                                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: priorityColor }} />
+                                {priorityLabel}
+                              </Box>
                             </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <CalendarIcon sx={{ fontSize: '1.1rem', color: '#9CA3AF' }} />
-                              <span style={{ fontWeight: 500 }}>Fecha límite: {meta.limite.slice(0, 7)}</span>
+                          </Box>
+
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2.5 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                              <Typography variant="body2" sx={{ color: '#666666' }}>
+                                Progreso: <strong>{meta.actual}</strong> / {meta.objetivo}
+                              </Typography>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875' }}>
+                                {meta.pct}%
+                              </Typography>
+                            </Box>
+                            <LinearProgress variant="determinate" value={Math.min(meta.pct, 100)} sx={styles.metaProgressBar(meta.estado)} />
+                          </Box>
+
+                          <Divider sx={{ my: 1.5 }} />
+
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
+                            <Box sx={{ display: 'flex', gap: 2.5, color: '#666666', fontSize: '12px' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <CalendarIcon sx={{ fontSize: '1.1rem', color: '#9CA3AF' }} />
+                                <span style={{ fontWeight: 500 }}>Fecha de inicio: {(meta.inicio || '').slice(0, 7)}</span>
+                              </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <CalendarIcon sx={{ fontSize: '1.1rem', color: '#9CA3AF' }} />
+                                <span style={{ fontWeight: 500 }}>Fecha límite: {(meta.limite || '').slice(0, 7)}</span>
+                              </Box>
+                            </Box>
+                            <Box 
+                              sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                color: '#0F4AFF',
+                                fontWeight: 600,
+                                fontSize: '13px',
+                                cursor: 'pointer',
+                                borderRadius: 1,
+                                px: 1.25,
+                                py: 0.75,
+                                '&:hover': { bgcolor: '#eff6ff' }
+                              }}
+                              onClick={() => {
+                                const dashboardPath = currentData.departmentId === 'vinculacion_medio'
+                                  ? '/dashboard-vcm'
+                                  : '/dashboard-educacion-continua';
+                                navigate(dashboardPath);
+                              }}
+                            >
+                              Ver detalles
+                              <ArrowUpIcon sx={{ transform: 'rotate(90deg)', fontSize: '0.95rem', ml: 0.5 }} />
                             </Box>
                           </Box>
-                          <Box 
-                            sx={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 0.5,
-                              color: '#0F4AFF',
-                              fontWeight: 600,
-                              fontSize: '13px',
-                              cursor: 'pointer',
-                              borderRadius: 1,
-                              px: 1.25,
-                              py: 0.75,
-                              '&:hover': { bgcolor: '#eff6ff' }
-                            }}
-                            onClick={() => {
-                              const dashboardPath = currentData.departmentId === 'vinculacion_medio'
-                                ? '/dashboard-vcm'
-                                : '/dashboard-educacion-continua';
-                              navigate(dashboardPath);
-                            }}
-                          >
-                            Ver detalles
-                            <ArrowUpIcon sx={{ transform: 'rotate(90deg)', fontSize: '0.95rem', ml: 0.5 }} />
-                          </Box>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                );
-              })}
-            </Grid>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            )}
           </Box>
         )}
 

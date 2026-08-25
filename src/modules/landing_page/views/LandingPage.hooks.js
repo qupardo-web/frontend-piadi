@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
-import { getDashboardSummary, getDepartmentFilters } from '../../../services/piadiApi';
+import { getDashboardSummary, getDepartmentFilters, getMetas } from '../../../services/piadiApi';
 
 // Mapeo de colores específicos por departamento.
 export const DEPARTMENT_COLORS = {
@@ -25,8 +25,9 @@ export const useLandingPage = () => {
     educacion_continua: [],
     vinculacion_medio: []
   });
+  const [allMetas, setAllMetas] = useState([]);
 
-  // 1. Initial fetch: Load departments and filters on mount
+  // 1. Initial fetch: Load departments, filters and metas on mount
   useEffect(() => {
     getDashboardSummary()
       .then(res => {
@@ -47,6 +48,35 @@ export const useLandingPage = () => {
           educacion_continua: ecYears.map(Number),
           vinculacion_medio: vcmYears.map(Number)
         });
+      })
+      .catch(() => {});
+
+    getMetas()
+      .then(res => {
+        if (res?.success && Array.isArray(res.data)) {
+          const mapped = res.data.map(m => {
+            let estado = 'progreso';
+            if (m.status === 'cumplida') estado = 'completada';
+            else if (m.status === 'en_riesgo' || m.status === 'no_cumplida') estado = 'atencion';
+
+            const actual = m.metrics?.[0]?.currentValue !== undefined ? Number(m.metrics[0].currentValue) : 0;
+            const objetivo = Number(m.valorMeta || m.metrics?.[0]?.targetValue || 0);
+
+            return {
+              id: m.id,
+              name: m.nombre || 'Meta',
+              estado: estado,
+              pct: Number(m.totalProgress || 0),
+              prioridad: m.prioridad || 'media',
+              actual: actual,
+              objetivo: objetivo,
+              inicio: m.fechaInicio || m.inicio || '',
+              limite: m.fechaLimite || m.limite || '',
+              departmentId: m.departmentId
+            };
+          });
+          setAllMetas(mapped);
+        }
       })
       .catch(() => {});
   }, []);
@@ -88,19 +118,6 @@ export const useLandingPage = () => {
   };
 
   const currentDepartment = departments[activeTab];
-
-  const staticMetasByDept = {
-    educacion_continua: [
-      { name: 'Alcanzar tasa ejecución 90%', estado: 'progreso', pct: 95, prioridad: 'alta', actual: 95, objetivo: 100, inicio: '2024-01-01', limite: '2026-12-31' },
-      { name: 'Matricular 1,000 participantes', estado: 'progreso', pct: 89, prioridad: 'alta', actual: 890, objetivo: 1000, inicio: '2024-01-01', limite: '2026-12-31' },
-      { name: '85% aprobación programas', estado: 'atencion', pct: 55, prioridad: 'alta', actual: 55, objetivo: 100, inicio: '2024-01-01', limite: '2026-12-31' }
-    ],
-    vinculacion_medio: [
-      { name: 'Firmar 15 nuevos convenios', estado: 'completada', pct: 80, prioridad: 'alta', actual: 12, objetivo: 15, inicio: '2024-01-01', limite: '2026-12-31' },
-      { name: 'Realizar 35 actividades VcM', estado: 'progreso', pct: 80, prioridad: 'alta', actual: 28, objetivo: 35, inicio: '2024-01-01', limite: '2026-12-31' },
-      { name: 'Mantener 50 convenios activos', estado: 'completada', pct: 90, prioridad: 'alta', actual: 45, objetivo: 50, inicio: '2024-01-01', limite: '2026-12-31' }
-    ]
-  };
 
   const currentData = useMemo(() => {
     const prevDepartment = prevYearDepartments.find(d => d.departmentId === currentDepartment?.departmentId);
@@ -161,15 +178,17 @@ export const useLandingPage = () => {
       };
     });
 
+    const filteredMetas = allMetas.filter(m => m.departmentId === currentDepartment?.departmentId && m.prioridad === 'alta');
+
     return {
       year: activeYear,
       departmentId: currentDepartment?.departmentId,
       departmentName: currentDepartment?.name || 'departamento seleccionado',
       kpis: mappedKpis,
-      metas: staticMetasByDept[currentDepartment?.departmentId] || [],
+      metas: filteredMetas,
       hasData: (currentDepartment?.cards ?? []).some(c => c.hasData),
     };
-  }, [currentDepartment, prevYearDepartments, activeYear]);
+  }, [currentDepartment, prevYearDepartments, activeYear, allMetas]);
   
   // Obtiene el color de fondo personalizado para este departamento
   const deptColor = DEPARTMENT_COLORS[currentData.departmentId] || '#1E2875';

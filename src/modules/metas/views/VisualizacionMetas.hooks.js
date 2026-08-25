@@ -26,7 +26,8 @@ export const useVisualizacionMetas = () => {
           'admision': 'Admisión',
           'relaciones_estudiantiles': 'Relaciones Estudiantiles',
           'desarrollo_curricular': 'Desarrollo Curricular',
-          'innovacion': 'Innovación'
+          'innovacion': 'Innovación',
+          'institucional': 'Institucional'
         };
 
         const mapped = res.data.map(m => {
@@ -230,6 +231,18 @@ export const useVisualizacionMetas = () => {
     }
   };
 
+  const kpis = useMemo(() => {
+    const total = metas.length;
+    if (total === 0) {
+      return { total: 0, cumplimiento: 0, riesgo: 0 };
+    }
+    const sumProgress = metas.reduce((sum, m) => sum + Number(m.progreso || 0), 0);
+    const cumplimiento = Math.round(sumProgress / total);
+    const riesgo = metas.filter(m => m.estado === 'alerta').length;
+    
+    return { total, cumplimiento, riesgo };
+  }, [metas]);
+
   return {
     navigate,
     user,
@@ -267,6 +280,7 @@ export const useVisualizacionMetas = () => {
     totalMetasOriginal: metas.length,
     loading,
     error,
+    kpis,
     deleteDialogOpen,
     metaToDelete,
     handleOpenDeleteDialog,

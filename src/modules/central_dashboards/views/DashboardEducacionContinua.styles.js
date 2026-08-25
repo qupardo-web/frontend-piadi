@@ -181,7 +181,7 @@ export const styles = {
 
   panelTitle: {
     fontWeight: 700,
-    fontSize: { xs: '24px', md: '30px' },
+    fontSize: { xs: '28px', md: '36px' },
     color: '#1E2875',
     fontFamily: "'Inter', sans-serif",
   },
@@ -203,7 +203,7 @@ export const styles = {
     alignItems: 'center',
     gap: 0.8,
     color: '#6B7280',
-    fontSize: '14px',
+    fontSize: '16px',
     fontWeight: 500,
   },
 

@@ -157,7 +157,7 @@ export const styles = {
   // Content Area
   contentArea: {
     flexGrow: 1,
-    p: { xs: 3, md: 6 },
+    p: { xs: 3, md: 4 },
     pt: { xs: 11, md: 4 },
     overflowX: 'hidden',
   },
@@ -199,7 +199,6 @@ export const styles = {
     color: '#6B7280',
     fontSize: '16px',
     fontWeight: 500,
-    mb: 1.5,
   },
 
   breadcrumbLink: {
