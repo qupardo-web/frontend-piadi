@@ -245,7 +245,7 @@ export const RepositorioArchivos = () => {
       <Box sx={styles.contentArea}>
         
         {/* Cabecera de la Página */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           {/* Breadcrumbs */}
           <Box sx={styles.breadcrumbsContainer}>
             <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/')}>

@@ -235,11 +235,12 @@ export const useMetaEditForm = () => {
 
   // Form Actions
   const validateForm = () => {
+    const isDateInvalid = inicio && limite && new Date(limite) < new Date(inicio);
     const nextErrors = {
       nombre: !nombre.trim(),
       departamento: !departamento,
       inicio: !inicio,
-      limite: !limite,
+      limite: !limite || isDateInvalid,
     };
     setErrors(nextErrors);
     const hasFieldErrors = Object.values(nextErrors).some(Boolean);
@@ -289,6 +290,13 @@ export const useMetaEditForm = () => {
     setPreviewModalOpen(true);
   };
 
+  const filteredDepartments = useMemo(() => {
+    if (user?.role === 'Rector') {
+      return departmentsList;
+    }
+    return departmentsList.filter(d => d.key !== 'institucional');
+  }, [departmentsList, user]);
+
   return {
     navigate,
     user,
@@ -299,7 +307,7 @@ export const useMetaEditForm = () => {
     setMobileOpen,
     handleDrawerToggle,
     modo,
-    departmentsList,
+    departmentsList: filteredDepartments,
     kpisList,
     nombre,
     setNombre,

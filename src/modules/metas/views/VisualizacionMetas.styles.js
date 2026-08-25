@@ -170,7 +170,7 @@ export const styles = {
   // Content Area
   contentArea: {
     flexGrow: 1,
-    p: { xs: 3, md: 6 },
+    p: { xs: 3, md: 4 },
     pt: { xs: 11, md: 4 }, // Padding superior extra en móvil por la AppBar fija
     overflowX: 'hidden',
   },
@@ -202,7 +202,6 @@ export const styles = {
     color: '#6B7280',
     fontSize: '16px',
     fontWeight: 500,
-    mb: 1.5,
   },
 
   breadcrumbLink: {
@@ -757,5 +756,69 @@ export const styles = {
   metasCounter: {
     fontSize: '13px',
     color: '#666666',
+  },
+
+  kpiRow: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+    gap: 2,
+    mt: 0.5,
+    mb: 3,
+    width: '100%',
+  },
+
+  kpiCard: {
+    bgcolor: '#ffffff',
+    border: '1px solid #e5e7eb',
+    borderRadius: 3,
+    p: '20px 24px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.015)',
+    transition: 'all 0.15s ease-out',
+    '&:hover': {
+      boxShadow: '0 4px 20px rgba(30, 40, 117, 0.05)',
+      transform: 'translateY(-2px)',
+    },
+  },
+
+  kpiHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 1.5,
+  },
+
+  kpiLabel: {
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '12px',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    color: '#6B7280',
+  },
+
+  kpiIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 2,
+    bgcolor: 'rgba(30, 40, 117, 0.08)',
+    color: '#1E2875',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    '& svg': {
+      width: 20,
+      height: 20,
+    },
+  },
+
+  kpiValue: {
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '30px',
+    fontWeight: 700,
+    color: '#1E2875',
+    letterSpacing: '-0.02em',
+    lineHeight: 1.15,
+    mt: 1.2,
   },
 };

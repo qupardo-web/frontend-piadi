@@ -881,7 +881,7 @@ export const DashboardVcM = () => {
       <Box component="main" sx={styles.contentArea} className="vcm-dashboard">
         
         {/* Encabezado y Breadcrumbs */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           <Box sx={styles.breadcrumbsContainer}>
             <Typography 
               variant="body1" 
@@ -904,7 +904,7 @@ export const DashboardVcM = () => {
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' }, gap: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
             <Box sx={styles.panelHeader}>
               <Box sx={styles.panelIconContainer}>
                 <PublicIcon />
@@ -913,13 +913,11 @@ export const DashboardVcM = () => {
                  <Typography variant="h5" sx={styles.panelTitle}>
                   Dashboard de Vinculación con el Medio
                 </Typography>
-                <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
+                <Typography variant="body2" sx={{ color: '#6B7280' }}>
                   Visualización de estadísticas y métricas del departamento de Vinculación con el Medio
                 </Typography>
               </Box>
             </Box>
-
-
           </Box>
         </Box>
 

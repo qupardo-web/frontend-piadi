@@ -208,8 +208,8 @@ export const MetaEditForm = () => {
       {/* Sidebar Footer */}
       <Box sx={styles.bottomSection}>
         <Box onClick={logout} sx={styles.logoutButton}>
-          <LogoutIcon sx={{ color: 'rgba(255,255,255,0.7)' }} />
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#ffffff' }}>
+          <LogoutIcon />
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
             Cerrar Sesión
           </Typography>
         </Box>
@@ -274,7 +274,7 @@ export const MetaEditForm = () => {
       {/* Main Content Area */}
       <Box component="main" sx={styles.contentArea}>
         {/* Cabecera de la Página */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 4 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mb: 4 }}>
           {/* Breadcrumbs */}
           <Box sx={styles.breadcrumb}>
             <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' }, fontSize: '16px' }} onClick={() => navigate('/')}>
@@ -335,7 +335,7 @@ export const MetaEditForm = () => {
                   component="input" 
                   type="text" 
                   id="campo-nombre" 
-                  placeholder="Ej: Menos de 40 deserciones..."
+                  placeholder="Mas de 3 nuevos convenios..."
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
                   sx={styles.input(errors.nombre)}
@@ -411,9 +411,14 @@ export const MetaEditForm = () => {
                   id="campo-limite"
                   value={limite}
                   onChange={(e) => setLimite(e.target.value)}
+                  min={inicio || undefined}
                   sx={{ ...styles.input(errors.limite), paddingRight: '12px' }}
                 />
-                {errors.limite && <Typography sx={styles.fieldError}>Selecciona la fecha límite</Typography>}
+                {errors.limite && (
+                  <Typography sx={styles.fieldError}>
+                    {!limite ? 'Selecciona la fecha límite' : 'La fecha límite no puede ser anterior a la de inicio'}
+                  </Typography>
+                )}
               </Box>
             </Box>
 
@@ -440,113 +445,115 @@ export const MetaEditForm = () => {
           </Box>
 
           {/* Section 2: Métricas asociadas */}
-          <Box sx={styles.formSection}>
-            <Box sx={styles.metricasHead}>
-              <Typography variant="h6" sx={{ ...styles.sectionTitle, mb: 0 }}>
-                Métricas asociadas
-              </Typography>
-
-              {/* Progress Weight Tracker */}
-              <Box sx={styles.aporteBlock}>
-                <Box sx={styles.aporteBarWrap}>
-                  <Box sx={styles.aporteBar}>
-                    <Box sx={styles.aporteBarFill(totalAporte)} />
-                  </Box>
-                </Box>
-                <Typography sx={styles.aporteText}>
-                  {totalAporte}% asignado
+          {departamento && (
+            <Box sx={styles.formSection}>
+              <Box sx={styles.metricasHead}>
+                <Typography variant="h6" sx={{ ...styles.sectionTitle, mb: 0 }}>
+                  Métricas asociadas
                 </Typography>
-              </Box>
 
-              {/* Add Metric Trigger Button */}
-              <Box
-                component="button"
-                type="button"
-                onClick={handleOpenAddMetric}
-                sx={styles.btnAnadirMetrica}
-              >
-                <AddIcon sx={{ fontSize: 16 }} />
-                Añadir métrica
-              </Box>
-            </Box>
-
-            {/* Metrics Warning */}
-            {metricas.length === 0 && (
-              <Box sx={styles.metricasWarn}>
-                <InfoIcon sx={{ fontSize: 16 }} />
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  Agrega al menos una métrica y asegura que sumen 100% (Actual: {totalAporte}%)
-                </Typography>
-              </Box>
-            )}
-
-            {/* Render metrics table if metricas count > 0 */}
-            {metricas.length > 0 ? (
-              <Box sx={styles.tableContainer}>
-                <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <Box component="thead">
-                    <Box component="tr">
-                      <Box component="th" sx={styles.th}>Nombre métrica</Box>
-                      <Box component="th" sx={styles.th}>Aporte a meta</Box>
-                      <Box component="th" sx={styles.th}>Comportamiento</Box>
-                      <Box component="th" sx={styles.th}>Valor esperado</Box>
-                      <Box component="th" sx={{ ...styles.th, textAlign: 'right' }}>Acciones</Box>
+                {/* Progress Weight Tracker */}
+                <Box sx={styles.aporteBlock}>
+                  <Box sx={styles.aporteBarWrap}>
+                    <Box sx={styles.aporteBar}>
+                      <Box sx={styles.aporteBarFill(totalAporte)} />
                     </Box>
                   </Box>
-                  <Box component="tbody">
-                    {metricas.map((m, index) => (
-                      <Box component="tr" key={m.id} sx={{ borderBottom: '1px solid #e5e7eb', '&:last-child': { borderBottom: 'none' } }}>
-                        <Box component="td" sx={{ ...styles.td, fontWeight: 500 }}>
-                          {kpisList.find(k => k.key === m.key)?.name || m.nombre || m.key}
-                        </Box>
-                        <Box component="td" sx={styles.td}>
-                          <Box sx={styles.badge('aporte')}>{m.aporte}%</Box>
-                        </Box>
-                        <Box component="td" sx={styles.td}>
-                          {m.comportamiento === 'debe-superar' ? (
-                            <Box sx={styles.badge('sup')}>Debe superar</Box>
-                          ) : m.comportamiento === 'debe-mantenerse-en-rango' ? (
-                            <Box sx={styles.badge('rango')}>En Rango</Box>
-                          ) : (
-                            <Box sx={styles.badge('nosup')}>No debe superar</Box>
-                          )}
-                        </Box>
-                        <Box component="td" sx={styles.td}>
-                          {m.valor}{m.tipoValor === 'porcentual' || m.tipoValor === 'porcentaje' ? '%' : ''}
-                        </Box>
-                        <Box component="td" sx={{ ...styles.td, textAlign: 'right' }}>
-                          <Box sx={styles.actionBtns}>
-                            <IconButton 
-                              onClick={() => handleOpenEditMetric(index)}
-                              sx={{ color: '#0F4AFF', '&:hover': { bgcolor: '#eff6ff' } }}
-                              size="small"
-                            >
-                              <EditIcon sx={{ fontSize: 16 }} />
-                            </IconButton>
-                            <IconButton 
-                              onClick={() => handleDeleteMetric(index)}
-                              sx={{ color: '#EF4444', '&:hover': { bgcolor: '#fef2f2' } }}
-                              size="small"
-                            >
-                              <DeleteIcon sx={{ fontSize: 16 }} />
-                            </IconButton>
-                          </Box>
-                        </Box>
-                      </Box>
-                    ))}
-                  </Box>
+                  <Typography sx={styles.aporteText}>
+                    {totalAporte}% asignado
+                  </Typography>
+                </Box>
+
+                {/* Add Metric Trigger Button */}
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={handleOpenAddMetric}
+                  sx={styles.btnAnadirMetrica}
+                >
+                  <AddIcon sx={{ fontSize: 16 }} />
+                  Añadir métrica
                 </Box>
               </Box>
-            ) : (
-              /* Empty Table State */
-              <Box sx={styles.emptyState}>
-                <TargetIcon sx={{ fontSize: 32 }} />
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  No hay métricas asociadas
-                </Typography>
-              </Box>
-            )}
-          </Box>
+
+              {/* Metrics Warning */}
+              {metricas.length === 0 && (
+                <Box sx={styles.metricasWarn}>
+                  <InfoIcon sx={{ fontSize: 16 }} />
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    Agrega al menos una métrica y asegura que sumen 100% (Actual: {totalAporte}%)
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Render metrics table if metricas count > 0 */}
+              {metricas.length > 0 ? (
+                <Box sx={styles.tableContainer}>
+                  <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <Box component="thead">
+                      <Box component="tr">
+                        <Box component="th" sx={styles.th}>Nombre métrica</Box>
+                        <Box component="th" sx={styles.th}>Aporte a meta</Box>
+                        <Box component="th" sx={styles.th}>Comportamiento</Box>
+                        <Box component="th" sx={styles.th}>Valor esperado</Box>
+                        <Box component="th" sx={{ ...styles.th, textAlign: 'right' }}>Acciones</Box>
+                      </Box>
+                    </Box>
+                    <Box component="tbody">
+                      {metricas.map((m, index) => (
+                        <Box component="tr" key={m.id} sx={{ borderBottom: '1px solid #e5e7eb', '&:last-child': { borderBottom: 'none' } }}>
+                          <Box component="td" sx={{ ...styles.td, fontWeight: 500 }}>
+                            {kpisList.find(k => k.key === m.key)?.name || m.nombre || m.key}
+                          </Box>
+                          <Box component="td" sx={styles.td}>
+                            <Box sx={styles.badge('aporte')}>{m.aporte}%</Box>
+                          </Box>
+                          <Box component="td" sx={styles.td}>
+                            {m.comportamiento === 'debe-superar' ? (
+                              <Box sx={styles.badge('sup')}>Debe superar</Box>
+                            ) : m.comportamiento === 'debe-mantenerse-en-rango' ? (
+                              <Box sx={styles.badge('rango')}>En Rango</Box>
+                            ) : (
+                              <Box sx={styles.badge('nosup')}>No debe superar</Box>
+                            )}
+                          </Box>
+                          <Box component="td" sx={styles.td}>
+                            {m.valor}{m.tipoValor === 'porcentual' || m.tipoValor === 'porcentaje' ? '%' : ''}
+                          </Box>
+                          <Box component="td" sx={{ ...styles.td, textAlign: 'right' }}>
+                            <Box sx={styles.actionBtns}>
+                              <IconButton 
+                                onClick={() => handleOpenEditMetric(index)}
+                                sx={{ color: '#0F4AFF', '&:hover': { bgcolor: '#eff6ff' } }}
+                                size="small"
+                              >
+                                <EditIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                              <IconButton 
+                                onClick={() => handleDeleteMetric(index)}
+                                sx={{ color: '#EF4444', '&:hover': { bgcolor: '#fef2f2' } }}
+                                size="small"
+                              >
+                                <DeleteIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                </Box>
+              ) : (
+                /* Empty Table State */
+                <Box sx={styles.emptyState}>
+                  <TargetIcon sx={{ fontSize: 32 }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    No hay métricas asociadas
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          )}
 
           {/* Section 3: Auditoría */}
           {creadaPor && (
@@ -786,82 +793,102 @@ export const MetaEditForm = () => {
       {/* =========================================================================
           MODAL: VISTA PREVIA DE META
           ========================================================================= */}
-      <Dialog
-        open={previewModalOpen}
+      {/* Dialog Vista Previa */}
+      <Dialog 
+        open={previewModalOpen} 
         onClose={() => setPreviewModalOpen(false)}
         maxWidth="md"
         fullWidth
         PaperProps={{ sx: { borderRadius: 4, p: 2, bgcolor: '#ffffff', color: '#111827', border: '1px solid #e5e7eb' } }}
       >
-        <DialogTitle sx={{ fontWeight: 700, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          Vista previa de la meta
+        <DialogTitle sx={{ fontWeight: 700, py: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Resumen de la meta
           <IconButton onClick={() => setPreviewModalOpen(false)} size="small">
             <CloseIcon />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
-          <Box sx={{ bgcolor: '#f9fafb', borderRadius: 3, p: 3, border: '1px solid #f3f4f6' }}>
-            <Typography variant="subtitle2" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 700, fontSize: '11px', mb: 1 }}>
-              Detalles Generales
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: '#1e293b', mb: 2 }}>
-              {nombre}
-            </Typography>
-            
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2.5 }}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 3 }}>
+          <Box sx={styles.prevSummary}>
+            <Box sx={styles.prevGrid}>
               <Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>Dirección / Departamento</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+                <Typography sx={styles.prevLabel}>Nombre de la meta</Typography>
+                <Typography sx={styles.prevVal}>{nombre}</Typography>
+              </Box>
+              <Box>
+                <Typography sx={styles.prevLabel}>Dirección / Depto</Typography>
+                <Typography sx={styles.prevVal}>
                   {departmentsList.find(d => d.key === departamento)?.name || departamento}
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>Comportamiento General</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155', textTransform: 'capitalize' }}>
-                  {comportamiento?.replace(/-/g, ' ')}
+                <Typography sx={styles.prevLabel}>Comportamiento esperado</Typography>
+                <Typography sx={styles.prevVal}>
+                  {comportamiento === 'no-debe-superar' ? 'No debe superar' : comportamiento === 'debe-alcanzar-o-superar' ? 'Debe alcanzar o superar' : comportamiento === 'debe-mantenerse-en-rango' ? 'Debe mantenerse en rango' : 'Debe reducirse'}
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>Período de vigencia</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
-                  Desde {inicio} hasta {limite}
-                </Typography>
+                <Typography sx={styles.prevLabel}>Prioridad</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Box sx={styles.prioridadBadge(prioridad, true)}>
+                    <span className="dot" />
+                    <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{prioridad}</span>
+                  </Box>
+                </Box>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>Prioridad</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: prioridad === 'alta' ? '#ef4444' : prioridad === 'media' ? '#3b82f6' : '#10b981' }}>
-                  {prioridad === 'alta' ? 'Alta' : prioridad === 'media' ? 'Media' : 'Baja'}
-                </Typography>
+                <Typography sx={styles.prevLabel}>Fecha Inicio</Typography>
+                <Typography sx={styles.prevVal}>{inicio}</Typography>
+              </Box>
+              <Box>
+                <Typography sx={styles.prevLabel}>Fecha Límite</Typography>
+                <Typography sx={styles.prevVal}>{limite}</Typography>
               </Box>
             </Box>
-          </Box>
 
-          <Box>
-            <Typography variant="subtitle2" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 700, fontSize: '11px', mb: 2 }}>
-              Métricas y Ponderaciones ({totalAporte}% de 100%)
+            <Divider />
+
+            <Typography variant="body2" sx={{ fontWeight: 700, color: '#111827' }}>
+              Métricas Asociadas
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {metricas.map((m) => {
-                const isSuperar = m.comportamiento === 'debe-superar' || m.comportamiento === 'debe-mantenerse-en-rango';
-                return (
-                  <Box key={m.id} sx={{ border: '1px solid #e2e8f0', borderRadius: 3, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
-                        {kpisList.find(k => k.key === m.key)?.name || m.nombre || m.key}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: '#64748b' }}>
-                        Aporte: {m.aporte}% | Comportamiento: {m.comportamiento === 'debe-superar' ? 'Debe superar' : m.comportamiento === 'debe-mantenerse-en-rango' ? 'En Rango' : 'No debe superar'}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ textAlign: 'right' }}>
-                      <Typography variant="body1" sx={{ fontWeight: 700, color: isSuperar ? '#15803d' : '#b91c1c' }}>
-                        {m.valor} {m.tipoValor === 'porcentaje' ? '%' : ''}
-                      </Typography>
-                    </Box>
+
+            <Box sx={styles.tableContainer}>
+              <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+                <Box component="thead">
+                  <Box component="tr">
+                    <Box component="th" sx={styles.th}>Nombre métrica</Box>
+                    <Box component="th" sx={styles.th}>Aporte</Box>
+                    <Box component="th" sx={styles.th}>Comportamiento</Box>
+                    <Box component="th" sx={styles.th}>Esperado</Box>
+                    <Box component="th" sx={styles.th}>Estado</Box>
                   </Box>
-                );
-              })}
+                </Box>
+                <Box component="tbody">
+                  {metricas.map((m) => {
+                    const total = totalAporte;
+                    const estado = total === 100 ? 'ok' : total < 100 ? 'incompleta' : 'excede';
+                    const estadoLabel = total === 100 ? '100% ok' : total < 100 ? '<100% incompleta' : '>100% excede';
+                    
+                    return (
+                      <Box component="tr" key={m.id} sx={{ borderBottom: '1px solid #e5e7eb', '&:last-child': { borderBottom: 'none' } }}>
+                        <Box component="td" sx={styles.td}>
+                          {kpisList.find(k => k.key === m.key)?.name || m.nombre || m.key}
+                        </Box>
+                        <Box component="td" sx={styles.td}>{m.aporte}%</Box>
+                        <Box component="td" sx={styles.td}>
+                          {m.comportamiento === 'debe-superar' ? 'Debe superar' : m.comportamiento === 'debe-mantenerse-en-rango' ? 'En Rango' : 'No debe superar'}
+                        </Box>
+                        <Box component="td" sx={styles.td}>
+                          {m.valor}{m.tipoValor === 'porcentaje' || m.tipoValor === 'porcentual' ? '%' : ''}
+                        </Box>
+                        <Box component="td" sx={styles.td}>
+                          <Box sx={styles.badge(estado)}>{estadoLabel}</Box>
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Box>
             </Box>
           </Box>
 

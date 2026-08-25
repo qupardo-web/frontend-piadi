@@ -261,7 +261,7 @@ export const CargaDatos = () => {
       <Box sx={styles.contentArea}>
         
         {/* Cabecera del Panel Principal */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           {/* Breadcrumbs */}
           <Box sx={styles.breadcrumbsContainer}>
             <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/')}>
@@ -273,8 +273,7 @@ export const CargaDatos = () => {
             </Typography>
           </Box>
 
-          {/* Fila superior: Cabecera con Sesión Activa */}
-          <Box sx={styles.headerRow}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
             <Box sx={styles.panelHeader}>
               <Box sx={styles.panelIconContainer}>
                 <CargaIcon />
@@ -283,7 +282,7 @@ export const CargaDatos = () => {
                 <Typography variant="h5" sx={styles.panelTitle}>
                   Carga de datos
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
+                <Typography variant="body2" sx={{ color: '#6B7280' }}>
                   Sube y actualiza los indicadores institucionales mediante archivos de plantilla.
                 </Typography>
               </Box>
