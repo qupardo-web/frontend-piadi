@@ -594,7 +594,15 @@ export const VisualizacionMetas = () => {
                   <Box sx={styles.metaProgress}>
                     <Box sx={styles.progressRow}>
                       <Typography variant="body2" sx={styles.progressLabel}>
-                        Progreso: <strong>{meta.actual}</strong> / {meta.objetivo}
+                        {meta.comportamiento === 'debe-mantenerse-en-rango' ? (
+                          <>
+                            Progreso: <strong>{meta.actual}{meta.tipoValor === 'percentage' || meta.tipoValor === 'porcentaje' || meta.tipoValor === 'porcentual' ? '%' : ''}</strong> (Rango: {meta.lowerLimit} - {meta.upperLimit}{meta.tipoValor === 'percentage' || meta.tipoValor === 'porcentaje' || meta.tipoValor === 'porcentual' ? '%' : ''})
+                          </>
+                        ) : (
+                          <>
+                            Progreso: <strong>{meta.actual}{meta.tipoValor === 'percentage' || meta.tipoValor === 'porcentaje' || meta.tipoValor === 'porcentual' ? '%' : ''}</strong> / {meta.objetivo}{meta.tipoValor === 'percentage' || meta.tipoValor === 'porcentaje' || meta.tipoValor === 'porcentual' ? '%' : ''}
+                          </>
+                        )}
                       </Typography>
                       <Typography sx={styles.progressPct}>
                         {meta.progreso.toFixed(2)}%

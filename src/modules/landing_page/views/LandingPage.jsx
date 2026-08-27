@@ -397,13 +397,13 @@ export const LandingPage = () => {
                       />
                     </Box>
 
-                    {/* Bottom layout: Value (left) and Trend/Comparison stacked (right) */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, mt: 'auto', width: '100%' }}>
+                    {/* Bottom layout: Value on top, Trend and Comparison below it */}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 'auto', width: '100%' }}>
                       <Typography variant="h3" sx={valueStyle}>
                         {kpi.value}
                       </Typography>
                       
-                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5, flexShrink: 0 }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5, width: '100%' }}>
                         {kpi.trend ? (
                           <Box 
                             sx={{ 
@@ -447,8 +447,7 @@ export const LandingPage = () => {
                               ? (isLight ? 'rgba(31, 41, 55, 0.7)' : 'rgba(255,255,255,0.85)') 
                               : '#6B7280', 
                             textAlign: 'right',
-                            lineHeight: 1.2,
-                            maxWidth: '130px'
+                            lineHeight: 1.2
                           }}
                         >
                           {kpi.trendDesc}

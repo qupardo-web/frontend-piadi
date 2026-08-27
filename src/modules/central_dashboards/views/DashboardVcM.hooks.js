@@ -38,9 +38,12 @@ export const useDashboardVcM = () => {
   const [selectedModalidades, setSelectedModalidades] = useState([]);
   const [selectedPlataformas, setSelectedPlataformas] = useState([]);
   const [selectedTiposArticulacion, setSelectedTiposArticulacion] = useState([]);
+  const [periodoAcumulado, setPeriodoAcumulado] = useState(false);
 
   // ESTADOS PARA DATOS REALES DE API
   const [apiSummary, setApiSummary] = useState(null);
+  const [apiPrevSummary, setApiPrevSummary] = useState(null);
+  const [apiSummaryHasta, setApiSummaryHasta] = useState(null);
   const [apiLoading, setApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
   const [apiFilters, setApiFilters] = useState(null);
@@ -126,6 +129,17 @@ export const useDashboardVcM = () => {
     const years = apiFilters?.filters?.years ?? [2023, 2024, 2025, 2026];
     const minAvailableYear = years.length > 0 ? Math.min(...years) : 2023;
     
+    const compareYear = desde === hasta ? (desde > minAvailableYear ? desde - 1 : desde) : desde;
+    const prevParams = { ...apiParams };
+    delete prevParams.fromYear;
+    delete prevParams.toYear;
+    prevParams.year = String(compareYear);
+
+    const hastaParams = { ...apiParams };
+    delete hastaParams.fromYear;
+    delete hastaParams.toYear;
+    hastaParams.year = String(hasta);
+    
     if (desde === hasta && desde > minAvailableYear) {
       delete seriesParams.year;
       seriesParams.fromYear = String(desde - 1);
@@ -134,6 +148,8 @@ export const useDashboardVcM = () => {
     
     Promise.all([
       getDashboardSummary(apiParams).catch(() => null),
+      getDashboardSummary(prevParams).catch(() => null),
+      getDashboardSummary(hastaParams).catch(() => null),
       getIndicatorSeries('convenios_activos', seriesParams).catch(() => null),
       getIndicatorSeries('total_convenios', seriesParams).catch(() => null),
       getIndicatorSeries('actividades_realizadas', seriesParams).catch(() => null),
@@ -158,6 +174,8 @@ export const useDashboardVcM = () => {
       getIndicatorBreakdown('articulaciones_tp', { ...breakdownParams, groupBy: 'colegioLiceoTP' }).catch(() => null),
     ]).then(([
       summary, 
+      prevSummary,
+      summaryHasta,
       conveniosActivos, 
       totalConvenios, 
       actividadesRealizadas, 
@@ -190,6 +208,26 @@ export const useDashboardVcM = () => {
           const map = {};
           cards.forEach(c => { map[c.indicatorKey] = c; });
           setApiSummary(map);
+        }
+      }
+
+      if (prevSummary?.success && prevSummary.data) {
+        const deptData = prevSummary.data?.departments?.find(d => d.departmentId === 'vinculacion_medio');
+        const cards = deptData?.cards ?? [];
+        if (cards.length > 0) {
+          const map = {};
+          cards.forEach(c => { map[c.indicatorKey] = c; });
+          setApiPrevSummary(map);
+        }
+      }
+
+      if (summaryHasta?.success && summaryHasta.data) {
+        const deptData = summaryHasta.data?.departments?.find(d => d.departmentId === 'vinculacion_medio');
+        const cards = deptData?.cards ?? [];
+        if (cards.length > 0) {
+          const map = {};
+          cards.forEach(c => { map[c.indicatorKey] = c; });
+          setApiSummaryHasta(map);
         }
       }
 
@@ -451,6 +489,7 @@ export const useDashboardVcM = () => {
   const kpiCardsData = useMemo(() => {
     const yHasta = Number(cohorteHasta) || 2026;
     const yDesde = Number(cohorteDesde) || 2023;
+    const isSingleYear = yDesde === yHasta;
 
     const years = apiFilters?.filters?.years ?? [2023, 2024, 2025, 2026];
     const minAvailableYear = years.length > 0 ? Math.min(...years) : 2023;
@@ -465,7 +504,6 @@ export const useDashboardVcM = () => {
     const getEvoForSeries = (series, kpiKey) => {
       let compareYear = yDesde;
       let isBaseline = false;
-      let isSingleYear = yDesde === yHasta;
       
       if (isSingleYear) {
         if (yDesde === minAvailableYear) {
@@ -482,12 +520,60 @@ export const useDashboardVcM = () => {
           isPositive: true,
           hasEvo: false,
           isBaseline: true,
-          compareYearLabel: String(yDesde)
+          compareYearLabel: String(yDesde),
+          isAccumulated: false
         };
       }
+
+      let vHasta;
+      let vDesde;
       
-      const vHasta = getValForYear(series, yHasta);
-      const vDesde = getValForYear(series, compareYear);
+      if (periodoAcumulado && !isSingleYear) {
+        if (series && Array.isArray(series) && series.length > 0) {
+          vHasta = series.reduce((sum, p) => {
+            const yr = Number(p.year ?? p.period ?? p.label);
+            if (yr >= yDesde && yr <= yHasta) {
+              return sum + Number(p.value ?? p.val ?? 0);
+            }
+            return sum;
+          }, 0);
+          vDesde = getValForYear(series, yDesde);
+        } else if (!hasRealData) {
+          vHasta = 0;
+          for (let yr = yDesde; yr <= yHasta; yr++) {
+            const yearDiff = yHasta - yr;
+            vHasta += Math.round(kpiStats[kpiKey].val * (1 - 0.12 * yearDiff));
+          }
+          vDesde = Math.round(kpiStats[kpiKey].val * (1 - 0.12 * (yHasta - yDesde)));
+        }
+      } else {
+        vHasta = getValForYear(series, yHasta);
+        vDesde = getValForYear(series, compareYear);
+      }
+      
+      if (kpiKey === 'participantes' && hasRealData) {
+        const rangeCardVal = apiSummary?.participaciones?.value;
+        const hastaCardVal = apiSummaryHasta?.participaciones?.value;
+        const activeCardVal = (periodoAcumulado && !isSingleYear) ? rangeCardVal : hastaCardVal;
+        const prevCardVal = apiPrevSummary?.participaciones?.value;
+        
+        let targetHasta = Number(vHasta ?? activeCardVal ?? 0);
+        let targetDesde = Number(vDesde ?? prevCardVal ?? 0);
+        
+        if (targetDesde !== 0 && targetHasta !== 0) {
+          const diff = targetHasta - targetDesde;
+          const pct = Math.round((diff / targetDesde) * 100);
+          return {
+            baseVal: targetDesde,
+            evolution: `${pct >= 0 ? '+' : ''}${pct}%`,
+            isPositive: pct >= 0,
+            hasEvo: true,
+            isBaseline: false,
+            compareYearLabel: String(compareYear),
+            isAccumulated: periodoAcumulado && !isSingleYear
+          };
+        }
+      }
       
       if (vDesde != null && vHasta != null && vDesde !== 0) {
         const diff = vHasta - vDesde;
@@ -498,11 +584,36 @@ export const useDashboardVcM = () => {
           isPositive: pct >= 0,
           hasEvo: true,
           isBaseline: false,
-          compareYearLabel: String(compareYear)
+          compareYearLabel: String(compareYear),
+          isAccumulated: periodoAcumulado && !isSingleYear
         };
       }
       
       if (!series || series.length === 0) {
+        if (kpiKey === 'participantes' && hasRealData) {
+          const rangeCardVal = apiSummary?.participaciones?.value;
+          const hastaCardVal = apiSummaryHasta?.participaciones?.value;
+          const activeCardVal = (periodoAcumulado && !isSingleYear) ? rangeCardVal : hastaCardVal;
+          const prevCardVal = apiPrevSummary?.participaciones?.value;
+          
+          let targetHasta = Number(activeCardVal ?? 0);
+          let targetDesde = Number(prevCardVal ?? 0);
+          
+          if (targetDesde !== 0 && targetHasta !== 0) {
+            const diff = targetHasta - targetDesde;
+            const pct = Math.round((diff / targetDesde) * 100);
+            return {
+              baseVal: targetDesde,
+              evolution: `${pct >= 0 ? '+' : ''}${pct}%`,
+              isPositive: pct >= 0,
+              hasEvo: true,
+              isBaseline: false,
+              compareYearLabel: String(compareYear),
+              isAccumulated: false
+            };
+          }
+        }
+        
         if (isSingleYear) {
           const simValHasta = kpiStats[kpiKey].val;
           const simValDesde = Math.round(simValHasta * 0.85);
@@ -514,7 +625,8 @@ export const useDashboardVcM = () => {
             isPositive: pct >= 0,
             hasEvo: true,
             isBaseline: false,
-            compareYearLabel: String(compareYear)
+            compareYearLabel: String(compareYear),
+            isAccumulated: false
           };
         }
         
@@ -524,7 +636,8 @@ export const useDashboardVcM = () => {
           isPositive: kpiStats[kpiKey].isPositive,
           hasEvo: true,
           isBaseline: false,
-          compareYearLabel: String(yDesde)
+          compareYearLabel: String(yDesde),
+          isAccumulated: false
         };
       }
       
@@ -535,7 +648,8 @@ export const useDashboardVcM = () => {
           isPositive: true,
           hasEvo: false,
           isBaseline: false,
-          compareYearLabel: String(compareYear)
+          compareYearLabel: String(compareYear),
+          isAccumulated: false
         };
       }
       
@@ -545,7 +659,8 @@ export const useDashboardVcM = () => {
         isPositive: true,
         hasEvo: false,
         isBaseline: false,
-        compareYearLabel: String(compareYear)
+        compareYearLabel: String(compareYear),
+        isAccumulated: false
       };
     };
 
@@ -553,14 +668,38 @@ export const useDashboardVcM = () => {
     const newCard = apiSummary?.total_convenios;
     const partCard = apiSummary?.participaciones;
 
-    const activeVal = hasRealData
-      ? (activeCard?.formattedValue ?? activeCard?.value ?? 0)
-      : kpiStats.conveniosVigentes.val;
+    let activeValSim = kpiStats.conveniosVigentes.val;
+    let newValSim = kpiStats.nuevosConvenios.val;
+    let partValSim = kpiStats.participantes.val;
+    
+    if (periodoAcumulado && !isSingleYear) {
+      activeValSim = 0;
+      newValSim = 0;
+      partValSim = 0;
+      for (let yr = yDesde; yr <= yHasta; yr++) {
+        const yearDiff = yHasta - yr;
+        activeValSim += Math.round(kpiStats.conveniosVigentes.val * (1 - 0.12 * yearDiff));
+        newValSim += Math.round(kpiStats.nuevosConvenios.val * (1 - 0.12 * yearDiff));
+        partValSim += Math.round(kpiStats.participantes.val * (1 - 0.12 * yearDiff));
+      }
+    }
+
+    const activeVal = (periodoAcumulado && !isSingleYear && apiConveniosActivosSeries)
+      ? apiConveniosActivosSeries.reduce((sum, p) => {
+          const yr = Number(p.year ?? p.period ?? p.label);
+          if (yr >= yDesde && yr <= yHasta) return sum + Number(p.value ?? p.val ?? 0);
+          return sum;
+        }, 0)
+      : (hasRealData ? (activeCard?.formattedValue ?? activeCard?.value ?? 0) : activeValSim);
     const activeEvoData = getEvoForSeries(apiConveniosActivosSeries, 'conveniosVigentes');
 
-    const newVal = hasRealData
-      ? (newCard?.formattedValue ?? newCard?.value ?? 0)
-      : kpiStats.nuevosConvenios.val;
+    const newVal = (periodoAcumulado && !isSingleYear && apiTotalConveniosSeries)
+      ? apiTotalConveniosSeries.reduce((sum, p) => {
+          const yr = Number(p.year ?? p.period ?? p.label);
+          if (yr >= yDesde && yr <= yHasta) return sum + Number(p.value ?? p.val ?? 0);
+          return sum;
+        }, 0)
+      : (hasRealData ? (newCard?.formattedValue ?? newCard?.value ?? 0) : newValSim);
     const newEvoData = getEvoForSeries(apiTotalConveniosSeries, 'nuevosConvenios');
 
     const flatPartPoints = (() => {
@@ -581,9 +720,13 @@ export const useDashboardVcM = () => {
       }));
     })();
 
-    const partVal = hasRealData
-      ? (partCard?.formattedValue ?? partCard?.value ?? 0)
-      : kpiStats.participantes.val;
+    const partVal = (periodoAcumulado && !isSingleYear && flatPartPoints)
+      ? flatPartPoints.reduce((sum, p) => {
+          const yr = Number(p.year ?? p.period ?? p.label);
+          if (yr >= yDesde && yr <= yHasta) return sum + Number(p.value ?? p.val ?? 0);
+          return sum;
+        }, 0)
+      : (hasRealData ? (partCard?.formattedValue ?? partCard?.value ?? 0) : partValSim);
     const partEvoData = getEvoForSeries(flatPartPoints, 'participantes');
 
     return [
@@ -597,6 +740,7 @@ export const useDashboardVcM = () => {
         hasEvo: activeEvoData.hasEvo,
         isBaseline: activeEvoData.isBaseline,
         compareYearLabel: activeEvoData.compareYearLabel,
+        isAccumulated: activeEvoData.isAccumulated,
         icon: Award,
         color: '#E27800',
       },
@@ -610,6 +754,7 @@ export const useDashboardVcM = () => {
         hasEvo: newEvoData.hasEvo,
         isBaseline: newEvoData.isBaseline,
         compareYearLabel: newEvoData.compareYearLabel,
+        isAccumulated: newEvoData.isAccumulated,
         icon: Briefcase,
         color: '#2196F3',
       },
@@ -623,11 +768,12 @@ export const useDashboardVcM = () => {
         hasEvo: partEvoData.hasEvo,
         isBaseline: partEvoData.isBaseline,
         compareYearLabel: partEvoData.compareYearLabel,
+        isAccumulated: partEvoData.isAccumulated,
         icon: Users,
         color: '#4CAF50',
       }
     ];
-  }, [kpiStats, apiSummary, apiConveniosActivosSeries, apiTotalConveniosSeries, apiParticipacionesSeries, cohorteDesde, cohorteHasta, hasRealData, apiFilters]);
+  }, [kpiStats, apiSummary, apiPrevSummary, apiSummaryHasta, apiConveniosActivosSeries, apiTotalConveniosSeries, apiParticipacionesSeries, cohorteDesde, cohorteHasta, hasRealData, apiFilters, periodoAcumulado]);
 
   // Datos del grÃ¡fico de Oferta de Actividades (EvoluciÃ³n Temporal)
   const ofertaChartData = useMemo(() => {
@@ -1590,6 +1736,8 @@ export const useDashboardVcM = () => {
     setSelectedPlataformas,
     selectedTiposArticulacion,
     setSelectedTiposArticulacion,
+    periodoAcumulado,
+    setPeriodoAcumulado,
     ofertaViewMode,
     setOfertaViewMode,
     ingresosViewMode,
@@ -1605,6 +1753,7 @@ export const useDashboardVcM = () => {
     activeModal,
     setActiveModal,
     apiSummary,
+    apiPrevSummary,
     apiLoading,
     apiError,
     hasRealData,
