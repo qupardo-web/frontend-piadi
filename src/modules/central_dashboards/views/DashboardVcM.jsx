@@ -228,6 +228,8 @@ export const DashboardVcM = () => {
     setSelectedPlataformas,
     selectedTiposArticulacion,
     setSelectedTiposArticulacion,
+    periodoAcumulado,
+    setPeriodoAcumulado,
     ofertaViewMode,
     setOfertaViewMode,
     perfilViewMode,
@@ -542,6 +544,33 @@ export const DashboardVcM = () => {
             <Typography variant="body2" sx={{ textAlign: 'center', mt: 1.5, fontWeight: 600, color: '#1E2875', fontSize: '13px' }}>
               {cohorteDesde === cohorteHasta ? cohorteDesde : `${cohorteDesde} - ${cohorteHasta}`}
             </Typography>
+
+            {/* Checkbox para Periodo Acumulado */}
+            {cohorteDesde !== cohorteHasta && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={periodoAcumulado}
+                      onChange={(e) => setPeriodoAcumulado(e.target.checked)}
+                      size="small"
+                      sx={{
+                        color: '#1E2875',
+                        '&.Mui-checked': {
+                          color: '#1DC2A0',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: '#475569' }}>
+                      Período acumulado
+                    </Typography>
+                  }
+                  sx={{ mx: 0 }}
+                />
+              </Box>
+            )}
           </Box>
         </Box>
 
@@ -968,7 +997,10 @@ export const DashboardVcM = () => {
                       </Typography>
                     ) : (
                       <Typography variant="caption" sx={styles.kpiCardFooterLabel}>
-                        vs Año anterior ({kpi.compareYearLabel}): {isNoData ? '-' : kpi.baseVal} {' '}
+                        {kpi.isAccumulated 
+                          ? 'vs Año base' 
+                          : (cohorteDesde === cohorteHasta ? 'vs Año anterior' : 'vs Año más anterior')
+                        } ({kpi.compareYearLabel}): {isNoData ? '-' : kpi.baseVal} {' '}
                         {kpi.hasEvo && (
                           <Box component="span" sx={styles.kpiEvoBadge(isNoData ? true : kpi.isPositive)}>
                             {isNoData ? '→' : (kpi.isPositive ? '↑' : '↓')} {isNoData ? '-' : kpi.evolution}
@@ -2199,6 +2231,33 @@ export const DashboardVcM = () => {
                 <Typography variant="body2" sx={{ textAlign: 'center', mt: 1.5, fontWeight: 600, color: '#1E2875', fontSize: '13px' }}>
                   {cohorteDesde === cohorteHasta ? cohorteDesde : `${cohorteDesde} - ${cohorteHasta}`}
                 </Typography>
+
+                {/* Checkbox para Periodo Acumulado (Móvil) */}
+                {cohorteDesde !== cohorteHasta && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={periodoAcumulado}
+                          onChange={(e) => setPeriodoAcumulado(e.target.checked)}
+                          size="small"
+                          sx={{
+                            color: '#1E2875',
+                            '&.Mui-checked': {
+                              color: '#1DC2A0',
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: '#475569' }}>
+                          Período acumulado
+                        </Typography>
+                      }
+                      sx={{ mx: 0 }}
+                    />
+                  </Box>
+                )}
               </Box>
             </Box>
 

@@ -92,6 +92,10 @@ export const MetaForm = () => {
     setMetricValorTipo,
     metricValor,
     setMetricValor,
+    metricLowerLimit,
+    setMetricLowerLimit,
+    metricUpperLimit,
+    setMetricUpperLimit,
     metricModalError,
     totalAporte,
     filteredMetricsPool,
@@ -380,7 +384,6 @@ export const MetaForm = () => {
                   <option value="no-debe-superar">No debe superar</option>
                   <option value="debe-alcanzar-o-superar">Debe alcanzar o superar</option>
                   <option value="debe-mantenerse-en-rango">Debe mantenerse en el rango</option>
-                  <option value="debe-reducirse">Debe reducirse respecto al período anterior</option>
                 </Box>
               </Box>
 
@@ -507,14 +510,20 @@ export const MetaForm = () => {
                             <Box sx={styles.badge('aporte')}>{m.aporte}%</Box>
                           </Box>
                           <Box component="td" sx={styles.td}>
-                            {m.comportamiento === 'debe-superar' ? (
+                            {m.comportamiento === 'debe-superar' || m.comportamiento === 'debe-alcanzar-o-superar' ? (
                               <Box sx={styles.badge('sup')}>Debe superar</Box>
+                            ) : m.comportamiento === 'debe-mantenerse-en-rango' ? (
+                              <Box sx={styles.badge('rango')}>En rango</Box>
                             ) : (
                               <Box sx={styles.badge('nosup')}>No debe superar</Box>
                             )}
                           </Box>
                           <Box component="td" sx={styles.td}>
-                            {m.valor}{m.tipoValor === 'porcentual' ? '%' : ''}
+                            {m.comportamiento === 'debe-mantenerse-en-rango' ? (
+                              `${m.lowerLimit} - ${m.upperLimit}${m.tipoValor === 'porcentual' || m.tipoValor === 'porcentaje' ? '%' : ''}`
+                            ) : (
+                              `${m.valor}${m.tipoValor === 'porcentual' || m.tipoValor === 'porcentaje' ? '%' : ''}`
+                            )}
                           </Box>
                           <Box component="td" sx={{ ...styles.td, textAlign: 'right' }}>
                             <Box sx={styles.actionBtns}>
@@ -724,44 +733,112 @@ export const MetaForm = () => {
             </Box>
           </Box>
 
-          {/* Expected Value with Suffix */}
-          <Box sx={styles.field}>
-            <Typography component="label" htmlFor="metric-valor-input" sx={styles.fieldLabel}>
-              Valor esperado <span style={styles.required}>*</span>
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-              <Box sx={styles.valorTipo} role="group" aria-label="Tipo de valor">
-                <Box 
-                  component="button"
-                  type="button"
-                  onClick={() => setMetricValorTipo('numerico')}
-                  sx={styles.valorTipoBtn(metricValorTipo === 'numerico')}
-                >
-                  Numérico
+          {/* Expected Value or Limits Rango */}
+          {metricComportamiento !== 'debe-mantenerse-en-rango' ? (
+            /* Original Inline Design */
+            <Box sx={styles.field}>
+              <Typography component="label" htmlFor="metric-valor-input" sx={styles.fieldLabel}>
+                Valor esperado <span style={styles.required}>*</span>
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                <Box sx={styles.valorTipo} role="group" aria-label="Tipo de valor">
+                  <Box 
+                    component="button"
+                    type="button"
+                    onClick={() => setMetricValorTipo('numerico')}
+                    sx={styles.valorTipoBtn(metricValorTipo === 'numerico')}
+                  >
+                    Numérico
+                  </Box>
+                  <Box 
+                    component="button"
+                    type="button"
+                    onClick={() => setMetricValorTipo('porcentual')}
+                    sx={styles.valorTipoBtn(metricValorTipo === 'porcentual')}
+                  >
+                    Porcentual
+                  </Box>
                 </Box>
-                <Box 
-                  component="button"
-                  type="button"
-                  onClick={() => setMetricValorTipo('porcentual')}
-                  sx={styles.valorTipoBtn(metricValorTipo === 'porcentual')}
-                >
-                  Porcentual
+                <Box sx={{ ...styles.inputWithIcon, flex: 1 }}>
+                  <Box 
+                    component="input"
+                    type="number"
+                    id="metric-valor-input"
+                    placeholder="0"
+                    value={metricValor}
+                    onChange={(e) => setMetricValor(e.target.value)}
+                    sx={styles.input(false)}
+                  />
+                  <span style={styles.inputSuffix}>{metricValorTipo === 'porcentual' ? '%' : '#'}</span>
                 </Box>
-              </Box>
-              <Box sx={{ ...styles.inputWithIcon, flex: 1 }}>
-                <Box 
-                  component="input"
-                  type="number"
-                  id="metric-valor-input"
-                  placeholder="0"
-                  value={metricValor}
-                  onChange={(e) => setMetricValor(e.target.value)}
-                  sx={styles.input(false)}
-                />
-                <span style={styles.inputSuffix}>{metricValorTipo === 'porcentual' ? '%' : '#'}</span>
               </Box>
             </Box>
-          </Box>
+          ) : (
+            /* New Range Design */
+            <>
+              {/* Tipo de valor toggle */}
+              <Box sx={styles.field}>
+                <Typography component="label" sx={styles.fieldLabel}>
+                  Tipo de valor <span style={styles.required}>*</span>
+                </Typography>
+                <Box sx={styles.valorTipo} role="group" aria-label="Tipo de valor" sx={{ display: 'inline-flex', mt: 0.5 }}>
+                  <Box 
+                    component="button"
+                    type="button"
+                    onClick={() => setMetricValorTipo('numerico')}
+                    sx={styles.valorTipoBtn(metricValorTipo === 'numerico')}
+                  >
+                    Numérico
+                  </Box>
+                  <Box 
+                    component="button"
+                    type="button"
+                    onClick={() => setMetricValorTipo('porcentual')}
+                    sx={styles.valorTipoBtn(metricValorTipo === 'porcentual')}
+                  >
+                    Porcentual
+                  </Box>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
+                <Box sx={{ ...styles.field, flex: 1 }}>
+                  <Typography component="label" htmlFor="metric-lower-input" sx={styles.fieldLabel}>
+                    Límite inferior <span style={styles.required}>*</span>
+                  </Typography>
+                  <Box sx={{ ...styles.inputWithIcon, width: '100%' }}>
+                    <Box 
+                      component="input"
+                      type="number"
+                      id="metric-lower-input"
+                      placeholder="Mínimo"
+                      value={metricLowerLimit}
+                      onChange={(e) => setMetricLowerLimit(e.target.value)}
+                      sx={styles.input(false)}
+                    />
+                    <span style={styles.inputSuffix}>{metricValorTipo === 'porcentual' ? '%' : '#'}</span>
+                  </Box>
+                </Box>
+                <Box sx={{ ...styles.field, flex: 1 }}>
+                  <Typography component="label" htmlFor="metric-upper-input" sx={styles.fieldLabel}>
+                    Límite superior <span style={styles.required}>*</span>
+                  </Typography>
+                  <Box sx={{ ...styles.inputWithIcon, width: '100%' }}>
+                    <Box 
+                      component="input"
+                      type="number"
+                      id="metric-upper-input"
+                      placeholder="Máximo"
+                      value={metricUpperLimit}
+                      onChange={(e) => setMetricUpperLimit(e.target.value)}
+                      sx={styles.input(false)}
+                    />
+                    <span style={styles.inputSuffix}>{metricValorTipo === 'porcentual' ? '%' : '#'}</span>
+                  </Box>
+                </Box>
+              </Box>
+            </>
+          )}
 
           {/* Modal Error Message */}
           {metricModalError && (
@@ -871,17 +948,21 @@ export const MetaForm = () => {
                   {metricas.map((m) => {
                     const total = totalAporte;
                     const estado = total === 100 ? 'ok' : total < 100 ? 'incompleta' : 'excede';
-                    const estadoLabel = total === 100 ? '100% ok' : total < 100 ? '<100% incompleta' : '>100% excede';
+                    const estadoLabel = total === 100 ? '100%' : total < 100 ? '<100% incompleta' : '>100% excede';
                     
                     return (
                       <Box component="tr" key={m.id} sx={{ borderBottom: '1px solid #e5e7eb', '&:last-child': { borderBottom: 'none' } }}>
                         <Box component="td" sx={styles.td}>{m.nombre}</Box>
                         <Box component="td" sx={styles.td}>{m.aporte}%</Box>
                         <Box component="td" sx={styles.td}>
-                          {m.comportamiento === 'debe-superar' ? 'Debe superar' : 'No debe superar'}
+                          {m.comportamiento === 'debe-superar' || m.comportamiento === 'debe-alcanzar-o-superar' ? 'Debe superar' : m.comportamiento === 'debe-mantenerse-en-rango' ? 'En rango' : 'No debe superar'}
                         </Box>
                         <Box component="td" sx={styles.td}>
-                          {m.valor}{m.tipoValor === 'porcentual' ? '%' : ''}
+                          {m.comportamiento === 'debe-mantenerse-en-rango' ? (
+                            `${m.lowerLimit} - ${m.upperLimit}${m.tipoValor === 'porcentual' ? '%' : ''}`
+                          ) : (
+                            `${m.valor}${m.tipoValor === 'porcentual' ? '%' : ''}`
+                          )}
                         </Box>
                         <Box component="td" sx={styles.td}>
                           <Box sx={styles.badge(estado)}>{estadoLabel}</Box>

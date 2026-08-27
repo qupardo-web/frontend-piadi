@@ -57,6 +57,8 @@ export const useMetaEditForm = () => {
   const [metricComportamiento, setMetricComportamiento] = useState('no-debe-superar');
   const [metricValorTipo, setMetricValorTipo] = useState('numerico');
   const [metricValor, setMetricValor] = useState('');
+  const [metricLowerLimit, setMetricLowerLimit] = useState('');
+  const [metricUpperLimit, setMetricUpperLimit] = useState('');
   const [metricModalError, setMetricModalError] = useState(null);
 
   // Load departments from database on mount
@@ -124,7 +126,9 @@ export const useMetaEditForm = () => {
               aporte: Number(metric.weight || 0),
               comportamiento: metric.behavior,
               valor: Number(metric.targetValue || 0),
-              tipoValor: metric.valueType === 'percentage' ? 'porcentaje' : 'numerico'
+              tipoValor: metric.valueType === 'percentage' ? 'porcentaje' : 'numerico',
+              lowerLimit: metric.lowerLimit !== undefined && metric.lowerLimit !== null ? Number(metric.lowerLimit) : null,
+              upperLimit: metric.upperLimit !== undefined && metric.upperLimit !== null ? Number(metric.upperLimit) : null
             }));
             setMetricas(mappedMetrics);
           }
@@ -162,6 +166,8 @@ export const useMetaEditForm = () => {
     setMetricComportamiento('no-debe-superar');
     setMetricValorTipo('numerico');
     setMetricValor('');
+    setMetricLowerLimit('');
+    setMetricUpperLimit('');
     setMetricModalError(null);
     setMetricModalOpen(true);
   };
@@ -177,6 +183,8 @@ export const useMetaEditForm = () => {
     setMetricComportamiento(item.comportamiento);
     setMetricValorTipo(item.tipoValor);
     setMetricValor(item.valor);
+    setMetricLowerLimit(item.lowerLimit !== undefined && item.lowerLimit !== null ? item.lowerLimit : '');
+    setMetricUpperLimit(item.upperLimit !== undefined && item.upperLimit !== null ? item.upperLimit : '');
     setMetricModalError(null);
     setMetricModalOpen(true);
   };
@@ -200,9 +208,32 @@ export const useMetaEditForm = () => {
       return;
     }
 
-    if (!metricValor || Number(metricValor) <= 0) {
-      setMetricModalError('El valor esperado debe ser un número positivo');
-      return;
+    let targetVal = Number(metricValor);
+    let lowerLim = null;
+    let upperLim = null;
+
+    if (metricComportamiento === 'debe-mantenerse-en-rango') {
+      if (metricLowerLimit === '' || isNaN(Number(metricLowerLimit)) || Number(metricLowerLimit) < 0) {
+        setMetricModalError('El límite inferior debe ser un número positivo o cero');
+        return;
+      }
+      if (metricUpperLimit === '' || isNaN(Number(metricUpperLimit)) || Number(metricUpperLimit) <= 0) {
+        setMetricModalError('El límite superior debe ser un número positivo');
+        return;
+      }
+      lowerLim = Number(metricLowerLimit);
+      upperLim = Number(metricUpperLimit);
+      if (lowerLim >= upperLim) {
+        setMetricModalError('El límite inferior debe ser menor al límite superior');
+        return;
+      }
+      // Para cumplir con la restricción del backend, targetValue se asigna al límite superior
+      targetVal = upperLim;
+    } else {
+      if (!metricValor || Number(metricValor) <= 0) {
+        setMetricModalError('El valor esperado debe ser un número positivo');
+        return;
+      }
     }
 
     const selectedKpiObj = kpisList.find(k => k.name === metricNombre);
@@ -212,8 +243,10 @@ export const useMetaEditForm = () => {
       key: selectedKpiObj ? selectedKpiObj.key : '',
       aporte: valAporte,
       comportamiento: metricComportamiento,
-      valor: Number(metricValor),
-      tipoValor: metricValorTipo
+      valor: targetVal,
+      tipoValor: metricValorTipo,
+      lowerLimit: lowerLim,
+      upperLimit: upperLim
     };
 
     if (editMetricIndex !== null) {
@@ -271,7 +304,9 @@ export const useMetaEditForm = () => {
           weight: Number(m.aporte),
           behavior: m.comportamiento,
           targetValue: Number(m.valor),
-          valueType: m.tipoValor === 'numerico' ? 'number' : (m.tipoValor === 'porcentaje' ? 'percentage' : m.tipoValor)
+          valueType: m.tipoValor === 'numerico' ? 'number' : (m.tipoValor === 'porcentaje' ? 'percentage' : m.tipoValor),
+          lowerLimit: m.lowerLimit !== undefined && m.lowerLimit !== null ? Number(m.lowerLimit) : null,
+          upperLimit: m.upperLimit !== undefined && m.upperLimit !== null ? Number(m.upperLimit) : null
         }))
       };
 
@@ -348,6 +383,10 @@ export const useMetaEditForm = () => {
     setMetricValorTipo,
     metricValor,
     setMetricValor,
+    metricLowerLimit,
+    setMetricLowerLimit,
+    metricUpperLimit,
+    setMetricUpperLimit,
     metricModalError,
     totalAporte,
     filteredMetricsPool,

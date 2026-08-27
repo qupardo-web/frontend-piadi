@@ -36,9 +36,9 @@ export const useVisualizacionMetas = () => {
           if (m.status === 'cumplida') estado = 'completada';
           else if (m.status === 'en_riesgo' || m.status === 'no_cumplida') estado = 'alerta';
 
-          // First metric values or fallback to header valorMeta
-          const actual = m.metrics?.[0]?.currentValue !== undefined ? Number(m.metrics[0].currentValue) : 0;
-          const objetivo = Number(m.valorMeta || m.metrics?.[0]?.targetValue || 0);
+          const firstMetric = m.metrics?.[0] || {};
+          const actual = firstMetric.currentValue !== undefined && firstMetric.currentValue !== null ? Number(firstMetric.currentValue) : 0;
+          const objetivo = Number(m.valorMeta || firstMetric.targetValue || 0);
 
           const deptName = DEPT_MAP[m.departmentId] || m.departmentId || 'Institucional';
 
@@ -53,7 +53,11 @@ export const useVisualizacionMetas = () => {
             progreso: Number(m.totalProgress || 0),
             prioridad: m.prioridad || 'media',
             inicio: m.fechaInicio || m.inicio || '',
-            fechaLimite: m.fechaLimite || m.limite || ''
+            fechaLimite: m.fechaLimite || m.limite || '',
+            comportamiento: firstMetric.behavior || m.comportamiento || 'debe-superar',
+            lowerLimit: firstMetric.lowerLimit !== undefined ? firstMetric.lowerLimit : null,
+            upperLimit: firstMetric.upperLimit !== undefined ? firstMetric.upperLimit : null,
+            tipoValor: firstMetric.valueType || 'number'
           };
         });
         setMetas(mapped);
