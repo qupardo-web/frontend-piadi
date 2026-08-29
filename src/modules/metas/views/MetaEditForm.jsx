@@ -737,25 +737,12 @@ export const MetaEditForm = () => {
 
           {/* Expected Value or Limits Rango */}
           {metricComportamiento !== 'debe-mantenerse-en-rango' ? (
-            /* Original Inline Design */
-            <Box sx={styles.field}>
-              <Typography component="label" htmlFor="metric-valor-input" sx={styles.fieldLabel}>
-                Valor esperado <span style={styles.required}>*</span>
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-                <Box sx={{ ...styles.inputWithIcon, flex: 1 }}>
-                  <Box 
-                    component="input"
-                    type="number"
-                    id="metric-valor-input"
-                    placeholder="Ej: 40"
-                    value={metricValor}
-                    onChange={(e) => setMetricValor(e.target.value)}
-                    sx={styles.input(false)}
-                  />
-                  <span style={styles.inputSuffix}>{metricValorTipo === 'porcentaje' ? '%' : '#'}</span>
-                </Box>
-                <Box sx={styles.valorTipo} role="group" aria-label="Tipo de valor">
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography component="label" sx={styles.fieldLabel}>
+                  Tipo de valor <span style={styles.required}>*</span>
+                </Typography>
+                <Box sx={{ ...styles.valorTipo, mt: 0.5 }} role="group" aria-label="Tipo de valor">
                   <Box 
                     component="button"
                     type="button"
@@ -774,6 +761,24 @@ export const MetaEditForm = () => {
                   </Box>
                 </Box>
               </Box>
+              
+              <Box sx={{ flex: 1 }}>
+                <Typography component="label" htmlFor="metric-valor-input" sx={styles.fieldLabel}>
+                  Valor esperado <span style={styles.required}>*</span>
+                </Typography>
+                <Box sx={{ ...styles.inputWithIcon, mt: 0.5 }}>
+                  <Box 
+                    component="input"
+                    type="number"
+                    id="metric-valor-input"
+                    placeholder="Ej: 100"
+                    value={metricValor}
+                    onChange={(e) => setMetricValor(e.target.value)}
+                    sx={styles.input(false)}
+                  />
+                  <span style={styles.inputSuffix}>{metricValorTipo === 'porcentaje' ? '%' : '#'}</span>
+                </Box>
+              </Box>
             </Box>
           ) : (
             /* New Range Design */
@@ -783,7 +788,7 @@ export const MetaEditForm = () => {
                 <Typography component="label" sx={styles.fieldLabel}>
                   Tipo de valor <span style={styles.required}>*</span>
                 </Typography>
-                <Box sx={styles.valorTipo} role="group" aria-label="Tipo de valor" sx={{ display: 'inline-flex', mt: 0.5 }}>
+                <Box sx={{ ...styles.valorTipo, display: 'inline-flex', mt: 0.5 }} role="group" aria-label="Tipo de valor">
                   <Box 
                     component="button"
                     type="button"
@@ -1001,13 +1006,13 @@ export const MetaEditForm = () => {
       {/* Floating Success Alert Dialog */}
       <Dialog 
         open={showSuccessAlert} 
-        onClose={() => setShowSuccessAlert(false)}
+        onClose={() => { setShowSuccessAlert(false); navigate('/metas'); }}
         maxWidth="xs"
         fullWidth
         PaperProps={{ sx: { borderRadius: 3, p: 2, bgcolor: '#ffffff', color: '#111827', textAlign: 'center' } }}
       >
         <DialogTitle sx={{ m: 0, p: 1, display: 'flex', justifyContent: 'flex-end', pb: 0 }}>
-          <IconButton onClick={() => setShowSuccessAlert(false)} size="small" sx={{ color: '#6b7280' }}>
+          <IconButton onClick={() => { setShowSuccessAlert(false); navigate('/metas'); }} size="small" sx={{ color: '#6b7280' }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -1022,7 +1027,7 @@ export const MetaEditForm = () => {
             Los datos han sido registrados correctamente en el servidor.
           </Typography>
           <Button
-            onClick={() => setShowSuccessAlert(false)}
+            onClick={() => { setShowSuccessAlert(false); navigate('/metas'); }}
             variant="contained"
             sx={{
               mt: 2,

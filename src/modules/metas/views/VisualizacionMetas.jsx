@@ -44,6 +44,7 @@ import {
   ArrowDownward as ArrowDownIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
+  RestartAlt as ResetIcon,
 } from '@mui/icons-material';
 
 export const VisualizacionMetas = () => {
@@ -59,6 +60,7 @@ export const VisualizacionMetas = () => {
     setOpenHelpDialog,
     filtersVisible,
     handleToggleFilters,
+    handleResetFilters,
     searchQuery,
     setSearchQuery,
     filtroDepartamento,
@@ -89,6 +91,7 @@ export const VisualizacionMetas = () => {
     loading,
     error,
     kpis,
+    departmentsList,
     deleteDialogOpen,
     handleOpenDeleteDialog,
     handleCloseDeleteDialog,
@@ -404,13 +407,36 @@ export const VisualizacionMetas = () => {
               <FilterIcon sx={{ fontSize: 18 }} />
               Filtrar por:
             </Typography>
-            <Box 
-              component="button" 
-              onClick={handleToggleFilters}
-              sx={styles.filterToggleBtn}
-            >
-              {filtersVisible ? 'Ocultar filtros' : 'Mostrar filtros'}
-              <ExpandMoreIcon sx={{ fontSize: 16, transform: filtersVisible ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.2s' }} />
+            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+              <Box 
+                component="button" 
+                onClick={handleResetFilters}
+                sx={{
+                  bgcolor: 'transparent',
+                  border: 'none',
+                  color: '#6b7280',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  '&:hover': { bgcolor: '#F1F5F9', color: '#1E2875' }
+                }}
+              >
+                <ResetIcon sx={{ fontSize: 16 }} />
+                Limpiar filtros
+              </Box>
+              <Box 
+                component="button" 
+                onClick={handleToggleFilters}
+                sx={styles.filterToggleBtn}
+              >
+                {filtersVisible ? 'Ocultar filtros' : 'Mostrar filtros'}
+                <ExpandMoreIcon sx={{ fontSize: 16, transform: filtersVisible ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.2s' }} />
+              </Box>
             </Box>
           </Box>
 
@@ -429,12 +455,11 @@ export const VisualizacionMetas = () => {
                   sx={styles.filterInput}
                 >
                   <option value="todas">Todas</option>
-                  <option value="Admisión">Admisión</option>
-                  <option value="Relaciones Estudiantiles">Relaciones Estudiantiles</option>
-                  <option value="Desarrollo Curricular">Desarrollo Curricular</option>
-                  <option value="Innovación">Innovación</option>
-                  <option value="Educación Continua">Educación Continua</option>
-                  <option value="Vinculación con el Medio">Vinculación con el Medio</option>
+                  {departmentsList.map((dept) => (
+                    <option key={dept.key} value={dept.key}>
+                      {dept.name}
+                    </option>
+                  ))}
                 </Box>
               </Box>
 

@@ -31,6 +31,7 @@ import {
   AccordionDetails,
   Grid,
   Tooltip,
+  Collapse,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -638,48 +639,57 @@ export const CargaDatos = () => {
                 })}
               </Box>
               
-              {showMetadataHelp && selectedTemplateMetadata && (
+              {selectedTemplateMetadata && (
                 <Box sx={{ 
                   mt: 2.5, 
-                  p: 2, 
                   bgcolor: '#F8FAFC', 
                   border: '1px solid #E2E8F0', 
                   borderRadius: '8px',
                   fontFamily: "'Inter', sans-serif",
-                  position: 'relative'
+                  overflow: 'hidden'
                 }}>
-                  <IconButton
-                    onClick={() => setShowMetadataHelp(false)}
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      color: '#64748b',
-                      p: 0.5,
-                      '&:hover': { color: '#EF4444' }
+                  <Box 
+                    onClick={() => setShowMetadataHelp(prev => !prev)}
+                    sx={{ 
+                      p: 2, 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                      '&:hover': { bgcolor: '#F1F5F9' }
                     }}
-                    aria-label="Cerrar detalles de plantilla"
                   >
-                    <CloseIcon sx={{ fontSize: '18px' }} />
-                  </IconButton>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Campos y Hojas Requeridas en el Excel:
+                    </Typography>
+                    <IconButton size="small" sx={{ color: '#1E2875', p: 0 }}>
+                      <ExpandMoreIcon sx={{ 
+                        transform: showMetadataHelp ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s'
+                      }} />
+                    </IconButton>
+                  </Box>
                   
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875', mb: 1.5, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px', pr: 4 }}>
-                    Campos y Hojas Requeridas en el Excel:
-                  </Typography>
-                  <Grid container spacing={1.5}>
-                    {selectedTemplateMetadata.hojas.map((hoja, hIdx) => (
-                      <Grid item xs={12} sm={6} key={hIdx}>
-                        <Box sx={{ bgcolor: '#ffffff', p: 1.5, borderRadius: '6px', border: '1px solid #E2E8F0', height: '100%' }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1DC2A0', mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '12px' }}>
-                            📁 Hoja: {hoja.nombre}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: '#475569', fontSize: '11.5px', lineHeight: 1.45 }}>
-                            <strong>Columnas obligatorias:</strong> {hoja.columnas.join(', ')}
-                          </Typography>
-                        </Box>
+                  <Collapse in={showMetadataHelp}>
+                    <Box sx={{ p: 2, pt: 0 }}>
+                      <Divider sx={{ mb: 2 }} />
+                      <Grid container spacing={1.5}>
+                        {selectedTemplateMetadata.hojas.map((hoja, hIdx) => (
+                          <Grid item xs={12} sm={6} key={hIdx}>
+                            <Box sx={{ bgcolor: '#ffffff', p: 1.5, borderRadius: '6px', border: '1px solid #E2E8F0', height: '100%' }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1DC2A0', mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '12px' }}>
+                                📁 Hoja: {hoja.nombre}
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#475569', fontSize: '11.5px', lineHeight: 1.45 }}>
+                                <strong>Columnas obligatorias:</strong> {hoja.columnas.join(', ')}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        ))}
                       </Grid>
-                    ))}
-                  </Grid>
+                    </Box>
+                  </Collapse>
                 </Box>
               )}
 

@@ -38,6 +38,7 @@ export const useDashboardVcM = () => {
   const [selectedModalidades, setSelectedModalidades] = useState([]);
   const [selectedPlataformas, setSelectedPlataformas] = useState([]);
   const [selectedTiposArticulacion, setSelectedTiposArticulacion] = useState([]);
+  const [selectedAreas, setSelectedAreas] = useState([]);
   const [periodoAcumulado, setPeriodoAcumulado] = useState(false);
 
   // ESTADOS PARA DATOS REALES DE API
@@ -91,9 +92,10 @@ export const useDashboardVcM = () => {
     if (selectedModalidades.length > 0) params.modalidad = selectedModalidades.join(',');
     if (selectedPlataformas.length > 0) params.plataformaFoco = selectedPlataformas.join(',');
     if (selectedTiposArticulacion.length > 0) params.tipoArticulacion = selectedTiposArticulacion.join(',');
+    if (selectedAreas.length > 0) params.areaVinculada = selectedAreas.join(',');
 
     return params;
-  }, [cohorteDesde, cohorteHasta, selectedSectores, selectedTiposConvenio, selectedEstados, selectedLineas, selectedModalidades, selectedPlataformas, selectedTiposArticulacion]);
+  }, [cohorteDesde, cohorteHasta, selectedSectores, selectedTiposConvenio, selectedEstados, selectedLineas, selectedModalidades, selectedPlataformas, selectedTiposArticulacion, selectedAreas]);
 
   const hasRealData = useMemo(() => {
     if (!apiSummary) return false;
@@ -345,7 +347,16 @@ export const useDashboardVcM = () => {
   const [activeModal, setActiveModal] = useState(null);
 
   // Filtros dinÃ¡micos estÃ¡ticos (no dependen del backend)
-  const dynamicAreas = AREAS_LIST;
+  const dynamicAreas = useMemo(() => {
+    const rawAreas = apiFilters?.filters?.areas ?? AREAS_LIST;
+    return rawAreas.map(a => {
+      let cleanLabel = a;
+      if (a.includes('ArtÃ­stica') || a.includes('Artística')) {
+        cleanLabel = 'Cultural-Artística';
+      }
+      return { label: cleanLabel, val: a };
+    });
+  }, [apiFilters]);
   const dynamicTipos = useMemo(() => {
     const items = apiConveniosTipo?.items ?? apiTotalConveniosTipo?.items ?? [];
     if (items.length > 0) {
@@ -437,6 +448,7 @@ export const useDashboardVcM = () => {
     setSelectedModalidades([]);
     setSelectedPlataformas([]);
     setSelectedTiposArticulacion([]);
+    setSelectedAreas([]);
     setLocalSexoFilter('Todos');
     setLocalEdadFilter('Todos');
   };
@@ -483,7 +495,7 @@ export const useDashboardVcM = () => {
       nuevosConvenios: getKPIVal('nuevosConvenios'),
       participantes: getKPIVal('participantes')
     };
-  }, [cohorteDesde, cohorteHasta, selectedSectores, selectedTiposConvenio, selectedEstados, selectedLineas, selectedModalidades, selectedPlataformas, selectedTiposArticulacion]);
+  }, [cohorteDesde, cohorteHasta, selectedSectores, selectedTiposConvenio, selectedEstados, selectedLineas, selectedModalidades, selectedPlataformas, selectedTiposArticulacion, selectedAreas]);
 
   // Lista de KPIs en formato tarjeta (3 tarjetas de referencia)
   const kpiCardsData = useMemo(() => {
@@ -690,7 +702,7 @@ export const useDashboardVcM = () => {
           if (yr >= yDesde && yr <= yHasta) return sum + Number(p.value ?? p.val ?? 0);
           return sum;
         }, 0)
-      : (hasRealData ? (activeCard?.formattedValue ?? activeCard?.value ?? 0) : activeValSim);
+      : (hasRealData ? (apiSummaryHasta?.convenios_activos?.formattedValue ?? apiSummaryHasta?.convenios_activos?.value ?? 0) : activeValSim);
     const activeEvoData = getEvoForSeries(apiConveniosActivosSeries, 'conveniosVigentes');
 
     const newVal = (periodoAcumulado && !isSingleYear && apiTotalConveniosSeries)
@@ -699,7 +711,7 @@ export const useDashboardVcM = () => {
           if (yr >= yDesde && yr <= yHasta) return sum + Number(p.value ?? p.val ?? 0);
           return sum;
         }, 0)
-      : (hasRealData ? (newCard?.formattedValue ?? newCard?.value ?? 0) : newValSim);
+      : (hasRealData ? (apiSummaryHasta?.total_convenios?.formattedValue ?? apiSummaryHasta?.total_convenios?.value ?? 0) : newValSim);
     const newEvoData = getEvoForSeries(apiTotalConveniosSeries, 'nuevosConvenios');
 
     const flatPartPoints = (() => {
@@ -726,7 +738,7 @@ export const useDashboardVcM = () => {
           if (yr >= yDesde && yr <= yHasta) return sum + Number(p.value ?? p.val ?? 0);
           return sum;
         }, 0)
-      : (hasRealData ? (partCard?.formattedValue ?? partCard?.value ?? 0) : partValSim);
+      : (hasRealData ? (apiSummaryHasta?.participaciones?.formattedValue ?? apiSummaryHasta?.participaciones?.value ?? 0) : partValSim);
     const partEvoData = getEvoForSeries(flatPartPoints, 'participantes');
 
     return [
@@ -1736,6 +1748,8 @@ export const useDashboardVcM = () => {
     setSelectedPlataformas,
     selectedTiposArticulacion,
     setSelectedTiposArticulacion,
+    selectedAreas,
+    setSelectedAreas,
     periodoAcumulado,
     setPeriodoAcumulado,
     ofertaViewMode,

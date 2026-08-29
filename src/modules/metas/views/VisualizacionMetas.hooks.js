@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
-import { getMetas, deleteMeta } from '../../../services/piadiApi';
+import { getMetas, deleteMeta, getDepartments } from '../../../services/piadiApi';
 
 const PRIORIDAD_RANK = { alta: 0, media: 1, baja: 2 };
 
@@ -11,6 +11,7 @@ export const useVisualizacionMetas = () => {
 
   // Dynamic metas state from backend
   const [metas, setMetas] = useState([]);
+  const [departmentsList, setDepartmentsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -47,13 +48,14 @@ export const useVisualizacionMetas = () => {
             nombre: m.nombre || `Meta de ${deptName}`,
             area: deptName,
             departamento: deptName,
+            departmentId: m.departmentId,
             estado: estado,
             actual: actual,
             objetivo: objetivo,
             progreso: Number(m.totalProgress || 0),
             prioridad: m.prioridad || 'media',
-            inicio: m.fechaInicio || m.inicio || '',
-            fechaLimite: m.fechaLimite || m.limite || '',
+            inicio: (m.fechaInicio || m.inicio || '').slice(0, 10),
+            fechaLimite: (m.fechaLimite || m.limite || '').slice(0, 10),
             comportamiento: firstMetric.behavior || m.comportamiento || 'debe-superar',
             lowerLimit: firstMetric.lowerLimit !== undefined ? firstMetric.lowerLimit : null,
             upperLimit: firstMetric.upperLimit !== undefined ? firstMetric.upperLimit : null,
@@ -72,6 +74,17 @@ export const useVisualizacionMetas = () => {
 
   useEffect(() => {
     fetchBackendMetas();
+    const fetchDepts = async () => {
+      try {
+        const res = await getDepartments();
+        if (res.success && Array.isArray(res.data)) {
+          setDepartmentsList(res.data);
+        }
+      } catch (err) {
+        console.error('Error loading departments:', err);
+      }
+    };
+    fetchDepts();
   }, []);
 
   // Navigation and menus
@@ -110,6 +123,16 @@ export const useVisualizacionMetas = () => {
     setFiltersVisible(!filtersVisible);
   };
 
+  // Reset all filters to defaults
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setFiltroDepartamento('todas');
+    setFiltroEstado('todos');
+    setFiltroDesde('');
+    setFiltroHasta('');
+    setPaginaActual(1);
+  };
+
   // Compare function for sorting
   const compareMetas = (a, b) => {
     let r = 0;
@@ -139,7 +162,7 @@ export const useVisualizacionMetas = () => {
     
     const filtered = metas.filter(m => {
       if (q && !m.nombre.toLowerCase().includes(q) && !m.area.toLowerCase().includes(q)) return false;
-      if (filtroDepartamento !== 'todas' && m.departamento !== filtroDepartamento) return false;
+      if (filtroDepartamento !== 'todas' && m.departmentId !== filtroDepartamento) return false;
       if (filtroEstado !== 'todos' && m.estado !== filtroEstado) return false;
       if (filtroDesde && m.fechaLimite < filtroDesde) return false;
       if (filtroHasta && m.fechaLimite > filtroHasta) return false;
@@ -259,6 +282,7 @@ export const useVisualizacionMetas = () => {
     setOpenHelpDialog,
     filtersVisible,
     handleToggleFilters,
+    handleResetFilters,
     searchQuery,
     setSearchQuery,
     filtroDepartamento,
@@ -285,6 +309,7 @@ export const useVisualizacionMetas = () => {
     loading,
     error,
     kpis,
+    departmentsList,
     deleteDialogOpen,
     metaToDelete,
     handleOpenDeleteDialog,
