@@ -598,10 +598,10 @@ export const LandingPage = () => {
                                 Progreso: <strong>{meta.actual}</strong> / {meta.objetivo}
                               </Typography>
                               <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875' }}>
-                                {meta.pct}%
+                                {Number(meta.pct).toFixed(2)}%
                               </Typography>
                             </Box>
-                            <LinearProgress variant="determinate" value={Math.min(meta.pct, 100)} sx={styles.metaProgressBar(meta.estado)} />
+                            <LinearProgress variant="determinate" value={Math.min(Number(meta.pct), 100)} sx={styles.metaProgressBar(meta.estado)} />
                           </Box>
 
                           <Divider sx={{ my: 1.5 }} />

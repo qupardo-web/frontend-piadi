@@ -228,6 +228,8 @@ export const DashboardVcM = () => {
     setSelectedPlataformas,
     selectedTiposArticulacion,
     setSelectedTiposArticulacion,
+    selectedAreas,
+    setSelectedAreas,
     periodoAcumulado,
     setPeriodoAcumulado,
     ofertaViewMode,
@@ -633,6 +635,23 @@ export const DashboardVcM = () => {
                     label={chip.label}
                     selected={selectedEstados.includes(chip.val)}
                     onClick={() => toggleChip(selectedEstados, setSelectedEstados, chip.val)}
+                  />
+                ))}
+              </Box>
+            </Box>
+
+            {/* Área vinculada */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Área vinculada
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                {dynamicAreas.map((chip) => (
+                  <FilterChip
+                    key={chip.val}
+                    label={chip.label}
+                    selected={selectedAreas.includes(chip.val)}
+                    onClick={() => toggleChip(selectedAreas, setSelectedAreas, chip.val)}
                   />
                 ))}
               </Box>
@@ -2319,8 +2338,25 @@ export const DashboardVcM = () => {
                     ))}
                   </Box>
                 </Box>
-              </AccordionDetails>
-            </Accordion>
+
+                {/* Área vinculada */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Área vinculada
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                        {dynamicAreas.map((chip) => (
+                          <FilterChip
+                            key={chip.val}
+                            label={chip.label}
+                            selected={selectedAreas.includes(chip.val)}
+                            onClick={() => toggleChip(selectedAreas, setSelectedAreas, chip.val)}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
 
             <Accordion 
               expanded={openActividades} 
