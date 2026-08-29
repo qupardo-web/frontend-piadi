@@ -5,6 +5,19 @@ import { useAuth } from '../../auth';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const VCM_ROLE = 'Vinculación Con El Medio';
 const VCM_TEMPLATE_NAME = 'Vinculación Con El Medio';
+const INTERNAL_ERROR_MESSAGE = 'Error interno, contacte al administrador';
+
+const toPublicText = (value) => (
+  typeof value === 'string' || typeof value === 'number' ? String(value) : ''
+);
+
+export const normalizeUploadErrorDetail = (detail = {}) => ({
+  message: toPublicText(detail.message) || 'El registro contiene un dato inválido.',
+  hoja: toPublicText(detail.hoja ?? detail.sheet) || 'General',
+  fila: toPublicText(detail.fila ?? detail.row),
+  columna: toPublicText(detail.columna ?? detail.column),
+  celda: toPublicText(detail.celda ?? detail.cell)
+});
 
 const normalizeName = (value) => String(value || '').trim().toLocaleLowerCase('es');
 
@@ -369,7 +382,12 @@ export const useCargaDatos = () => {
           body: formData
         });
 
-        const data = await response.json();
+        let data = {};
+        try {
+          data = await response.json();
+        } catch {
+          data = {};
+        }
 
         if (response.ok) {
           const templateObj = templates.find(t => t.id === selectedTemplate);
@@ -389,10 +407,19 @@ export const useCargaDatos = () => {
             setUploadError('No tienes permiso para cargar datos en este departamento');
             return;
           }
-          // Si el servidor retorna errores de validación estructurados
-          setUploadError(data.message || data.error || 'Error en la estructura del archivo.');
-          if (data.errores) {
-            setUploadErrorDetails(data.errores);
+
+          if (response.status >= 500) {
+            setUploadError(INTERNAL_ERROR_MESSAGE);
+            return;
+          }
+
+          setUploadError(
+            typeof data.error === 'string'
+              ? data.error
+              : 'Error en la estructura del archivo.'
+          );
+          if (Array.isArray(data.errores)) {
+            setUploadErrorDetails(data.errores.map(normalizeUploadErrorDetail));
           }
         }
       } catch (err) {

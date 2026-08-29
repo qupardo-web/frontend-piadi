@@ -798,9 +798,11 @@ export const CargaDatos = () => {
                               lineHeight: 1.4
                             }}
                           >
-                            <strong>Hoja:</strong> {detail.sheet || detail.hoja || 'General'} | 
-                            <strong> Celda:</strong> {detail.row || detail.fila ? `Fila ${detail.row || detail.fila}` : ''}{(detail.column || detail.celda) ? `, Columna ${detail.column || detail.celda}` : ''} | 
-                            <strong> Fallo:</strong> {detail.message}
+                            <strong>Hoja:</strong> {detail.hoja}
+                            {detail.fila && <> | <strong>Fila:</strong> {detail.fila}</>}
+                            {detail.columna && <> | <strong>Columna:</strong> {detail.columna}</>}
+                            {detail.celda && <> | <strong>Celda:</strong> {detail.celda}</>}
+                            {' '}| <strong>Fallo:</strong> {detail.message}
                           </Typography>
                         ))}
                       </Box>
