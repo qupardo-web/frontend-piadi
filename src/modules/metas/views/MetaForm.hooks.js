@@ -53,20 +53,40 @@ export const useMetaForm = () => {
   const [creadaPor, setCreadaPor] = useState('');
   const [metricas, setMetricas] = useState([]);
 
-  // Load departments from database on mount
+  // Load departments from database on mount and filter by role
   useEffect(() => {
     const fetchDepts = async () => {
       try {
         const res = await getDepartments();
         if (res.success && Array.isArray(res.data)) {
-          setDepartmentsList(res.data);
+          if (user?.role === 'Rector') {
+            setDepartmentsList(res.data);
+          } else {
+            const roleLower = (user?.role || '').toLowerCase();
+            let userDeptKey = null;
+            if (roleLower.includes('vinculación') || roleLower.includes('vinculacion') || roleLower.includes('vcm')) {
+              userDeptKey = 'vinculacion_medio';
+            } else if (roleLower.includes('continua') || roleLower.includes('académico') || roleLower.includes('academico')) {
+              userDeptKey = 'educacion_continua';
+            }
+
+            if (userDeptKey) {
+              const filtered = res.data.filter(d => d.key === userDeptKey);
+              setDepartmentsList(filtered);
+              if (filtered.length === 1) {
+                setDepartamento(filtered[0].key);
+              }
+            } else {
+              setDepartmentsList([]);
+            }
+          }
         }
       } catch (err) {
         console.error('Error fetching departments:', err);
       }
     };
     fetchDepts();
-  }, []);
+  }, [user]);
 
   // Load KPIs whenever the selected department changes
   useEffect(() => {

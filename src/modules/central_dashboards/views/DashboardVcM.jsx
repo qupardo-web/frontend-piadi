@@ -179,12 +179,13 @@ export const DashboardVcM = () => {
   };
   const getAxisMax = (val) => {
     if (val <= 0) return 10;
-    if (val <= 50) return Math.ceil(val / 10) * 10;
-    if (val <= 200) return Math.ceil(val / 40) * 40;
-    if (val <= 500) return Math.ceil(val / 100) * 100;
-    if (val <= 1500) return Math.ceil(val / 500) * 500;
-    if (val <= 4000) return Math.ceil(val / 1000) * 1000;
-    return Math.ceil(val / 2000) * 2000;
+    const paddedVal = val * 1.15;
+    if (paddedVal <= 50) return Math.ceil(paddedVal / 10) * 10;
+    if (paddedVal <= 200) return Math.ceil(paddedVal / 40) * 40;
+    if (paddedVal <= 500) return Math.ceil(paddedVal / 100) * 100;
+    if (paddedVal <= 1500) return Math.ceil(paddedVal / 500) * 500;
+    if (paddedVal <= 4000) return Math.ceil(paddedVal / 1000) * 1000;
+    return Math.ceil(paddedVal / 2000) * 2000;
   };
   const getAxisTicks = (val) => {
     if (val <= 0) return 5;
@@ -302,9 +303,7 @@ export const DashboardVcM = () => {
 
   const sectorsList = hasRealData && apiFilters?.filters?.sectores?.length
     ? apiFilters.filters.sectores.map(s => {
-        let val = s.toLowerCase();
-        if (val.includes('público') || val.includes('publico')) val = 'publico';
-        return { label: s, val };
+        return { label: s, val: s };
       })
     : [];
 
@@ -1149,7 +1148,8 @@ export const DashboardVcM = () => {
                             label: d.label,
                             stack: 'total',
                             barLabel: 'value',
-                            barLabelPlacement: 'outside'
+                            barLabelPlacement: 'outside',
+                            valueFormatter: (value) => value === null ? null : String(value)
                           }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec1.Tipo.map(d => d.value), 0)), 
@@ -1159,7 +1159,10 @@ export const DashboardVcM = () => {
                           }]}
                           height={250}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                          slotProps={{
+                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            tooltip: { trigger: 'axis' }
+                          }}
                         />
                       )}
 
@@ -1206,7 +1209,8 @@ export const DashboardVcM = () => {
                             label: d.label,
                             stack: 'total',
                             barLabel: 'value',
-                            barLabelPlacement: 'outside'
+                            barLabelPlacement: 'outside',
+                            valueFormatter: (value) => value === null ? null : String(value)
                           }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec1['Área vinculada'].map(d => d.value), 0)), 
@@ -1216,7 +1220,10 @@ export const DashboardVcM = () => {
                           }]}
                           height={250}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                          slotProps={{
+                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            tooltip: { trigger: 'axis' }
+                          }}
                         />
                       )}
                     </Box>
@@ -1326,7 +1333,8 @@ export const DashboardVcM = () => {
                             label: d.label,
                             stack: 'total',
                             barLabel: 'value',
-                            barLabelPlacement: 'outside'
+                            barLabelPlacement: 'outside',
+                            valueFormatter: (value) => value === null ? null : String(value)
                           }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec2.Sector.map(d => d.value), 0)), 
@@ -1336,7 +1344,10 @@ export const DashboardVcM = () => {
                           }]}
                           height={250}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                          slotProps={{
+                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            tooltip: { trigger: 'axis' }
+                          }}
                         />
                       )}
 
@@ -1358,7 +1369,8 @@ export const DashboardVcM = () => {
                             label: d.label,
                             stack: 'total',
                             barLabel: 'value',
-                            barLabelPlacement: 'outside'
+                            barLabelPlacement: 'outside',
+                            valueFormatter: (value) => value === null ? null : String(value)
                           }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec2.Tipo.map(d => d.value), 0)), 
@@ -1368,7 +1380,10 @@ export const DashboardVcM = () => {
                           }]}
                           height={250}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                          slotProps={{
+                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            tooltip: { trigger: 'axis' }
+                          }}
                         />
                       )}
 
@@ -1390,7 +1405,8 @@ export const DashboardVcM = () => {
                             label: d.label,
                             stack: 'total',
                             barLabel: 'value',
-                            barLabelPlacement: 'outside'
+                            barLabelPlacement: 'outside',
+                            valueFormatter: (value) => value === null ? null : String(value)
                           }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec2.Responsable.map(d => d.value), 0)), 
@@ -1400,7 +1416,10 @@ export const DashboardVcM = () => {
                           }]}
                           height={250}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                          slotProps={{
+                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            tooltip: { trigger: 'axis' }
+                          }}
                         />
                       )}
                     </Box>
@@ -1603,12 +1622,16 @@ export const DashboardVcM = () => {
                             label: d.label,
                             stack: 'total',
                             barLabel: 'value',
-                            barLabelPlacement: 'outside'
+                            barLabelPlacement: 'outside',
+                            valueFormatter: (value) => value === null ? null : String(value)
                           }))}
                           layout="horizontal"
                           height={270}
                           margin={{ top: 10, right: 50, bottom: 70, left: isMobile ? 65 : 130 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                          slotProps={{
+                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            tooltip: { trigger: 'axis' }
+                          }}
                         />
                       )}
 
@@ -1634,12 +1657,16 @@ export const DashboardVcM = () => {
                             label: d.label,
                             stack: 'total',
                             barLabel: 'value',
-                            barLabelPlacement: 'outside'
+                            barLabelPlacement: 'outside',
+                            valueFormatter: (value) => value === null ? null : String(value)
                           }))}
                           layout="horizontal"
                           height={270}
                           margin={{ top: 10, right: 50, bottom: 70, left: isMobile ? 65 : 120 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                          slotProps={{
+                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            tooltip: { trigger: 'axis' }
+                          }}
                         />
                       )}
 
@@ -1828,15 +1855,18 @@ export const DashboardVcM = () => {
                             label: d.label,
                             stack: 'total',
                             barLabel: 'value',
-                            barLabelPlacement: 'outside'
+                            barLabelPlacement: 'outside',
+                            valueFormatter: (value) => value === null ? null : String(value)
                           }))}
                           layout="horizontal"
                           height={380}
                           margin={{ top: 10, right: 50, bottom: 70, left: isMobile ? 65 : 130 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                          slotProps={{
+                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            tooltip: { trigger: 'axis' }
+                          }}
                         />
                       )}
-
                       {sec5Segment === 'Sexo' && (
                         <Box sx={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                           <PieChart
@@ -2024,7 +2054,8 @@ export const DashboardVcM = () => {
                             label: d.label,
                             stack: 'total',
                             barLabel: 'value',
-                            barLabelPlacement: 'outside'
+                            barLabelPlacement: 'outside',
+                            valueFormatter: (value) => value === null ? null : String(value)
                           }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec6.Plataforma.map(d => d.value), 0)), 
@@ -2034,7 +2065,10 @@ export const DashboardVcM = () => {
                           }]}
                           height={270}
                           margin={{ top: 30, right: 10, bottom: 75, left: 40 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                          slotProps={{
+                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            tooltip: { trigger: 'axis' }
+                          }}
                         />
                       )}
 
@@ -2056,7 +2090,8 @@ export const DashboardVcM = () => {
                             label: d.label,
                             stack: 'total',
                             barLabel: 'value',
-                            barLabelPlacement: 'outside'
+                            barLabelPlacement: 'outside',
+                            valueFormatter: (value) => value === null ? null : String(value)
                           }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec6.Tipo.map(d => d.value), 0)), 
@@ -2066,7 +2101,10 @@ export const DashboardVcM = () => {
                           }]}
                           height={270}
                           margin={{ top: 30, right: 10, bottom: 75, left: 40 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                          slotProps={{
+                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            tooltip: { trigger: 'axis' }
+                          }}
                         />
                       )}
 
