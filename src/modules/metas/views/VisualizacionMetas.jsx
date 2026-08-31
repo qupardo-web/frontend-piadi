@@ -759,6 +759,7 @@ export const VisualizacionMetas = () => {
                 key={index}
                 elevation={0}
                 sx={{
+                  bgcolor: '#f9fafb',
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px !important',
                   mb: 1,
@@ -771,7 +772,7 @@ export const VisualizacionMetas = () => {
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails sx={{ borderTop: '1px solid #e5e7eb', pt: 2 }}>
-                  <Typography variant="body2" sx={{ color: '#4b5563' }}>
+                  <Typography variant="body2" sx={{ color: '#070c12' }}>
                     {faq.a}
                   </Typography>
                 </AccordionDetails>
