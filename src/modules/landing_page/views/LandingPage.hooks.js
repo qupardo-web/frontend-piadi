@@ -29,18 +29,6 @@ export const useLandingPage = () => {
 
   // 1. Initial fetch: Load departments, filters and metas on mount
   useEffect(() => {
-    getDashboardSummary()
-      .then(res => {
-        if (res?.success && res.data) {
-          const filtered = (res.data.departments ?? []).filter(d => 
-            d.departmentId === 'educacion_continua' || d.departmentId === 'vinculacion_medio' ||
-            d.key === 'educacion_continua' || d.key === 'vinculacion_medio'
-          );
-          setDepartments(filtered);
-        }
-      })
-      .catch(() => {});
-
     Promise.all([
       getDepartmentFilters('educacion_continua').catch(() => null),
       getDepartmentFilters('vinculacion_medio').catch(() => null)
