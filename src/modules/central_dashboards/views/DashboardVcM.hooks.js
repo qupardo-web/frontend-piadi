@@ -346,9 +346,9 @@ export const useDashboardVcM = () => {
   // MODALES DE DETALLE
   const [activeModal, setActiveModal] = useState(null);
 
-  // Filtros dinÃ¡micos estÃ¡ticos (no dependen del backend)
+  // Filtros dinámicos estáticos (no dependen del backend)
   const dynamicAreas = useMemo(() => {
-    const rawAreas = apiFilters?.filters?.areas ?? AREAS_LIST;
+    const rawAreas = apiFilters?.filters?.areas ?? [];
     return rawAreas.map(a => {
       let cleanLabel = a;
       if (a.includes('ArtÃ­stica') || a.includes('Artística')) {
@@ -365,14 +365,10 @@ export const useDashboardVcM = () => {
         val: i.label.toLowerCase().replace(/í/g, 'i').replace(/é/g, 'e').replace(/á/g, 'a').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n').trim()
       }));
     }
-    return [
-      { label: 'Convenio Marco', val: 'marco' },
-      { label: 'Convenio Específico', val: 'especifico' },
-      { label: 'Colaboración', val: 'colaboracion' }
-    ];
+    return [];
   }, [apiConveniosTipo, apiTotalConveniosTipo]);
-  const dynamicModalidades = MODALIDADES_LIST;
-  const dynamicSemestres = SEMESTRES_LIST;
+  const dynamicModalidades = hasRealData ? MODALIDADES_LIST : [];
+  const dynamicSemestres = hasRealData ? SEMESTRES_LIST : [];
 
   const dynamicLineas = useMemo(() => {
     if (apiActividadesLinea?.items?.length) {
@@ -382,14 +378,7 @@ export const useDashboardVcM = () => {
         return { label: i.label, val };
       });
     }
-    return [
-      { label: 'Admisión y orientación', val: 'admision' },
-      { label: 'Articulación TP', val: 'tp' },
-      { label: 'Empleabilidad y prácticas', val: 'empleabilidad' },
-      { label: 'Transferencia disciplinar', val: 'disciplinar' },
-      { label: 'Certificación y competencias', val: 'certificacion' },
-      { label: 'Relacionamiento territorial', val: 'territorial' }
-    ];
+    return [];
   }, [apiActividadesLinea]);
 
   const dynamicPlataformas = useMemo(() => {
@@ -403,12 +392,7 @@ export const useDashboardVcM = () => {
         return { label: i.label, val };
       });
     }
-    return [
-      { label: 'SAP', val: 'sap' },
-      { label: 'Defontana', val: 'defontana' },
-      { label: 'Excel aplicado', val: 'excel' },
-      { label: 'Power BI', val: 'powerbi' }
-    ];
+    return [];
   }, [apiArticulacionesPlataforma]);
 
   const dynamicTiposArticulacion = useMemo(() => {
@@ -424,14 +408,7 @@ export const useDashboardVcM = () => {
         return { label: i.label, val };
       });
     }
-    return [
-      { label: 'Reconocimiento de aprendizajes', val: 'reconocimiento' },
-      { label: 'Alternancia', val: 'alternancia' },
-      { label: 'Taller práctico', val: 'taller' },
-      { label: 'Charla técnica', val: 'charla' },
-      { label: 'Feria TP', val: 'curricular' },
-      { label: 'Mesa sectorial', val: 'mesa' }
-    ];
+    return [];
   }, [apiArticulacionesTipo]);
 
   const handleDrawerToggle = () => {
@@ -499,6 +476,52 @@ export const useDashboardVcM = () => {
 
   // Lista de KPIs en formato tarjeta (3 tarjetas de referencia)
   const kpiCardsData = useMemo(() => {
+    if (!hasRealData) {
+      return [
+        {
+          key: 'convenios_vigentes',
+          title: 'Total de convenios vigentes',
+          value: 0,
+          baseVal: 0,
+          evolution: '0%',
+          isPositive: true,
+          hasEvo: false,
+          isBaseline: true,
+          compareYearLabel: String(cohorteDesde),
+          isAccumulated: false,
+          icon: Award,
+          color: '#E27800',
+        },
+        {
+          key: 'nuevos_convenios',
+          title: 'Nuevos convenios firmados',
+          value: 0,
+          baseVal: 0,
+          evolution: '0%',
+          isPositive: true,
+          hasEvo: false,
+          isBaseline: true,
+          compareYearLabel: String(cohorteDesde),
+          isAccumulated: false,
+          icon: Briefcase,
+          color: '#2196F3',
+        },
+        {
+          key: 'total_participantes',
+          title: 'Total de participantes VcM',
+          value: 0,
+          baseVal: 0,
+          evolution: '0%',
+          isPositive: true,
+          hasEvo: false,
+          isBaseline: true,
+          compareYearLabel: String(cohorteDesde),
+          isAccumulated: false,
+          icon: Users,
+          color: '#4CAF50',
+        }
+      ];
+    }
     const yHasta = Number(cohorteHasta) || 2026;
     const yDesde = Number(cohorteDesde) || 2023;
     const isSingleYear = yDesde === yHasta;
@@ -621,7 +644,7 @@ export const useDashboardVcM = () => {
               hasEvo: true,
               isBaseline: false,
               compareYearLabel: String(compareYear),
-              isAccumulated: false
+              isAccumulated: periodoAcumulado && !isSingleYear
             };
           }
         }
@@ -696,22 +719,24 @@ export const useDashboardVcM = () => {
       }
     }
 
+    const activeCardVal = (periodoAcumulado && !isSingleYear) ? apiSummary?.convenios_activos : apiSummaryHasta?.convenios_activos;
     const activeVal = (periodoAcumulado && !isSingleYear && apiConveniosActivosSeries)
       ? apiConveniosActivosSeries.reduce((sum, p) => {
           const yr = Number(p.year ?? p.period ?? p.label);
           if (yr >= yDesde && yr <= yHasta) return sum + Number(p.value ?? p.val ?? 0);
           return sum;
         }, 0)
-      : (hasRealData ? (apiSummaryHasta?.convenios_activos?.formattedValue ?? apiSummaryHasta?.convenios_activos?.value ?? 0) : activeValSim);
+      : (hasRealData ? (activeCardVal?.formattedValue ?? activeCardVal?.value ?? 0) : activeValSim);
     const activeEvoData = getEvoForSeries(apiConveniosActivosSeries, 'conveniosVigentes');
 
+    const newCardVal = (periodoAcumulado && !isSingleYear) ? apiSummary?.total_convenios : apiSummaryHasta?.total_convenios;
     const newVal = (periodoAcumulado && !isSingleYear && apiTotalConveniosSeries)
       ? apiTotalConveniosSeries.reduce((sum, p) => {
           const yr = Number(p.year ?? p.period ?? p.label);
           if (yr >= yDesde && yr <= yHasta) return sum + Number(p.value ?? p.val ?? 0);
           return sum;
         }, 0)
-      : (hasRealData ? (apiSummaryHasta?.total_convenios?.formattedValue ?? apiSummaryHasta?.total_convenios?.value ?? 0) : newValSim);
+      : (hasRealData ? (newCardVal?.formattedValue ?? newCardVal?.value ?? 0) : newValSim);
     const newEvoData = getEvoForSeries(apiTotalConveniosSeries, 'nuevosConvenios');
 
     const flatPartPoints = (() => {
@@ -732,13 +757,14 @@ export const useDashboardVcM = () => {
       }));
     })();
 
+    const partCardVal = (periodoAcumulado && !isSingleYear) ? apiSummary?.participaciones : apiSummaryHasta?.participaciones;
     const partVal = (periodoAcumulado && !isSingleYear && flatPartPoints)
       ? flatPartPoints.reduce((sum, p) => {
           const yr = Number(p.year ?? p.period ?? p.label);
           if (yr >= yDesde && yr <= yHasta) return sum + Number(p.value ?? p.val ?? 0);
           return sum;
         }, 0)
-      : (hasRealData ? (apiSummaryHasta?.participaciones?.formattedValue ?? apiSummaryHasta?.participaciones?.value ?? 0) : partValSim);
+      : (hasRealData ? (partCardVal?.formattedValue ?? partCardVal?.value ?? 0) : partValSim);
     const partEvoData = getEvoForSeries(flatPartPoints, 'participantes');
 
     return [
@@ -935,6 +961,15 @@ export const useDashboardVcM = () => {
 
   // --- DATASET SECCIÓN 1: Total de convenios vigentes ---
   const datasetsSec1 = useMemo(() => {
+    if (!hasRealData) {
+      return {
+        'Año': [],
+        'Sector': [],
+        'Tipo': [],
+        'Contraparte': [],
+        'Área vinculada': []
+      };
+    }
     let multiplier = 1.0;
     if (selectedSectores.length > 0) multiplier *= (selectedSectores.length / 5) * 1.1;
     if (selectedTiposConvenio.length > 0) multiplier *= (selectedTiposConvenio.length / 7) * 1.1;
@@ -1084,6 +1119,14 @@ export const useDashboardVcM = () => {
 
   // --- DATASET SECCIÓN 2: Nuevos convenios firmados ---
   const datasetsSec2 = useMemo(() => {
+    if (!hasRealData) {
+      return {
+        'Año': [],
+        'Sector': [],
+        'Tipo': [],
+        'Responsable': []
+      };
+    }
     let multiplier = 1.0;
     if (selectedSectores.length > 0) multiplier *= (selectedSectores.length / 5) * 1.1;
     if (selectedTiposConvenio.length > 0) multiplier *= (selectedTiposConvenio.length / 7) * 1.1;
@@ -1210,6 +1253,9 @@ export const useDashboardVcM = () => {
 
   // --- DATASET SECCIÓN 3: Convenios por Sector ---
   const datasetsSec3 = useMemo(() => {
+    if (!hasRealData) {
+      return [];
+    }
     let multiplier = 1.0;
     if (selectedSectores.length > 0) multiplier *= (selectedSectores.length / 5) * 1.1;
     if (selectedEstados.length > 0) multiplier *= (selectedEstados.length / 3) * 1.1;
@@ -1272,6 +1318,15 @@ export const useDashboardVcM = () => {
 
   // --- DATASET SECCIÓN 4: Actividades VcM ---
   const datasetsSec4 = useMemo(() => {
+    if (!hasRealData) {
+      return {
+        'Año': [],
+        'Línea VcM': [],
+        'Modalidad': [],
+        'Tipo de Actividad': [],
+        'Comuna': []
+      };
+    }
     let multiplier = 1.0;
     if (selectedLineas.length > 0) multiplier *= (selectedLineas.length / 6) * 1.1;
     if (selectedModalidades.length > 0) multiplier *= (selectedModalidades.length / 3) * 1.1;
@@ -1430,6 +1485,15 @@ export const useDashboardVcM = () => {
 
   // --- DATASET SECCIÓN 5: Participantes en actividades VcM ---
   const datasetsSec5 = useMemo(() => {
+    if (!hasRealData) {
+      return {
+        'Año': [],
+        'Público objetivo': [],
+        'Sexo': [],
+        'Institución': [],
+        'Comuna': []
+      };
+    }
     let multiplier = 1.0;
     if (selectedLineas.length > 0) multiplier *= (selectedLineas.length / 6) * 1.1;
     if (selectedModalidades.length > 0) multiplier *= (selectedModalidades.length / 3) * 1.1;
@@ -1467,25 +1531,12 @@ export const useDashboardVcM = () => {
         });
       }
       
-      return [
-        { label: '2022', interno: Math.round(450 * multiplier), externo: Math.round(320 * multiplier) },
-        { label: '2023', interno: Math.round(580 * multiplier), externo: Math.round(420 * multiplier) },
-        { label: '2024', interno: Math.round(710 * multiplier), externo: Math.round(530 * multiplier) },
-        { label: '2025', interno: Math.round(890 * multiplier), externo: Math.round(760 * multiplier) }
-      ];
+      return [];
     })();
 
     const participacionesTipo = apiParticipacionesTipo?.items?.length
       ? apiParticipacionesTipo.items.map(i => ({ label: i.label, value: i.value }))
-      : [
-          { label: 'Estudiantes EMTP', value: Math.round(620 * multiplier) },
-          { label: 'Docentes EMTP', value: Math.round(340 * multiplier) },
-          { label: 'Empresas', value: Math.round(280 * multiplier) },
-          { label: 'Titulados ECAS', value: Math.round(190 * multiplier) },
-          { label: 'Estudiantes ECAS', value: Math.round(150 * multiplier) },
-          { label: 'Apoderados', value: Math.round(45 * multiplier) },
-          { label: 'Equipos directivos TP', value: Math.round(25 * multiplier) }
-        ];
+      : [];
 
     const participacionesTotal = (() => {
       if (apiParticipacionesSeries && Array.isArray(apiParticipacionesSeries)) {
@@ -1500,25 +1551,11 @@ export const useDashboardVcM = () => {
       return null;
     })();
 
-    const rawSexo = [
-      { label: 'Femenino', value: Math.round(860 * multiplier) },
-      { label: 'Masculino', value: Math.round(720 * multiplier) },
-      { label: 'No informado', value: Math.round(70 * multiplier) }
-    ];
+    const rawSexo = [];
 
-    const rawInstitucion = [
-      { label: 'Liceo Industrial A-20', value: Math.round(180 * multiplier) },
-      { label: 'Colegio Técnico Profesional', value: Math.round(145 * multiplier) },
-      { label: 'Liceo Polivalente', value: Math.round(120 * multiplier) },
-      { label: 'Instituto Comercial', value: Math.round(95 * multiplier) }
-    ];
+    const rawInstitucion = [];
 
-    const rawComunaPart = [
-      { label: 'Santiago', value: Math.round(320 * multiplier) },
-      { label: 'Providencia', value: Math.round(210 * multiplier) },
-      { label: 'La Florida', value: Math.round(155 * multiplier) },
-      { label: 'Maipú', value: Math.round(130 * multiplier) }
-    ];
+    const rawComunaPart = [];
 
     if (participacionesTotal !== null) {
       const sexoScaled = apiParticipacionesSexo?.items?.length
@@ -1563,6 +1600,15 @@ export const useDashboardVcM = () => {
 
   // --- DATASET SECCIÓN 6: Articulaciones TP ejecutadas ---
   const datasetsSec6 = useMemo(() => {
+    if (!hasRealData) {
+      return {
+        'Año': [],
+        'Plataforma': [],
+        'Tipo': [],
+        'Especialidad': [],
+        'Colegio': []
+      };
+    }
     let multiplier = 1.0;
     if (selectedPlataformas.length > 0) multiplier *= (selectedPlataformas.length / 4) * 1.1;
     if (selectedTiposArticulacion.length > 0) multiplier *= (selectedTiposArticulacion.length / 6) * 1.1;
