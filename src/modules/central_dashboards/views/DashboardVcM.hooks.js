@@ -21,6 +21,16 @@ export const cleanKey = (label) => {
     .replace(/\s+/g, ' '); // collapse spaces
 };
 
+export const getSectorKey = (label) => {
+  const lbl = String(label || '').toLowerCase();
+  if (lbl.includes('público') || lbl.includes('publico') || lbl.includes('p\ufffdblico') || lbl.includes('pblico')) return 'publico';
+  if (lbl.includes('privado')) return 'privado';
+  if (lbl.includes('ong') || lbl.includes('fundación') || lbl.includes('fundacion')) return 'ong';
+  if (lbl.includes('academia')) return 'academia';
+  if (lbl.includes('tp') || lbl.includes('comunidad') || lbl.includes('educación tp') || lbl.includes('edtp') || lbl.includes('educacin tp') || lbl.includes('educacin tp') || lbl.includes('educacintp')) return 'edtp';
+  return lbl;
+};
+
 export const useDashboardVcM = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -40,6 +50,10 @@ export const useDashboardVcM = () => {
   const [selectedTiposArticulacion, setSelectedTiposArticulacion] = useState([]);
   const [selectedAreas, setSelectedAreas] = useState([]);
   const [periodoAcumulado, setPeriodoAcumulado] = useState(false);
+
+  const selectedSectorKeys = useMemo(() => {
+    return selectedSectores.map(getSectorKey);
+  }, [selectedSectores]);
 
   // ESTADOS PARA DATOS REALES DE API
   const [apiSummary, setApiSummary] = useState(null);
@@ -984,8 +998,8 @@ export const useDashboardVcM = () => {
       { label: 'Academia', value: Math.round(12 * multiplier), key: 'academia' },
       { label: 'Comunidad', value: Math.round(5 * multiplier), key: 'edtp' }
     ];
-    const filteredSector = selectedSectores.length > 0
-      ? rawSector.filter(d => selectedSectores.includes(d.key))
+    const filteredSector = selectedSectorKeys.length > 0
+      ? rawSector.filter(d => selectedSectorKeys.includes(d.key))
       : rawSector;
 
     const rawTipo = [
@@ -1038,17 +1052,17 @@ export const useDashboardVcM = () => {
         ? apiConveniosSector.items.map(i => {
             const lbl = i.label.toLowerCase();
             let key = lbl;
-            if (lbl.includes('público') || lbl.includes('publico')) key = 'publico';
+            if (lbl.includes('público') || lbl.includes('publico') || lbl.includes('p\ufffdblico') || lbl.includes('pblico')) key = 'publico';
             else if (lbl.includes('privado')) key = 'privado';
-            else if (lbl.includes('ong') || lbl.includes('fundación') || lbl.includes('fundacion')) key = 'ong';
+            else if (lbl.includes('ong') || lbl.includes('fundación') || lbl.includes('fundacion') || lbl.includes('fundacin')) key = 'ong';
             else if (lbl.includes('academia')) key = 'academia';
-            else if (lbl.includes('tp') || lbl.includes('comunidad') || lbl.includes('educación tp') || lbl.includes('edtp')) key = 'edtp';
+            else if (lbl.includes('tp') || lbl.includes('comunidad') || lbl.includes('educación tp') || lbl.includes('edtp') || lbl.includes('educacin tp')) key = 'edtp';
             return { label: i.label, value: i.value, key };
           })
         : scaleAndAdjust(rawSector, activeTotal);
 
-      const sectorFiltered = selectedSectores.length > 0
-        ? conveniosSector.filter(d => selectedSectores.includes(d.key))
+      const sectorFiltered = selectedSectorKeys.length > 0
+        ? conveniosSector.filter(d => selectedSectorKeys.includes(d.key))
         : conveniosSector;
 
       const tipoScaled = apiConveniosTipo?.items?.length
@@ -1084,13 +1098,17 @@ export const useDashboardVcM = () => {
       ? apiConveniosSector.items.map(i => {
           const lbl = i.label.toLowerCase();
           let key = lbl;
-          if (lbl.includes('público') || lbl.includes('publico')) key = 'publico';
+          if (lbl.includes('público') || lbl.includes('publico') || lbl.includes('p\ufffdblico') || lbl.includes('pblico')) key = 'publico';
           else if (lbl.includes('privado')) key = 'privado';
-          else if (lbl.includes('ong') || lbl.includes('fundación') || lbl.includes('fundacion')) key = 'ong';
+          else if (lbl.includes('ong') || lbl.includes('fundación') || lbl.includes('fundacion') || lbl.includes('fundacin')) key = 'ong';
           else if (lbl.includes('academia')) key = 'academia';
-          else if (lbl.includes('tp') || lbl.includes('comunidad') || lbl.includes('educación tp') || lbl.includes('edtp')) key = 'edtp';
+          else if (lbl.includes('tp') || lbl.includes('comunidad') || lbl.includes('educación tp') || lbl.includes('edtp') || lbl.includes('educacin tp')) key = 'edtp';
           return { label: i.label, value: i.value, key };
         })
+      : null;
+
+    const finalSector = conveniosSector
+      ? (selectedSectorKeys.length > 0 ? conveniosSector.filter(d => selectedSectorKeys.includes(d.key)) : conveniosSector)
       : filteredSector;
 
     const conveniosTipo = apiConveniosTipo?.items?.length
@@ -1111,7 +1129,7 @@ export const useDashboardVcM = () => {
 
     return {
       'Año': conveniosAnio,
-      'Sector': conveniosSector,
+      'Sector': finalSector,
       'Tipo': conveniosTipo,
       'Contraparte': conveniosContraparte,
       'Área vinculada': conveniosArea
@@ -1141,8 +1159,8 @@ export const useDashboardVcM = () => {
       { label: 'Academia', value: Math.round(9 * multiplier), key: 'academia' },
       { label: 'Comunidad', value: Math.round(3 * multiplier), key: 'edtp' }
     ];
-    const filteredSector = selectedSectores.length > 0
-      ? rawSector.filter(d => selectedSectores.includes(d.key))
+    const filteredSector = selectedSectorKeys.length > 0
+      ? rawSector.filter(d => selectedSectorKeys.includes(d.key))
       : rawSector;
 
     const rawTipo = [
@@ -1182,17 +1200,17 @@ export const useDashboardVcM = () => {
         ? apiConveniosSector.items.map(i => {
             const lbl = i.label.toLowerCase();
             let key = lbl;
-            if (lbl.includes('público') || lbl.includes('publico')) key = 'publico';
+            if (lbl.includes('público') || lbl.includes('publico') || lbl.includes('p\ufffdblico') || lbl.includes('pblico')) key = 'publico';
             else if (lbl.includes('privado')) key = 'privado';
-            else if (lbl.includes('ong') || lbl.includes('fundación') || lbl.includes('fundacion')) key = 'ong';
+            else if (lbl.includes('ong') || lbl.includes('fundación') || lbl.includes('fundacion') || lbl.includes('fundacin')) key = 'ong';
             else if (lbl.includes('academia')) key = 'academia';
-            else if (lbl.includes('tp') || lbl.includes('comunidad') || lbl.includes('educación tp') || lbl.includes('edtp')) key = 'edtp';
+            else if (lbl.includes('tp') || lbl.includes('comunidad') || lbl.includes('educación tp') || lbl.includes('edtp') || lbl.includes('educacin tp')) key = 'edtp';
             return { label: i.label, value: i.value, key };
           })
         : scaleAndAdjust(rawSector, actualTotal);
 
-      const sectorFiltered = selectedSectores.length > 0
-        ? conveniosSector.filter(d => selectedSectores.includes(d.key))
+      const sectorFiltered = selectedSectorKeys.length > 0
+        ? conveniosSector.filter(d => selectedSectorKeys.includes(d.key))
         : conveniosSector;
 
       const tipoScaled = apiTotalConveniosTipo?.items?.length
@@ -1204,7 +1222,7 @@ export const useDashboardVcM = () => {
         : scaleAndAdjust(rawTipo, actualTotal);
 
       const tipoFiltered = selectedTiposConvenio.length > 0
-        ? tipoScaled.filter(d => selectedTiposConvenio.includes(d.key))
+        ? tipoScaled.filter(d => tipoScaled.includes(d.key))
         : tipoScaled;
 
       const responsableScaled = apiTotalConveniosResponsable?.items?.length
@@ -1223,13 +1241,17 @@ export const useDashboardVcM = () => {
       ? apiConveniosSector.items.map(i => {
           const lbl = i.label.toLowerCase();
           let key = lbl;
-          if (lbl.includes('público') || lbl.includes('publico')) key = 'publico';
+          if (lbl.includes('público') || lbl.includes('publico') || lbl.includes('p\ufffdblico') || lbl.includes('pblico')) key = 'publico';
           else if (lbl.includes('privado')) key = 'privado';
-          else if (lbl.includes('ong') || lbl.includes('fundación') || lbl.includes('fundacion')) key = 'ong';
+          else if (lbl.includes('ong') || lbl.includes('fundación') || lbl.includes('fundacion') || lbl.includes('fundacin')) key = 'ong';
           else if (lbl.includes('academia')) key = 'academia';
-          else if (lbl.includes('tp') || lbl.includes('comunidad') || lbl.includes('educación tp') || lbl.includes('edtp')) key = 'edtp';
+          else if (lbl.includes('tp') || lbl.includes('comunidad') || lbl.includes('educación tp') || lbl.includes('edtp') || lbl.includes('educacin tp')) key = 'edtp';
           return { label: i.label, value: i.value, key };
         })
+      : null;
+
+    const finalSector = conveniosSector
+      ? (selectedSectorKeys.length > 0 ? conveniosSector.filter(d => selectedSectorKeys.includes(d.key)) : conveniosSector)
       : filteredSector;
 
     const conveniosTipo = apiTotalConveniosTipo?.items?.length
@@ -1246,11 +1268,11 @@ export const useDashboardVcM = () => {
 
     return {
       'Año': totalConveniosAnio,
-      'Sector': conveniosSector,
+      'Sector': finalSector,
       'Tipo': conveniosTipo,
       'Responsable': conveniosResp
     };
-  }, [selectedSectores, selectedTiposConvenio, selectedEstados, apiTotalConveniosSeries, apiConveniosSector, apiTotalConveniosTipo, apiTotalConveniosResponsable]);
+  }, [selectedSectorKeys, selectedTiposConvenio, selectedEstados, apiTotalConveniosSeries, apiConveniosSector, apiTotalConveniosTipo, apiTotalConveniosResponsable]);
 
   // --- DATASET SECCIÓN 3: Convenios por Sector ---
   const datasetsSec3 = useMemo(() => {
@@ -1266,11 +1288,11 @@ export const useDashboardVcM = () => {
       const mapped = apiConveniosSector.items.map(i => {
         const lbl = i.label.toLowerCase();
         let key = lbl;
-        if (lbl.includes('público') || lbl.includes('publico')) key = 'publico';
+        if (lbl.includes('público') || lbl.includes('publico') || lbl.includes('p\ufffdblico') || lbl.includes('pblico')) key = 'publico';
         else if (lbl.includes('privado')) key = 'privado';
-        else if (lbl.includes('ong') || lbl.includes('fundación') || lbl.includes('fundacion')) key = 'ong';
+        else if (lbl.includes('ong') || lbl.includes('fundación') || lbl.includes('fundacion') || lbl.includes('fundacin')) key = 'ong';
         else if (lbl.includes('academia')) key = 'academia';
-        else if (lbl.includes('tp') || lbl.includes('comunidad') || lbl.includes('educación tp') || lbl.includes('edtp')) key = 'edtp';
+        else if (lbl.includes('tp') || lbl.includes('comunidad') || lbl.includes('educación tp') || lbl.includes('edtp') || lbl.includes('educacin tp')) key = 'edtp';
         return {
           label: i.label,
           vigentes: i.value,
@@ -1280,8 +1302,8 @@ export const useDashboardVcM = () => {
         };
       });
 
-      return selectedSectores.length > 0
-        ? mapped.filter(d => selectedSectores.includes(d.key))
+      return selectedSectorKeys.length > 0
+        ? mapped.filter(d => selectedSectorKeys.includes(d.key))
         : mapped;
     }
 
@@ -1298,8 +1320,8 @@ export const useDashboardVcM = () => {
       : null;
 
     if (activeTotal !== null) {
-      const filteredRaw = selectedSectores.length > 0
-        ? rawData.filter(d => selectedSectores.includes(d.key))
+      const filteredRaw = selectedSectorKeys.length > 0
+        ? rawData.filter(d => selectedSectorKeys.includes(d.key))
         : rawData;
       const prep = filteredRaw.map(d => ({ ...d, value: d.vigentes }));
       const scaled = scaleAndAdjust(prep, activeTotal);
@@ -1312,10 +1334,10 @@ export const useDashboardVcM = () => {
       }));
     }
 
-    return selectedSectores.length > 0
-      ? rawData.filter(d => selectedSectores.includes(d.key))
+    return selectedSectorKeys.length > 0
+      ? rawData.filter(d => selectedSectorKeys.includes(d.key))
       : rawData;
-  }, [selectedSectores, selectedEstados, apiConveniosSector, apiConveniosActivosSeries]);
+  }, [selectedSectorKeys, selectedEstados, apiConveniosSector, apiConveniosActivosSeries]);
 
   // --- DATASET SECCIÓN 4: Actividades VcM ---
   const datasetsSec4 = useMemo(() => {
