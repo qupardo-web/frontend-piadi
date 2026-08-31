@@ -219,7 +219,7 @@ export const useVisualizacionMetas = () => {
   const faqData = [
     {
       q: '¿Qué son las metas y cómo se usan?',
-      a: 'Las metas son objetivos específicos que puedes rastrear a lo largo del tiempo. Cada meta tiene un progreso medido en porcentaje, fechas de inicio y término, y un estado (Completada, En progreso, o Requiere atención). Las barras de progreso muestran visualmente qué tan cerca estás de cumplir cada meta.'
+      a: 'Las metas son objetivos específicos que puedes rastrear a lo largo del tiempo. Cada meta tiene un progreso medido en porcentaje, fechas de inicio y término, prioridad (Alta, Media, Baja) y un estado (Completada, En progreso, o Requiere atención). Las barras de progreso muestran visualmente qué tan cerca estás de cumplir cada meta.'
     },
     {
       q: '¿Cómo interpreto los indicadores?',
@@ -264,7 +264,7 @@ export const useVisualizacionMetas = () => {
       return { total: 0, cumplimiento: 0, riesgo: 0 };
     }
     const sumProgress = metas.reduce((sum, m) => sum + Number(m.progreso || 0), 0);
-    const cumplimiento = Math.round(sumProgress / total);
+    const cumplimiento = Math.round((metas.filter(m => m.estado === 'completada').length / total) * 100);
     const riesgo = metas.filter(m => m.estado === 'alerta').length;
     
     return { total, cumplimiento, riesgo };
