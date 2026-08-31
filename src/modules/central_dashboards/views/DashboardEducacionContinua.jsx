@@ -207,6 +207,8 @@ export const DashboardEducacionContinua = () => {
     activePeriodosText,
   } = useDashboardEducacionContinua();
 
+  const hasData = !apiLoading && apiSummary && Object.keys(apiSummary).length > 0;
+
   useEffect(() => {
     if (!location.hash) return;
     const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
@@ -1109,6 +1111,7 @@ export const DashboardEducacionContinua = () => {
           </Box>
 
           {/* Selector de Semestre (Selector Múltiple) */}
+          {hasData && (
           <Box sx={styles.filterSection}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
@@ -1136,8 +1139,10 @@ export const DashboardEducacionContinua = () => {
               </Select>
             </FormControl>
           </Box>
+          )}
 
           {/* Selector de Mes (Rango) */}
+          {hasData && (
           <Box sx={styles.filterSection}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
@@ -1187,8 +1192,10 @@ export const DashboardEducacionContinua = () => {
               </FormControl>
             </Box>
           </Box>
+          )}
 
           {/* Tipo de programa (Selector Múltiple) */}
+          {hasData && (
           <Box sx={styles.filterSection}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <AssignmentIcon sx={{ fontSize: 18, color: '#1E2875' }} />
@@ -1216,8 +1223,10 @@ export const DashboardEducacionContinua = () => {
               </Select>
             </FormControl>
           </Box>
+          )}
 
           {/* Modalidad (Selector Múltiple) */}
+          {hasData && (
           <Box sx={styles.filterSection}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <PublicIcon sx={{ fontSize: 18, color: '#1E2875' }} />
@@ -1245,8 +1254,10 @@ export const DashboardEducacionContinua = () => {
               </Select>
             </FormControl>
           </Box>
+          )}
 
           {/* Área (Selector Múltiple) */}
+          {hasData && (
           <Box sx={styles.filterSection}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CategoryIcon sx={{ fontSize: 18, color: '#1E2875' }} />
@@ -1274,7 +1285,16 @@ export const DashboardEducacionContinua = () => {
               </Select>
             </FormControl>
           </Box>
+          )}
         </Box>
+
+        {!apiLoading && !hasData && (
+          <Box sx={{ mx: 2, mb: 2, p: 2, bgcolor: '#FEF3C7', borderRadius: 2, border: '1px solid #F59E0B' }}>
+            <Typography sx={{ fontSize: '13px', color: '#92400E', textAlign: 'center', fontWeight: 500 }}>
+              No hay datos disponibles para los filtros.
+            </Typography>
+          </Box>
+        )}
 
         {/* Botón de Limpiar Filtros */}
         <Box sx={styles.filtersFooter}>

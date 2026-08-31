@@ -121,6 +121,7 @@ export const useDashboardVcM = () => {
 
   useEffect(() => {
     setApiLoading(true);
+    setApiSummary(null);
     const seriesParams = { ...apiParams };
     const breakdownParams = { ...apiParams };
     
@@ -206,7 +207,7 @@ export const useDashboardVcM = () => {
       if (summary?.success && summary.data) {
         const deptData = summary.data?.departments?.find(d => d.departmentId === 'vinculacion_medio');
         const cards = deptData?.cards ?? [];
-        if (cards.length > 0) {
+        if (cards.some(c => c.hasData)) {
           const map = {};
           cards.forEach(c => { map[c.indicatorKey] = c; });
           setApiSummary(map);
@@ -216,7 +217,7 @@ export const useDashboardVcM = () => {
       if (prevSummary?.success && prevSummary.data) {
         const deptData = prevSummary.data?.departments?.find(d => d.departmentId === 'vinculacion_medio');
         const cards = deptData?.cards ?? [];
-        if (cards.length > 0) {
+        if (cards.some(c => c.hasData)) {
           const map = {};
           cards.forEach(c => { map[c.indicatorKey] = c; });
           setApiPrevSummary(map);
@@ -226,7 +227,7 @@ export const useDashboardVcM = () => {
       if (summaryHasta?.success && summaryHasta.data) {
         const deptData = summaryHasta.data?.departments?.find(d => d.departmentId === 'vinculacion_medio');
         const cards = deptData?.cards ?? [];
-        if (cards.length > 0) {
+        if (cards.some(c => c.hasData)) {
           const map = {};
           cards.forEach(c => { map[c.indicatorKey] = c; });
           setApiSummaryHasta(map);

@@ -567,6 +567,8 @@ export const DashboardVcM = () => {
           </Box>
         </Box>
 
+        {hasRealData && (
+        <>
         {/* Accordion: Convenios (default expanded) */}
         <Accordion defaultExpanded sx={{ boxShadow: 'none', border: 'none', mt: -1.5, '&:before': { display: 'none' } }}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ p: 0, minHeight: 0, '& .MuiAccordionSummary-content': { my: 1 } }}>
@@ -742,7 +744,17 @@ export const DashboardVcM = () => {
 
           </AccordionDetails>
         </Accordion>
+        </>
+        )}
       </Box>
+
+      {!apiLoading && !hasRealData && (
+        <Box sx={{ mx: 2, mb: 2, p: 2, bgcolor: '#FEF3C7', borderRadius: 2, border: '1px solid #F59E0B' }}>
+          <Typography sx={{ fontSize: '13px', color: '#92400E', textAlign: 'center', fontWeight: 500 }}>
+            No hay datos disponibles para los filtros.
+          </Typography>
+        </Box>
+      )}
 
       {/* Footer Filtros */}
       <Box sx={styles.filtersFooter}>
@@ -2266,7 +2278,9 @@ export const DashboardVcM = () => {
               </Box>
             </Box>
 
-            {/* Accordions de filtros */}
+            {/* Accordions de filtros (solo si hay datos) */}
+            {hasRealData && (
+            <>
             <Accordion 
               expanded={openConvenios} 
               onChange={(e, expanded) => setOpenConvenios(expanded)}
@@ -2433,7 +2447,18 @@ export const DashboardVcM = () => {
                 </Box>
               </AccordionDetails>
             </Accordion>
+            </>
+            )}
           </Box>
+
+          {/* Mensaje sin datos */}
+          {!apiLoading && !hasRealData && (
+            <Box sx={{ mx: 2, mb: 2, p: 2, bgcolor: '#FEF3C7', borderRadius: 2, border: '1px solid #F59E0B' }}>
+              <Typography sx={{ fontSize: '13px', color: '#92400E', textAlign: 'center', fontWeight: 500 }}>
+                No hay datos disponibles para los filtros.
+              </Typography>
+            </Box>
+          )}
 
           {/* Footer Reset Button */}
           <Box sx={{ p: 2, borderTop: '1px solid #E2E8F0', bgcolor: '#F8FAFC' }}>
