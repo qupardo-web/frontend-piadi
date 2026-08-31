@@ -73,6 +73,7 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
+import { cheerfulFiestaPalette } from '@mui/x-charts/colorPalettes';
 
 import {
   useDashboardVcM,
@@ -299,31 +300,21 @@ export const DashboardVcM = () => {
     apiArticulacionesTPSeries,
   } = useDashboardVcM();
 
-  const sectorsList = apiFilters?.filters?.sectores?.length
+  const sectorsList = hasRealData && apiFilters?.filters?.sectores?.length
     ? apiFilters.filters.sectores.map(s => {
         let val = s.toLowerCase();
         if (val.includes('público') || val.includes('publico')) val = 'publico';
         return { label: s, val };
       })
-    : [
-        { label: 'Público', val: 'publico' },
-        { label: 'Privado', val: 'privado' },
-        { label: 'ONG / Fundación', val: 'ong' },
-        { label: 'Academia', val: 'academia' },
-        { label: 'Educación TP', val: 'edtp' }
-      ];
+    : [];
 
-  const modalidadesList = apiFilters?.filters?.modalidades?.length
+  const modalidadesList = hasRealData && apiFilters?.filters?.modalidades?.length
     ? apiFilters.filters.modalidades.map(m => {
         let val = m.toLowerCase();
         if (val.includes('híbrida') || val.includes('hibrida')) val = 'hibrida';
         return { label: m, val };
       })
-    : [
-        { label: 'Presencial', val: 'presencial' },
-        { label: 'Online', val: 'online' },
-        { label: 'Híbrida', val: 'hibrida' }
-      ];
+    : [];
 
   const availableYears = apiFilters?.filters?.years ?? [];
   const minYear = availableYears.length ? Math.min(...availableYears) : 2023;
@@ -1056,15 +1047,18 @@ export const DashboardVcM = () => {
                     <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875', mb: 1 }}>
                       Distribución por año
                     </Typography>
-                    <Box sx={{ height: 260, width: '100%' }}>
+                    <Box sx={{ minHeight: 260, pb: 2, width: '100%' }}>
                       {getFilteredYears(datasetsSec1['Año']).length > 0 ? (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
-                          xAxis={[{ scaleType: 'band', data: getFilteredYears(datasetsSec1['Año']).map(d => d.label) }]}
+                          xAxis={[{ 
+                            scaleType: 'band', 
+                            data: getFilteredYears(datasetsSec1['Año']).map(d => d.label)
+                          }]}
                           series={[{ 
                             data: getFilteredYears(datasetsSec1['Año']).map(d => d.value),
                             label: 'Convenios Vigentes',
-                            color: '#E27800',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
                           }]}
@@ -1074,9 +1068,9 @@ export const DashboardVcM = () => {
                             domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...getFilteredYears(datasetsSec1['Año']).map(d => d.value), 0))
                           }]}
-                          height={240}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 40 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={270}
+                          margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
                         />
                       ) : (
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9E9E9E' }}>
@@ -1114,8 +1108,9 @@ export const DashboardVcM = () => {
                     <Box sx={{ height: 260 }}>
                       {sec1Segment === 'Sector' && (
                         <PieChart
+                          colors={cheerfulFiestaPalette}
                           series={[{
-                            data: datasetsSec1.Sector.filter(d => d.value > 0).map((d, i) => ({ id: i, value: d.value, label: d.label, color: getSectorColor(d.label) })),
+                            data: datasetsSec1.Sector.filter(d => d.value > 0).map((d, i) => ({ id: i, value: d.value, label: d.label })),
                             innerRadius: 40,
                             outerRadius: 80,
                           }]}
@@ -1126,35 +1121,33 @@ export const DashboardVcM = () => {
 
                       {sec1Segment === 'Tipo' && (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec1.Tipo.map(d => d.label), 
-                            colorMap: { 
-                              type: 'ordinal', 
-                              values: ['Admisión y orientación', 'Articulación TP', 'Empleabilidad y prácticas', 'Transferencia disciplinar', 'Certificación y competencias', 'Relacionamiento territorial', 'Vínculo Académico', 'Extensión'],
-                              colors: ['#E27800', '#2196F3', '#4CAF50', '#9C27B0', '#FF5722', '#607D8B', '#009688', '#795548']
-                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                                 if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
                               return value;
                             }
                           }]}
-                          series={[{ 
-                            data: datasetsSec1.Tipo.map(d => d.value),
+                          series={datasetsSec1.Tipo.map((d, idx) => ({
+                            data: datasetsSec1.Tipo.map((x, i) => i === idx ? x.value : null),
+                            label: d.label,
+                            stack: 'total',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
-                          }]}
+                          }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec1.Tipo.map(d => d.value), 0)), 
                             width: 35,
                             domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...datasetsSec1.Tipo.map(d => d.value), 0))
                           }]}
-                          height={220}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 40 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={250}
+                          margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                         />
                       )}
 
@@ -1185,35 +1178,33 @@ export const DashboardVcM = () => {
 
                       {sec1Segment === 'Área vinculada' && (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec1['Área vinculada'].map(d => d.label), 
-                            colorMap: { 
-                              type: 'ordinal', 
-                              values: ['Presencial', 'Híbrida', 'Online', 'Online sincrónica'],
-                              colors: ['#E27800', '#4CAF50', '#2196F3', '#2196F3']
-                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
                               return value;
                             }
                           }]}
-                          series={[{ 
-                            data: datasetsSec1['Área vinculada'].map(d => d.value),
+                          series={datasetsSec1['Área vinculada'].map((d, idx) => ({
+                            data: datasetsSec1['Área vinculada'].map((x, i) => i === idx ? x.value : null),
+                            label: d.label,
+                            stack: 'total',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
-                          }]}
+                          }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec1['Área vinculada'].map(d => d.value), 0)), 
                             width: 35,
                             domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...datasetsSec1['Área vinculada'].map(d => d.value), 0))
                           }]}
-                          height={220}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 40 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={250}
+                          margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                         />
                       )}
                     </Box>
@@ -1246,15 +1237,18 @@ export const DashboardVcM = () => {
                     <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875', mb: 1 }}>
                       Distribución por año
                     </Typography>
-                    <Box sx={{ height: 260, width: '100%' }}>
+                    <Box sx={{ minHeight: 260, pb: 2, width: '100%' }}>
                       {getFilteredYears(datasetsSec2['Año']).length > 0 ? (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
-                          xAxis={[{ scaleType: 'band', data: getFilteredYears(datasetsSec2['Año']).map(d => d.label) }]}
+                          xAxis={[{ 
+                            scaleType: 'band', 
+                            data: getFilteredYears(datasetsSec2['Año']).map(d => d.label)
+                          }]}
                           series={[{ 
                             data: getFilteredYears(datasetsSec2['Año']).map(d => d.value),
                             label: 'Nuevos Convenios',
-                            color: '#2196F3',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
                           }]}
@@ -1264,9 +1258,9 @@ export const DashboardVcM = () => {
                             domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...getFilteredYears(datasetsSec2['Año']).map(d => d.value), 0))
                           }]}
-                          height={240}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 40 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={270}
+                          margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
                         />
                       ) : (
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9E9E9E' }}>
@@ -1301,102 +1295,100 @@ export const DashboardVcM = () => {
                       </ToggleButtonGroup>
                     </Box>
 
-                    <Box sx={{ height: 260 }}>
+                    <Box sx={{ minHeight: 260, pb: 2 }}>
                       {sec2Segment === 'Sector' && (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec2.Sector.map(d => d.label), 
-                            colorMap: { 
-                              type: 'ordinal', 
-                              values: ['Administración', 'Finanzas', 'Social', 'Ingeniería', 'Salud', 'Educación', 'Ambiental'],
-                              colors: ['#E27800', '#2196F3', '#4CAF50', '#9C27B0', '#FF5722', '#607D8B', '#00BCD4']
-                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
                               return value;
                             }
                           }]}
-                          series={[{ 
-                            data: datasetsSec2.Sector.map(d => d.value),
+                          series={datasetsSec2.Sector.map((d, idx) => ({
+                            data: datasetsSec2.Sector.map((x, i) => i === idx ? x.value : null),
+                            label: d.label,
+                            stack: 'total',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
-                          }]}
+                          }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec2.Sector.map(d => d.value), 0)), 
                             width: 35,
                             domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...datasetsSec2.Sector.map(d => d.value), 0))
                           }]}
-                          height={220}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 40 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={250}
+                          margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                         />
                       )}
 
                       {sec2Segment === 'Tipo' && (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec2.Tipo.map(d => d.label), 
-                            colorMap: { 
-                              type: 'ordinal', 
-                              values: ['Marco', 'Específico', 'Colaboración'],
-                              colors: ['#E27800', '#2196F3', '#4CAF50']
-                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
                               return value;
                             }
                           }]}
-                          series={[{ 
-                            data: datasetsSec2.Tipo.map(d => d.value),
+                          series={datasetsSec2.Tipo.map((d, idx) => ({
+                            data: datasetsSec2.Tipo.map((x, i) => i === idx ? x.value : null),
+                            label: d.label,
+                            stack: 'total',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
-                          }]}
+                          }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec2.Tipo.map(d => d.value), 0)), 
                             width: 35,
                             domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...datasetsSec2.Tipo.map(d => d.value), 0))
                           }]}
-                          height={220}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 40 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={250}
+                          margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                         />
                       )}
 
                       {sec2Segment === 'Responsable' && (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec2.Responsable.map(d => d.label), 
-                            colorMap: { type: 'ordinal', colors: catColors },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
                               return value;
                             }
                           }]}
-                          series={[{ 
-                            data: datasetsSec2.Responsable.map(d => d.value),
+                          series={datasetsSec2.Responsable.map((d, idx) => ({
+                            data: datasetsSec2.Responsable.map((x, i) => i === idx ? x.value : null),
+                            label: d.label,
+                            stack: 'total',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
-                          }]}
+                          }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec2.Responsable.map(d => d.value), 0)), 
                             width: 35,
                             domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...datasetsSec2.Responsable.map(d => d.value), 0))
                           }]}
-                          height={220}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 40 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={250}
+                          margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                         />
                       )}
                     </Box>
@@ -1428,8 +1420,9 @@ export const DashboardVcM = () => {
                   <Grid item xs={12} md={6}>
                     <Box sx={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                       <PieChart
+                        colors={cheerfulFiestaPalette}
                         series={[{
-                          data: datasetsSec3.filter(d => d.vigentes > 0).map((d, i) => ({ id: i, value: d.vigentes, label: d.label, color: getSectorColor(d.label) })),
+                          data: datasetsSec3.filter(d => d.vigentes > 0).map((d, i) => ({ id: i, value: d.vigentes, label: d.label })),
                           innerRadius: 50,
                           outerRadius: 90,
                           paddingAngle: 2,
@@ -1521,7 +1514,7 @@ export const DashboardVcM = () => {
                     <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875', mb: 1 }}>
                       Distribución por año
                     </Typography>
-                    <Box sx={{ height: 260, width: '100%' }}>
+                    <Box sx={{ minHeight: 260, pb: 2, width: '100%' }}>
                       {getFilteredYears(datasetsSec4['Año']).length > 0 ? (
                         <LineChart
                           grid={{ horizontal: true }}
@@ -1538,9 +1531,9 @@ export const DashboardVcM = () => {
                             width: 35,
                             tickInterval: getAxisTicks(Math.max(...getFilteredYears(datasetsSec4['Año']).map(d => d.value), 0))
                           }]}
-                          height={240}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 40 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={270}
+                          margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
                         />
                       ) : (
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9E9E9E' }}>
@@ -1578,17 +1571,13 @@ export const DashboardVcM = () => {
                     <Box sx={{ minHeight: 260 }}>
                       {sec4Segment === 'Línea VcM' && (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: false, vertical: false }}
                           xAxis={[{ max: Math.max(...datasetsSec4['Línea VcM'].map(d => d.value), 0) * 1.15 + 2 }]}
                           yAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec4['Línea VcM'].map(d => d.label), 
                             width: isMobile ? 55 : 120, 
-                            colorMap: { 
-                              type: 'ordinal', 
-                              values: ['Admisión y orientación', 'Articulación TP', 'Empleabilidad y prácticas', 'Transferencia disciplinar', 'Certificación y competencias', 'Relacionamiento territorial', 'Vínculo Académico', 'Extensión'],
-                              colors: ['#E27800', '#2196F3', '#4CAF50', '#9C27B0', '#FF5722', '#607D8B', '#009688', '#795548']
-                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 9) {
@@ -1597,31 +1586,29 @@ export const DashboardVcM = () => {
                               return value;
                             }
                           }]}
-                          series={[{ 
-                            data: datasetsSec4['Línea VcM'].map(d => d.value),
+                          series={datasetsSec4['Línea VcM'].map((d, idx) => ({
+                            data: datasetsSec4['Línea VcM'].map((x, i) => i === idx ? x.value : null),
+                            label: d.label,
+                            stack: 'total',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
-                          }]}
+                          }))}
                           layout="horizontal"
-                          height={240}
-                          margin={{ top: 10, right: 50, bottom: 45, left: isMobile ? 65 : 130 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={270}
+                          margin={{ top: 10, right: 50, bottom: 70, left: isMobile ? 65 : 130 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                         />
                       )}
 
                       {sec4Segment === 'Modalidad' && (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: false, vertical: false }}
                           xAxis={[{ max: Math.max(...datasetsSec4.Modalidad.map(d => d.value), 0) * 1.15 + 2 }]}
                           yAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec4.Modalidad.map(d => d.label), 
                             width: isMobile ? 55 : 110, 
-                            colorMap: { 
-                              type: 'ordinal', 
-                              values: ['Presencial', 'Híbrida', 'Online', 'Online sincrónica'],
-                              colors: ['#E27800', '#4CAF50', '#2196F3', '#2196F3']
-                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 9) {
@@ -1630,15 +1617,17 @@ export const DashboardVcM = () => {
                               return value;
                             }
                           }]}
-                          series={[{ 
-                            data: datasetsSec4.Modalidad.map(d => d.value),
+                          series={datasetsSec4.Modalidad.map((d, idx) => ({
+                            data: datasetsSec4.Modalidad.map((x, i) => i === idx ? x.value : null),
+                            label: d.label,
+                            stack: 'total',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
-                          }]}
+                          }))}
                           layout="horizontal"
-                          height={240}
-                          margin={{ top: 10, right: 50, bottom: 45, left: isMobile ? 65 : 120 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={270}
+                          margin={{ top: 10, right: 50, bottom: 70, left: isMobile ? 65 : 120 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                         />
                       )}
 
@@ -1751,14 +1740,15 @@ export const DashboardVcM = () => {
                     <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875', mb: 1 }}>
                       Distribución por año (Interno vs Externo)
                     </Typography>
-                    <Box sx={{ height: 260, width: '100%' }}>
+                    <Box sx={{ minHeight: 260, pb: 2, width: '100%' }}>
                       {getFilteredYears(datasetsSec5['Año']).length > 0 ? (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
                           xAxis={[{ scaleType: 'band', data: getFilteredYears(datasetsSec5['Año']).map(d => d.label) }]}
                           series={[
-                            { data: getFilteredYears(datasetsSec5['Año']).map(d => d.interno), label: 'Interno', color: '#2196F3', stack: 'total' },
-                            { data: getFilteredYears(datasetsSec5['Año']).map(d => d.externo), label: 'Externo', color: '#4CAF50', stack: 'total' }
+                            { data: getFilteredYears(datasetsSec5['Año']).map(d => d.interno), label: 'Interno', stack: 'total' },
+                            { data: getFilteredYears(datasetsSec5['Año']).map(d => d.externo), label: 'Externo', stack: 'total' }
                           ]}
                           yAxis={[{ 
                             min: 0,
@@ -1766,8 +1756,8 @@ export const DashboardVcM = () => {
                             width: 45,
                             tickInterval: getAxisTicks(Math.max(...getFilteredYears(datasetsSec5['Año']).map(d => d.interno + d.externo), 0))
                           }]}
-                          height={240}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 55 }}
+                          height={270}
+                          margin={{ top: 30, right: 10, bottom: 65, left: 55 }}
                           slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
                         />
                       ) : (
@@ -1806,38 +1796,41 @@ export const DashboardVcM = () => {
                     <Box sx={{ minHeight: 260, pb: 2 }}>
                       {sec5Segment === 'Público objetivo' && (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: false, vertical: false }}
                           xAxis={[{ max: Math.max(...datasetsSec5['Público objetivo'].map(d => d.value), 0) * 1.15 + 10 }]}
                           yAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec5['Público objetivo'].map(d => d.label), 
                             width: isMobile ? 55 : 120, 
-                            colorMap: { type: 'ordinal', colors: catColors },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 9) {
-                                return value.substring(0, 6) + '...';
+                                  return value.substring(0, 6) + '...';
                               }
                               return value;
                             }
                           }]}
-                          series={[{ 
-                            data: datasetsSec5['Público objetivo'].map(d => d.value),
+                          series={datasetsSec5['Público objetivo'].map((d, idx) => ({
+                            data: datasetsSec5['Público objetivo'].map((x, i) => i === idx ? x.value : null),
+                            label: d.label,
+                            stack: 'total',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
-                          }]}
+                          }))}
                           layout="horizontal"
-                          height={350}
-                          margin={{ top: 10, right: 50, bottom: 45, left: isMobile ? 65 : 130 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={380}
+                          margin={{ top: 10, right: 50, bottom: 70, left: isMobile ? 65 : 130 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                         />
                       )}
 
                       {sec5Segment === 'Sexo' && (
                         <Box sx={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                           <PieChart
+                            colors={cheerfulFiestaPalette}
                             series={[{
-                              data: datasetsSec5.Sexo.map((d, i) => ({ id: i, value: d.value, label: d.label, color: getSexoColor(d.label) })),
+                              data: datasetsSec5.Sexo.map((d, i) => ({ id: i, value: d.value, label: d.label })),
                               innerRadius: 50,
                               outerRadius: 90,
                               paddingAngle: 2,
@@ -1946,7 +1939,7 @@ export const DashboardVcM = () => {
                     <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875', mb: 1 }}>
                       Distribución por año
                     </Typography>
-                    <Box sx={{ height: 260, width: '100%' }}>
+                    <Box sx={{ minHeight: 260, pb: 2, width: '100%' }}>
                       {getFilteredYears(datasetsSec6['Año']).length > 0 ? (
                         <LineChart
                           grid={{ horizontal: true }}
@@ -1963,9 +1956,9 @@ export const DashboardVcM = () => {
                             width: 35,
                             tickInterval: getAxisTicks(Math.max(...getFilteredYears(datasetsSec6['Año']).map(d => d.value), 0))
                           }]}
-                          height={240}
-                          margin={{ top: 30, right: 10, bottom: 40, left: 40 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={270}
+                          margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
                         />
                       ) : (
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9E9E9E' }}>
@@ -2003,72 +1996,65 @@ export const DashboardVcM = () => {
                     <Box sx={{ minHeight: 260 }}>
                       {sec6Segment === 'Plataforma' && (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec6.Plataforma.map(d => wrapText(d.label, 12)), 
-                            colorMap: { 
-                              type: 'ordinal', 
-                              values: ['SAP', 'Defontana', 'Excel', 'Excel aplicado', 'Power BI', 'PowerBI'].map(v => wrapText(v, 12)),
-                              colors: ['#3F51B5', '#009688', '#4CAF50', '#4CAF50', '#FFC107', '#FFC107']
-                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
                               return value;
                             }
                           }]}
-                          series={[{ 
-                            data: datasetsSec6.Plataforma.map(d => d.value),
+                          series={datasetsSec6.Plataforma.map((d, idx) => ({
+                            data: datasetsSec6.Plataforma.map((x, i) => i === idx ? x.value : null),
+                            label: d.label,
+                            stack: 'total',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
-                          }]}
+                          }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec6.Plataforma.map(d => d.value), 0)), 
                             width: 35,
                             domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...datasetsSec6.Plataforma.map(d => d.value), 0))
                           }]}
-                          height={240}
-                          margin={{ top: 30, right: 10, bottom: 50, left: 40 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={270}
+                          margin={{ top: 30, right: 10, bottom: 75, left: 40 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                         />
                       )}
 
                       {sec6Segment === 'Tipo' && (
                         <BarChart
+                          colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
                           xAxis={[{ 
                             scaleType: 'band', 
                             data: datasetsSec6.Tipo.map(d => wrapText(d.label, 12)), 
-                            colorMap: { 
-                              type: 'ordinal', 
-                              values: [
-                                'Reconocimiento de aprendizajes', 'Alternancia', 'Taller práctico', 
-                                'Charla técnica', 'Feria TP', 'Mesa sectorial', 'Reconocimiento'
-                              ].map(v => wrapText(v, 12)),
-                              colors: ['#E27800', '#2196F3', '#4CAF50', '#9C27B0', '#FF5722', '#607D8B', '#E27800']
-                            },
                             tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
                             valueFormatter: (value, context) => {
                               if (isMobile && context?.location === 'tick' && value && value.length > 6) return value.substring(0, 4) + '...';
                               return value;
                             }
                           }]}
-                          series={[{ 
-                            data: datasetsSec6.Tipo.map(d => d.value),
+                          series={datasetsSec6.Tipo.map((d, idx) => ({
+                            data: datasetsSec6.Tipo.map((x, i) => i === idx ? x.value : null),
+                            label: d.label,
+                            stack: 'total',
                             barLabel: 'value',
                             barLabelPlacement: 'outside'
-                          }]}
+                          }))}
                           yAxis={[{ 
                             max: getAxisMax(Math.max(...datasetsSec6.Tipo.map(d => d.value), 0)), 
                             width: 35,
                             domainLimit: 'strict',
                             tickInterval: getAxisTicks(Math.max(...datasetsSec6.Tipo.map(d => d.value), 0))
                           }]}
-                          height={240}
-                          margin={{ top: 30, right: 10, bottom: 70, left: 40 }}
-                          slotProps={{ legend: { hidden: true } }}
+                          height={270}
+                          margin={{ top: 30, right: 10, bottom: 75, left: 40 }}
+                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                         />
                       )}
 

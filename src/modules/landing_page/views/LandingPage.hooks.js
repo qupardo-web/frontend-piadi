@@ -32,7 +32,10 @@ export const useLandingPage = () => {
     getDashboardSummary()
       .then(res => {
         if (res?.success && res.data) {
-          const filtered = (res.data.departments ?? []).filter(d => d.departmentId !== 'institucional' && d.key !== 'institucional' && d.id !== 'institucional');
+          const filtered = (res.data.departments ?? []).filter(d => 
+            d.departmentId === 'educacion_continua' || d.departmentId === 'vinculacion_medio' ||
+            d.key === 'educacion_continua' || d.key === 'vinculacion_medio'
+          );
           setDepartments(filtered);
         }
       })
@@ -101,11 +104,17 @@ export const useLandingPage = () => {
     ])
       .then(([resActive, resPrev]) => {
         if (resActive?.success && resActive.data) {
-          const filteredActive = (resActive.data.departments ?? []).filter(d => d.departmentId !== 'institucional' && d.key !== 'institucional' && d.id !== 'institucional');
+          const filteredActive = (resActive.data.departments ?? []).filter(d => 
+            d.departmentId === 'educacion_continua' || d.departmentId === 'vinculacion_medio' ||
+            d.key === 'educacion_continua' || d.key === 'vinculacion_medio'
+          );
           setDepartments(filteredActive);
         }
         if (resPrev?.success && resPrev.data) {
-          const filteredPrev = (resPrev.data.departments ?? []).filter(d => d.departmentId !== 'institucional' && d.key !== 'institucional' && d.id !== 'institucional');
+          const filteredPrev = (resPrev.data.departments ?? []).filter(d => 
+            d.departmentId === 'educacion_continua' || d.departmentId === 'vinculacion_medio' ||
+            d.key === 'educacion_continua' || d.key === 'vinculacion_medio'
+          );
           setPrevYearDepartments(filteredPrev);
         }
       })
