@@ -74,6 +74,47 @@ import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 import { cheerfulFiestaPalette } from '@mui/x-charts/colorPalettes';
+import { useDrawingArea } from '@mui/x-charts/hooks';
+
+function PieCenterLabel({ primary, secondary }) {
+  const { width, height, left, top } = useDrawingArea();
+  const centerX = left + width / 2;
+  const centerY = top + height / 2;
+  return (
+    <g style={{ pointerEvents: 'none' }}>
+      <text
+        x={centerX}
+        y={centerY - 6}
+        textAnchor="middle"
+        dominantBaseline="central"
+        style={{
+          fontFamily: "'Inter', sans-serif",
+          fontSize: '22px',
+          fontWeight: 800,
+          fill: '#1E2875',
+        }}
+      >
+        {primary}
+      </text>
+      <text
+        x={centerX}
+        y={centerY + 14}
+        textAnchor="middle"
+        dominantBaseline="central"
+        style={{
+          fontFamily: "'Inter', sans-serif",
+          fontSize: '10px',
+          fontWeight: 600,
+          fill: '#64748b',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+        }}
+      >
+        {secondary}
+      </text>
+    </g>
+  );
+}
 
 import {
   useDashboardVcM,
@@ -308,11 +349,7 @@ export const DashboardVcM = () => {
     : [];
 
   const modalidadesList = hasRealData && apiFilters?.filters?.modalidades?.length
-    ? apiFilters.filters.modalidades.map(m => {
-        let val = m.toLowerCase();
-        if (val.includes('híbrida') || val.includes('hibrida')) val = 'hibrida';
-        return { label: m, val };
-      })
+    ? apiFilters.filters.modalidades.map(m => ({ label: m, val: m }))
     : [];
 
   const availableYears = apiFilters?.filters?.years ?? [];
@@ -617,11 +654,14 @@ export const DashboardVcM = () => {
                 Estado
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {[
-                  { label: 'Activo', val: 'activo' },
-                  { label: 'Cerrado', val: 'cerrado' },
-                  { label: 'En renovación', val: 'renovacion' }
-                ].map((chip) => (
+                {(apiFilters?.filters?.estados?.length
+                  ? apiFilters.filters.estados.map(e => ({ label: e, val: e }))
+                  : [
+                      { label: 'Activo', val: 'Activo' },
+                      { label: 'Cerrado', val: 'Cerrado' },
+                      { label: 'En renovación', val: 'En renovación' }
+                    ]
+                ).map((chip) => (
                   <FilterChip
                     key={chip.val}
                     label={chip.label}
@@ -1116,7 +1156,7 @@ export const DashboardVcM = () => {
                       </ToggleButtonGroup>
                     </Box>
 
-                    <Box sx={{ height: 260 }}>
+                    <Box sx={{ minHeight: 260, pb: 2 }}>
                       {sec1Segment === 'Sector' && (
                         <PieChart
                           colors={cheerfulFiestaPalette}
@@ -1125,7 +1165,8 @@ export const DashboardVcM = () => {
                             innerRadius: 40,
                             outerRadius: 80,
                           }]}
-                          height={220}
+                          height={260}
+                          margin={{ top: 10, bottom: 65, left: 10, right: 10 }}
                           slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
                         />
                       )}
@@ -1449,7 +1490,7 @@ export const DashboardVcM = () => {
                 <Grid container spacing={3} alignItems="center">
                   {/* Donut Chart */}
                   <Grid item xs={12} md={6}>
-                    <Box sx={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <Box sx={{ minHeight: 270, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                       <PieChart
                         colors={cheerfulFiestaPalette}
                         series={[{
@@ -1459,28 +1500,15 @@ export const DashboardVcM = () => {
                           paddingAngle: 2,
                           cornerRadius: 4,
                         }]}
-                        height={250}
-                        margin={{ top: 10, bottom: 50, left: 10, right: 10 }}
+                        height={270}
+                        margin={{ top: 10, bottom: 65, left: 10, right: 10 }}
                         slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
-                      />
-
-                      {/* Texto en el centro del Donut */}
-                      <Box sx={{ 
-                        position: 'absolute', 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        pointerEvents: 'none',
-                        transform: 'translateY(-20px)'
-                      }}>
-                        <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#1E2875', lineHeight: 1 }}>
-                          {datasetsSec3.reduce((sum, d) => sum + (d.vigentes || 0), 0)}
-                        </Typography>
-                        <Typography sx={{ fontSize: '10px', fontWeight: 600, color: '#64748b', mt: 0.5, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          Vigentes
-                        </Typography>
-                      </Box>
+                      >
+                        <PieCenterLabel
+                          primary={datasetsSec3.reduce((sum, d) => sum + (d.vigentes || 0), 0)}
+                          secondary="Vigentes"
+                        />
+                      </PieChart>
                     </Box>
                   </Grid>
 
@@ -1868,7 +1896,7 @@ export const DashboardVcM = () => {
                         />
                       )}
                       {sec5Segment === 'Sexo' && (
-                        <Box sx={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                        <Box sx={{ minHeight: 270, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                           <PieChart
                             colors={cheerfulFiestaPalette}
                             series={[{
@@ -1878,27 +1906,15 @@ export const DashboardVcM = () => {
                               paddingAngle: 2,
                               cornerRadius: 4,
                             }]}
-                            height={240}
+                            height={270}
+                            margin={{ top: 10, bottom: 65, left: 10, right: 10 }}
                             slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
-                          />
-                          <Box sx={{ 
-                            position: 'absolute', 
-                            top: '50%', 
-                            left: '50%', 
-                            transform: 'translate(-50%, -50%) translateY(-10px)', 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            pointerEvents: 'none'
-                          }}>
-                            <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#1E2875', lineHeight: 1 }}>
-                              {datasetsSec5.Sexo.reduce((sum, d) => sum + (d.value || 0), 0)}
-                            </Typography>
-                            <Typography sx={{ fontSize: '9px', fontWeight: 600, color: '#64748b', mt: 0.5, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                              TOTAL
-                            </Typography>
-                          </Box>
+                          >
+                            <PieCenterLabel
+                              primary={datasetsSec5.Sexo.reduce((sum, d) => sum + (d.value || 0), 0)}
+                              secondary="TOTAL"
+                            />
+                          </PieChart>
                         </Box>
                       )}
 

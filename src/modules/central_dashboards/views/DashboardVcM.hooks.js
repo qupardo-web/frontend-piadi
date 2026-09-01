@@ -7,9 +7,9 @@ import { getDashboardSummary, getIndicatorSeries, getIndicatorBreakdown, getDepa
 export const SEMESTRES_LIST = ['Primer semestre', 'Segundo semestre'];
 export const SEXO_LIST = ['Femenino', 'Masculino', 'No binario', 'Prefiere no responder'];
 export const MESES_LIST = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-export const TIPOS_LIST = ['Charla', 'Taller', 'Seminario', 'Proyecto Social', 'Asistencia TÃ©cnica', 'Operativo Comunitario'];
-export const MODALIDADES_LIST = ['Presencial', 'Online', 'Semipresencial', 'HÃ­brida'];
-export const AREAS_LIST = ['Social-Comunitaria', 'Productiva-Empresarial', 'Cultural-ArtÃ­stica', 'Medioambiental', 'Titulados y Empleabilidad'];
+export const TIPOS_LIST = ['Charla', 'Taller', 'Seminario', 'Proyecto Social', 'Asistencia Técnica', 'Operativo Comunitario'];
+export const MODALIDADES_LIST = ['Presencial', 'Online', 'Semipresencial', 'Híbrida'];
+export const AREAS_LIST = ['Social-Comunitaria', 'Productiva-Empresarial', 'Cultural-Artística', 'Medioambiental', 'Titulados y Empleabilidad'];
 
 export const cleanKey = (label) => {
   return String(label || '')
@@ -377,7 +377,7 @@ export const useDashboardVcM = () => {
     if (items.length > 0) {
       return items.map(i => ({
         label: i.label,
-        val: i.label.toLowerCase().replace(/í/g, 'i').replace(/é/g, 'e').replace(/á/g, 'a').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n').trim()
+        val: i.label
       }));
     }
     return [];
@@ -387,41 +387,30 @@ export const useDashboardVcM = () => {
 
   const dynamicLineas = useMemo(() => {
     if (apiActividadesLinea?.items?.length) {
-      return apiActividadesLinea.items.map(i => {
-        let val = cleanKey(i.label);
-        if (val.includes('articulacion tp') || val === 'tp') val = 'tp';
-        return { label: i.label, val };
-      });
+      return apiActividadesLinea.items.map(i => ({
+        label: i.label,
+        val: i.label
+      }));
     }
     return [];
   }, [apiActividadesLinea]);
 
   const dynamicPlataformas = useMemo(() => {
     if (apiArticulacionesPlataforma?.items?.length) {
-      return apiArticulacionesPlataforma.items.map(i => {
-        let val = i.label.toLowerCase().replace(/í/g, 'i').replace(/é/g, 'e').replace(/á/g, 'a').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n').trim();
-        if (val.includes('sap')) val = 'sap';
-        else if (val.includes('defontana')) val = 'defontana';
-        else if (val.includes('excel')) val = 'excel';
-        else if (val.includes('power bi') || val.includes('powerbi')) val = 'powerbi';
-        return { label: i.label, val };
-      });
+      return apiArticulacionesPlataforma.items.map(i => ({
+        label: i.label,
+        val: i.label
+      }));
     }
     return [];
   }, [apiArticulacionesPlataforma]);
 
   const dynamicTiposArticulacion = useMemo(() => {
     if (apiArticulacionesTipo?.items?.length) {
-      return apiArticulacionesTipo.items.map(i => {
-        let val = i.label.toLowerCase().replace(/í/g, 'i').replace(/é/g, 'e').replace(/á/g, 'a').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n').trim();
-        if (val.includes('reconocimiento') || val.includes('aprendizajes')) val = 'reconocimiento';
-        else if (val.includes('alternancia')) val = 'alternancia';
-        else if (val.includes('taller')) val = 'taller';
-        else if (val.includes('charla')) val = 'charla';
-        else if (val.includes('feria')) val = 'curricular';
-        else if (val.includes('mesa') || val.includes('sectorial')) val = 'mesa';
-        return { label: i.label, val };
-      });
+      return apiArticulacionesTipo.items.map(i => ({
+        label: i.label,
+        val: i.label
+      }));
     }
     return [];
   }, [apiArticulacionesTipo]);
@@ -1112,11 +1101,7 @@ export const useDashboardVcM = () => {
       : filteredSector;
 
     const conveniosTipo = apiConveniosTipo?.items?.length
-      ? apiConveniosTipo.items.map(i => {
-          const lbl = i.label.toLowerCase();
-          const key = lbl.replace(/í/g, 'i').replace(/é/g, 'e').replace(/á/g, 'a').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n').trim();
-          return { label: i.label, value: i.value, key };
-        })
+      ? apiConveniosTipo.items.map(i => ({ label: i.label, value: i.value }))
       : filteredTipo;
 
     const conveniosContraparte = apiConveniosContraparte?.items?.length
@@ -1214,15 +1199,11 @@ export const useDashboardVcM = () => {
         : conveniosSector;
 
       const tipoScaled = apiTotalConveniosTipo?.items?.length
-        ? apiTotalConveniosTipo.items.map(i => {
-            const lbl = i.label.toLowerCase();
-            const key = lbl.replace(/í/g, 'i').replace(/é/g, 'e').replace(/á/g, 'a').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n').trim();
-            return { label: i.label, value: i.value, key };
-          })
+        ? apiTotalConveniosTipo.items.map(i => ({ label: i.label, value: i.value }))
         : scaleAndAdjust(rawTipo, actualTotal);
 
       const tipoFiltered = selectedTiposConvenio.length > 0
-        ? tipoScaled.filter(d => tipoScaled.includes(d.key))
+        ? tipoScaled.filter(d => selectedTiposConvenio.includes(d.label))
         : tipoScaled;
 
       const responsableScaled = apiTotalConveniosResponsable?.items?.length
@@ -1255,11 +1236,7 @@ export const useDashboardVcM = () => {
       : filteredSector;
 
     const conveniosTipo = apiTotalConveniosTipo?.items?.length
-      ? apiTotalConveniosTipo.items.map(i => {
-          const lbl = i.label.toLowerCase();
-          const key = lbl.replace(/í/g, 'i').replace(/é/g, 'e').replace(/á/g, 'a').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n').trim();
-          return { label: i.label, value: i.value, key };
-        })
+      ? apiTotalConveniosTipo.items.map(i => ({ label: i.label, value: i.value }))
       : filteredTipo;
 
     const conveniosResp = apiTotalConveniosResponsable?.items?.length
@@ -1386,22 +1363,11 @@ export const useDashboardVcM = () => {
         ];
 
     const actividadesLinea = apiActividadesLinea?.items?.length
-      ? apiActividadesLinea.items.map(i => {
-          let key = cleanKey(i.label);
-          if (key.includes('articulacion tp') || key === 'tp') key = 'tp';
-          return { label: i.label, value: i.value, key };
-        })
+      ? apiActividadesLinea.items.map(i => ({ label: i.label, value: i.value }))
       : filteredLineas;
 
     const actividadesModalidad = apiActividadesModalidad?.items?.length
-      ? apiActividadesModalidad.items.map(i => {
-          const lbl = i.label.toLowerCase();
-          let key = lbl;
-          if (lbl.includes('presencial')) key = 'presencial';
-          else if (lbl.includes('online')) key = 'online';
-          else if (lbl.includes('híbrida') || lbl.includes('hibrida')) key = 'hibrida';
-          return { label: i.label, value: i.value, key };
-        })
+      ? apiActividadesModalidad.items.map(i => ({ label: i.label, value: i.value }))
       : filteredModalidad;
 
     const actividadesTotal = apiActividadesRealizadasSeries
@@ -1418,30 +1384,19 @@ export const useDashboardVcM = () => {
     if (actividadesTotal !== null) {
       const factor = actividadesTotal / 5;
       const lineasScaled = apiActividadesLinea?.items?.length
-        ? apiActividadesLinea.items.map(i => {
-            let key = cleanKey(i.label);
-            if (key.includes('articulacion tp') || key === 'tp') key = 'tp';
-            return { label: i.label, value: i.value, key };
-          })
+        ? apiActividadesLinea.items.map(i => ({ label: i.label, value: i.value }))
         : scaleAndAdjust(rawLineas, actividadesTotal);
 
       const lineasFiltered = selectedLineas.length > 0
-        ? lineasScaled.filter(d => selectedLineas.includes(d.key))
+        ? lineasScaled.filter(d => selectedLineas.includes(d.label))
         : lineasScaled;
 
       const modalidadScaled = apiActividadesModalidad?.items?.length
-        ? apiActividadesModalidad.items.map(i => {
-            const lbl = i.label.toLowerCase();
-            let key = lbl;
-            if (lbl.includes('presencial')) key = 'presencial';
-            else if (lbl.includes('online')) key = 'online';
-            else if (lbl.includes('híbrida') || lbl.includes('hibrida')) key = 'hibrida';
-            return { label: i.label, value: i.value, key };
-          })
+        ? apiActividadesModalidad.items.map(i => ({ label: i.label, value: i.value }))
         : scaleAndAdjust(rawModalidad, actividadesTotal);
 
       const modalidadFiltered = selectedModalidades.length > 0
-        ? modalidadScaled.filter(d => selectedModalidades.includes(d.key))
+        ? modalidadScaled.filter(d => selectedModalidades.includes(d.label))
         : modalidadScaled;
 
       return {
@@ -1687,37 +1642,19 @@ export const useDashboardVcM = () => {
 
     if (articulacionesTotal !== null) {
       const plataformaScaled = apiArticulacionesPlataforma?.items?.length
-        ? apiArticulacionesPlataforma.items.map(i => {
-            const lbl = i.label.toLowerCase();
-            let key = lbl;
-            if (lbl.includes('sap')) key = 'sap';
-            else if (lbl.includes('defontana')) key = 'defontana';
-            else if (lbl.includes('excel')) key = 'excel';
-            else if (lbl.includes('power bi') || lbl.includes('powerbi')) key = 'powerbi';
-            return { label: i.label, value: i.value, key };
-          })
+        ? apiArticulacionesPlataforma.items.map(i => ({ label: i.label, value: i.value }))
         : scaleAndAdjust(rawPlataforma, articulacionesTotal);
 
       const plataformaFiltered = selectedPlataformas.length > 0
-        ? plataformaScaled.filter(d => selectedPlataformas.includes(d.key))
+        ? plataformaScaled.filter(d => selectedPlataformas.includes(d.label))
         : plataformaScaled;
 
       const tipoScaled = apiArticulacionesTipo?.items?.length
-        ? apiArticulacionesTipo.items.map(i => {
-            const lbl = i.label.toLowerCase();
-            let key = lbl;
-            if (lbl.includes('reconocimiento') || lbl.includes('aprendizajes')) key = 'reconocimiento';
-            else if (lbl.includes('alternancia')) key = 'alternancia';
-            else if (lbl.includes('taller')) key = 'taller';
-            else if (lbl.includes('charla')) key = 'charla';
-            else if (lbl.includes('feria')) key = 'curricular';
-            else if (lbl.includes('mesa') || lbl.includes('sectorial')) key = 'mesa';
-            return { label: i.label, value: i.value, key };
-          })
+        ? apiArticulacionesTipo.items.map(i => ({ label: i.label, value: i.value }))
         : scaleAndAdjust(rawTipo, articulacionesTotal);
 
       const tipoFiltered = selectedTiposArticulacion.length > 0
-        ? tipoScaled.filter(d => selectedTiposArticulacion.includes(d.key))
+        ? tipoScaled.filter(d => selectedTiposArticulacion.includes(d.label))
         : tipoScaled;
 
       const colegioScaled = apiArticulacionesColegio?.items?.length
@@ -1734,29 +1671,11 @@ export const useDashboardVcM = () => {
     }
 
     const platList = apiArticulacionesPlataforma?.items?.length
-      ? apiArticulacionesPlataforma.items.map(i => {
-          const lbl = i.label.toLowerCase();
-          let key = lbl;
-          if (lbl.includes('sap')) key = 'sap';
-          else if (lbl.includes('defontana')) key = 'defontana';
-          else if (lbl.includes('excel')) key = 'excel';
-          else if (lbl.includes('power bi') || lbl.includes('powerbi')) key = 'powerbi';
-          return { label: i.label, value: i.value, key };
-        })
+      ? apiArticulacionesPlataforma.items.map(i => ({ label: i.label, value: i.value }))
       : filteredPlataforma;
 
     const tipoList = apiArticulacionesTipo?.items?.length
-      ? apiArticulacionesTipo.items.map(i => {
-          const lbl = i.label.toLowerCase();
-          let key = lbl;
-          if (lbl.includes('reconocimiento') || lbl.includes('aprendizajes')) key = 'reconocimiento';
-          else if (lbl.includes('alternancia')) key = 'alternancia';
-          else if (lbl.includes('taller')) key = 'taller';
-          else if (lbl.includes('charla')) key = 'charla';
-          else if (lbl.includes('feria')) key = 'curricular';
-          else if (lbl.includes('mesa') || lbl.includes('sectorial')) key = 'mesa';
-          return { label: i.label, value: i.value, key };
-        })
+      ? apiArticulacionesTipo.items.map(i => ({ label: i.label, value: i.value }))
       : filteredTipo;
 
     const colegioList = apiArticulacionesColegio?.items?.length
