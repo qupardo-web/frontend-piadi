@@ -38,7 +38,7 @@ import { LoginPage, useAuth } from './modules/auth';
 import { LandingPage } from './modules/landing_page';
 import { CargaDatos, RepositorioArchivos } from './modules/carga_datos';
 import { Auditoria } from './modules/auditoria';
-import { CentralDashboards, DashboardEducacionContinua, DashboardVcM } from './modules/central_dashboards';
+import { CentralDashboards, DashboardEducacionContinua, DashboardVcM, DashboardInnovacion } from './modules/central_dashboards';
 import { VisualizacionMetas, MetaForm, MetaEditForm } from './modules/metas';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
@@ -485,6 +485,19 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DashboardVcM />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 
+               RUTA: /dashboard-innovacion
+               Muestra el dashboard específico de Innovación.
+            */}
+            <Route 
+              path="/dashboard-innovacion" 
+              element={
+                <ProtectedRoute>
+                  <DashboardInnovacion />
                 </ProtectedRoute>
               } 
             />

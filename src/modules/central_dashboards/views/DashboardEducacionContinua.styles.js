@@ -152,12 +152,15 @@ export const styles = {
   // Área de contenido central
   contentArea: {
     flexGrow: 1,
-    p: { xs: 3, md: 4 },
+    p: { xs: 2, sm: 3, md: 4 },
     pt: { xs: 11, md: 4 },
     display: 'flex',
     flexDirection: 'column',
-    gap: 4,
+    gap: { xs: 3, md: 4 },
     minWidth: 0, // Evita desbordamiento de contenedores flex hijos
+    width: '100%',
+    maxWidth: '100%',
+    boxSizing: 'border-box',
   },
 
   panelHeader: {

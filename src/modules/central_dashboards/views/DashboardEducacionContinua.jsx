@@ -25,6 +25,11 @@ import {
   OutlinedInput,
   createTheme,
   ThemeProvider,
+  useTheme,
+  useMediaQuery,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -47,6 +52,7 @@ import {
   Category as CategoryIcon,
   Assignment as AssignmentIcon,
   Public as PublicIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 
 // Lucide Icons from TallerDevops
@@ -121,6 +127,8 @@ const dashboardLightTheme = createTheme({
 
 export const DashboardEducacionContinua = () => {
   const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const {
     navigate,
     user,
@@ -300,6 +308,7 @@ export const DashboardEducacionContinua = () => {
           </Typography>
         </Box>
 
+        {/* Tarjeta de Usuario */}
         <Box sx={styles.userCard}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
             <Avatar sx={styles.userAvatar}>
@@ -322,6 +331,243 @@ export const DashboardEducacionContinua = () => {
     </Box>
   );
 
+  const filtersContent = (
+    <>
+      {/* Selector de Año (Slider) */}
+      <Box sx={styles.filterSection}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
+          <Typography sx={styles.filterSectionTitle}>
+            Año
+          </Typography>
+        </Box>
+        <Box sx={{ px: 1, mt: 0.5 }}>
+          <Slider
+            value={[parseInt(cohorteDesde), parseInt(cohorteHasta)]}
+            onChange={(e, newValue) => {
+              setCohorteDesde(newValue[0].toString());
+              setCohorteHasta(newValue[1].toString());
+            }}
+            valueLabelDisplay="auto"
+            min={2023}
+            max={2026}
+            step={1}
+            marks={[
+              { value: 2023, label: '2023' },
+              { value: 2024, label: '2024' },
+              { value: 2025, label: '2025' },
+              { value: 2026, label: '2026' }
+            ]}
+            sx={styles.ageSliderStyle}
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+            <Typography sx={styles.ageRangeLabels}>
+              <span>{cohorteDesde}</span> — <span>{cohorteHasta}</span>
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Selector de Semestre (Selector Múltiple) */}
+      {hasData && (
+      <Box sx={styles.filterSection}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
+          <Typography sx={styles.filterSectionTitle}>
+            Semestre
+          </Typography>
+        </Box>
+        <FormControl fullWidth size="small">
+          <InputLabel id="semestre-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
+          <Select
+            labelId="semestre-select-label"
+            multiple
+            value={semestresSeleccionados}
+            onChange={(e) => setSemestresSeleccionados(e.target.value)}
+            input={<OutlinedInput label="Seleccionar" />}
+            renderValue={(selected) => selected.join(', ')}
+            sx={styles.selectInputStyle}
+          >
+            {(dynamicSemestres.length > 0 ? dynamicSemestres : SEMESTRES_LIST).map((name) => (
+              <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
+                <Checkbox checked={semestresSeleccionados.indexOf(name) > -1} sx={styles.checkboxStyle} />
+                <ListItemText primary={name} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      )}
+
+      {/* Selector de Mes (Rango) */}
+      {hasData && (
+      <Box sx={styles.filterSection}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
+          <Typography sx={styles.filterSectionTitle}>
+            Mes
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <FormControl fullWidth size="small">
+            <InputLabel id="mes-desde-label" sx={styles.selectLabelStyle}>Desde</InputLabel>
+            <Select
+              labelId="mes-desde-label"
+              value={mesDesde}
+              label="Desde"
+              onChange={(e) => setMesDesde(e.target.value)}
+              sx={styles.selectInputStyle}
+            >
+              {MESES_LIST.map((m) => {
+                const isDisabled = MESES_LIST.indexOf(m) > MESES_LIST.indexOf(mesHasta);
+                return (
+                  <MenuItem key={m} value={m} disabled={isDisabled}>
+                    {m}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+          <Typography sx={{ color: '#94A3B8' }}>—</Typography>
+          <FormControl fullWidth size="small">
+            <InputLabel id="mes-hasta-label" sx={styles.selectLabelStyle}>Hasta</InputLabel>
+            <Select
+              labelId="mes-hasta-label"
+              value={mesHasta}
+              label="Hasta"
+              onChange={(e) => setMesHasta(e.target.value)}
+              sx={styles.selectInputStyle}
+            >
+              {MESES_LIST.map((m) => {
+                const isDisabled = MESES_LIST.indexOf(m) < MESES_LIST.indexOf(mesDesde);
+                return (
+                  <MenuItem key={m} value={m} disabled={isDisabled}>
+                    {m}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
+      )}
+
+      {/* Tipo de programa (Selector Múltiple) */}
+      {hasData && (
+      <Box sx={styles.filterSection}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AssignmentIcon sx={{ fontSize: 18, color: '#1E2875' }} />
+          <Typography sx={styles.filterSectionTitle}>
+            Tipo de programa
+          </Typography>
+        </Box>
+        <FormControl fullWidth size="small">
+          <InputLabel id="tipo-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
+          <Select
+            labelId="tipo-select-label"
+            multiple
+            value={tipoSeleccionado}
+            onChange={(e) => setTipoSeleccionado(e.target.value)}
+            input={<OutlinedInput label="Seleccionar" />}
+            renderValue={(selected) => selected.join(', ')}
+            sx={styles.selectInputStyle}
+          >
+            {(dynamicTipos.length > 0 ? dynamicTipos : TIPOS_LIST).map((name) => (
+              <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
+                <Checkbox checked={tipoSeleccionado.indexOf(name) > -1} sx={styles.checkboxStyle} />
+                <ListItemText primary={name} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      )}
+
+      {/* Modalidad (Selector Múltiple) */}
+      {hasData && (
+      <Box sx={styles.filterSection}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PublicIcon sx={{ fontSize: 18, color: '#1E2875' }} />
+          <Typography sx={styles.filterSectionTitle}>
+            Modalidad
+          </Typography>
+        </Box>
+        <FormControl fullWidth size="small">
+          <InputLabel id="modalidad-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
+          <Select
+            labelId="modalidad-select-label"
+            multiple
+            value={modalidadSeleccionada}
+            onChange={(e) => setModalidadSeleccionada(e.target.value)}
+            input={<OutlinedInput label="Seleccionar" />}
+            renderValue={(selected) => selected.join(', ')}
+            sx={styles.selectInputStyle}
+          >
+            {(dynamicModalidades.length > 0 ? dynamicModalidades : MODALIDADES_LIST).map((name) => (
+              <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
+                <Checkbox checked={modalidadSeleccionada.indexOf(name) > -1} sx={styles.checkboxStyle} />
+                <ListItemText primary={name} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      )}
+
+      {/* Área (Selector Múltiple) */}
+      {hasData && (
+      <Box sx={styles.filterSection}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CategoryIcon sx={{ fontSize: 18, color: '#1E2875' }} />
+          <Typography sx={styles.filterSectionTitle}>
+            Área de programa
+          </Typography>
+        </Box>
+        <FormControl fullWidth size="small">
+          <InputLabel id="area-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
+          <Select
+            labelId="area-select-label"
+            multiple
+            value={areaSeleccionada}
+            onChange={(e) => setAreaSeleccionada(e.target.value)}
+            input={<OutlinedInput label="Seleccionar" />}
+            renderValue={(selected) => selected.join(', ')}
+            sx={styles.selectInputStyle}
+          >
+            {(dynamicAreas.length > 0 ? dynamicAreas : AREAS_LIST).map((name) => (
+              <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
+                <Checkbox checked={areaSeleccionada.indexOf(name) > -1} sx={styles.checkboxStyle} />
+                <ListItemText primary={name} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      )}
+
+      {!apiLoading && !hasData && (
+        <Box sx={{ mx: 2, mb: 2, p: 2, bgcolor: '#FEF3C7', borderRadius: 2, border: '1px solid #F59E0B' }}>
+          <Typography sx={{ fontSize: '13px', color: '#92400E', textAlign: 'center', fontWeight: 500 }}>
+            No hay datos disponibles para los filtros.
+          </Typography>
+        </Box>
+      )}
+
+      {/* Botón de Limpiar Filtros */}
+      <Box sx={{ pt: 1 }}>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<ResetIcon />}
+          onClick={handleResetFilters}
+          sx={styles.resetFiltersButton}
+        >
+          Restablecer filtros
+        </Button>
+      </Box>
+    </>
+  );
+
   return (
     <ThemeProvider theme={dashboardLightTheme}>
       <Box sx={styles.mainLayout}>
@@ -331,6 +577,9 @@ export const DashboardEducacionContinua = () => {
         .taller-devops-dashboard {
           font-family: 'Inter', sans-serif;
           color: #1e293b;
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
         }
 
         /* Chart SVG text visibility */
@@ -358,10 +607,19 @@ export const DashboardEducacionContinua = () => {
           grid-template-columns: repeat(4, 1fr);
           gap: 20px;
           margin-bottom: 24px;
+          width: 100%;
+          box-sizing: border-box;
         }
-        @media (max-width: 768px) {
+        @media (max-width: 1100px) {
+          .taller-devops-dashboard .kpi-container {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+          }
+        }
+        @media (max-width: 600px) {
           .taller-devops-dashboard .kpi-container {
             grid-template-columns: 1fr;
+            gap: 14px;
           }
         }
         .taller-devops-dashboard .kpi-card {
@@ -371,6 +629,8 @@ export const DashboardEducacionContinua = () => {
           border-radius: 12px;
           padding: 20px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          width: 100%;
+          box-sizing: border-box;
         }
         .taller-devops-dashboard .kpi-header {
           display: flex;
@@ -404,6 +664,9 @@ export const DashboardEducacionContinua = () => {
           display: flex;
           align-items: center;
           gap: 10px;
+          width: 100%;
+          box-sizing: border-box;
+          flex-wrap: wrap;
         }
         .taller-devops-dashboard .info-banner-label {
           font-size: 11px;
@@ -422,10 +685,13 @@ export const DashboardEducacionContinua = () => {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 24px;
+          width: 100%;
+          box-sizing: border-box;
         }
         @media (max-width: 1024px) {
           .taller-devops-dashboard .charts-grid {
             grid-template-columns: 1fr;
+            gap: 16px;
           }
         }
         .taller-devops-dashboard .chart-card {
@@ -436,8 +702,20 @@ export const DashboardEducacionContinua = () => {
           box-shadow: 0 1px 3px rgba(0,0,0,0.02);
           display: flex;
           flex-direction: column;
-          height: 380px;
+          min-height: 380px;
+          height: auto;
+          width: 100%;
+          min-width: 0;
+          max-width: 100%;
+          box-sizing: border-box;
+          overflow: hidden;
           transition: transform 0.15s, box-shadow 0.15s;
+        }
+        @media (max-width: 600px) {
+          .taller-devops-dashboard .chart-card {
+            padding: 16px 14px;
+            min-height: 340px;
+          }
         }
         .taller-devops-dashboard .chart-card:hover {
           box-shadow: 0 4px 12px rgba(30, 40, 117, 0.05);
@@ -447,6 +725,9 @@ export const DashboardEducacionContinua = () => {
           justify-content: space-between;
           align-items: center;
           margin-bottom: 16px;
+          flex-wrap: wrap;
+          gap: 10px;
+          width: 100%;
         }
         .taller-devops-dashboard .chart-title {
           font-size: 15px;
@@ -457,15 +738,28 @@ export const DashboardEducacionContinua = () => {
         .taller-devops-dashboard .chart-wrapper {
           flex-grow: 1;
           position: relative;
-          min-height: 0;
+          min-height: 280px;
+          width: 100%;
+          min-width: 0;
+          max-width: 100%;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .taller-devops-dashboard .chart-wrapper .MuiResponsiveChart-container {
+          width: 100% !important;
+          max-width: 100% !important;
         }
 
         /* Toggle Buttons */
         .taller-devops-dashboard .card-toggle-group {
           display: flex;
+          flex-wrap: wrap;
           background-color: #f1f5f9;
           border-radius: 8px;
           padding: 3px;
+          gap: 2px;
         }
         .taller-devops-dashboard .btn-toggle {
           background: transparent;
@@ -567,6 +861,17 @@ export const DashboardEducacionContinua = () => {
           >
             <MenuIcon sx={{ fontSize: 36 }} />
           </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
+            <Box 
+              component="img" 
+              src={logoEcas} 
+              alt="Logo ECAS" 
+              sx={{ width: 24, height: 24, objectFit: 'contain' }} 
+            />
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#ffffff', letterSpacing: 0.5 }}>
+              PIADI ECAS
+            </Typography>
+          </Box>
         </Toolbar>
       </AppBar>
 
@@ -626,6 +931,36 @@ export const DashboardEducacionContinua = () => {
           </Box>
         </Box>
 
+        {/* SECCIÓN DE FILTROS EN MÓVIL (COLAPSABLE / ACORDEÓN ABIERTO POR DEFECTO) */}
+        <Box sx={{ display: { xs: 'block', md: 'none' }, width: '100%' }}>
+          <Accordion
+            defaultExpanded={true}
+            sx={{
+              bgcolor: '#FFFFFF',
+              borderRadius: '12px !important',
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              '&:before': { display: 'none' },
+              overflow: 'hidden',
+            }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon sx={{ color: '#1E2875' }} />}
+              sx={{ px: 2.5, py: 1 }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                <FilterIcon sx={{ color: '#1E2875', fontSize: 20 }} />
+                <Typography sx={{ fontWeight: 700, fontSize: '16px', color: '#1E2875', fontFamily: "'Inter', sans-serif" }}>
+                  Filtros
+                </Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ px: 2.5, pt: 0, pb: 2.5, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {filtersContent}
+            </AccordionDetails>
+          </Accordion>
+        </Box>
+
         {/* Top Summary Cards — 4 indicadores clave con evolución 2023→2026 */}
         <div className="kpi-container">
           {kpiCardsData.map(card => {
@@ -668,7 +1003,7 @@ export const DashboardEducacionContinua = () => {
         <div className="charts-grid">
 
           {/* Card 9: Oferta de cursos programada */}
-          <div id="oferta-programada" className="chart-card" style={{ gridColumn: '1 / -1', height: '390px' }}>
+          <div id="oferta-programada" className="chart-card" style={{ gridColumn: '1 / -1', minHeight: '390px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <BookOpen size={16} style={{ color: '#1E2875' }} />
@@ -690,16 +1025,24 @@ export const DashboardEducacionContinua = () => {
                   xAxis={[{
                     scaleType: 'band',
                     data: ofertaChartData.labels,
-                    label: ofertaViewMode === 'total' ? 'Año' : (ofertaViewMode === 'area' ? 'Área' : (ofertaViewMode === 'tipo' ? 'Tipo' : 'Modalidad'))
+                    label: isMobile ? undefined : (ofertaViewMode === 'total' ? 'Año' : (ofertaViewMode === 'area' ? 'Área' : (ofertaViewMode === 'tipo' ? 'Tipo' : 'Modalidad'))),
+                    tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
+                    valueFormatter: (value, context) => {
+                      if (isMobile && context?.location === 'tick' && value && String(value).length > 6) {
+                        return String(value).substring(0, 4) + '...';
+                      }
+                      return value;
+                    }
                   }]}
                   series={ofertaChartData.series}
-                  margin={{ top: 15, right: 15, bottom: 60, left: 40 }}
+                  margin={{ top: 15, right: 15, bottom: isMobile ? 65 : 60, left: isMobile ? 35 : 40 }}
                   slotProps={{
                     legend: {
                       direction: 'row',
                       position: { vertical: 'bottom', horizontal: 'middle' },
-                      labelStyle: { fontSize: '11px', fill: '#1e293b' }
-                    }
+                      labelStyle: { fontSize: isMobile ? '10px' : '11px', fill: '#1e293b' }
+                    },
+                    tooltip: { trigger: 'axis' }
                   }}
                 />
               ) : (
@@ -720,18 +1063,24 @@ export const DashboardEducacionContinua = () => {
             <div className="chart-wrapper">
               {effectiveDictadosSeries ? (
                 <BarChart
-                  xAxis={[{ scaleType: 'band', data: effectiveDictadosSeries.map(d => d.cohorte), label: 'Año' }]}
+                  xAxis={[{ 
+                    scaleType: 'band', 
+                    data: effectiveDictadosSeries.map(d => d.cohorte), 
+                    label: isMobile ? undefined : 'Año',
+                    tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 }
+                  }]}
                   series={[
                     { data: effectiveDictadosSeries.map(d => d.planificados), label: 'Programados', color: '#cbd5e1' },
                     { data: effectiveDictadosSeries.map(d => d.dictados), label: 'Dictados', color: '#10B981' }
                   ]}
-                  margin={{ top: 15, right: 15, bottom: 40, left: 40 }}
+                  margin={{ top: 15, right: 15, bottom: isMobile ? 55 : 40, left: isMobile ? 35 : 40 }}
                   slotProps={{
                     legend: {
                       direction: 'row',
                       position: { vertical: 'bottom', horizontal: 'middle' },
-                      labelStyle: { fontSize: '10px', fill: '#1e293b' }
-                    }
+                      labelStyle: { fontSize: isMobile ? '9px' : '10px', fill: '#1e293b' }
+                    },
+                    tooltip: { trigger: 'axis' }
                   }}
                 />
               ) : (
@@ -752,7 +1101,12 @@ export const DashboardEducacionContinua = () => {
             <div className="chart-wrapper">
               {effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0 ? (
                 <LineChart
-                  xAxis={[{ scaleType: 'point', data: effectiveEjecucionSeries.map(d => d.cohorte), label: 'Año' }]}
+                  xAxis={[{ 
+                    scaleType: 'point', 
+                    data: effectiveEjecucionSeries.map(d => d.cohorte), 
+                    label: isMobile ? undefined : 'Año',
+                    tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 }
+                  }]}
                   series={[{
                     data: effectiveEjecucionSeries.map(d => d.tasa),
                     color: '#1E2875',
@@ -760,7 +1114,10 @@ export const DashboardEducacionContinua = () => {
                     valueFormatter: (value) => `${value}%`,
                     showMark: true,
                   }]}
-                  margin={{ top: 15, right: 15, bottom: 40, left: 45 }}
+                  margin={{ top: 15, right: 15, bottom: isMobile ? 55 : 40, left: isMobile ? 35 : 45 }}
+                  slotProps={{
+                    tooltip: { trigger: 'axis' }
+                  }}
                 />
               ) : (
                 <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
@@ -769,7 +1126,7 @@ export const DashboardEducacionContinua = () => {
           </div>
 
           {/* Card 7: Ingresos Generados */}
-          <div id="ingresos-generados" className="chart-card" style={{ gridColumn: '1 / -1', height: '390px' }}>
+          <div id="ingresos-generados" className="chart-card" style={{ gridColumn: '1 / -1', minHeight: '390px', height: 'auto' }}>
             <div className="chart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <DollarSign size={16} style={{ color: '#10B981' }} />
@@ -792,12 +1149,21 @@ export const DashboardEducacionContinua = () => {
                   xAxis={[{
                     scaleType: 'band',
                     data: ingresosChartData.labels,
-                    label: ingresosViewMode === 'area' ? 'Área' : (ingresosViewMode === 'tipo' ? 'Tipo' : 'Modalidad'),
-                    tickLabelStyle: { fontSize: 11 }
+                    label: isMobile ? undefined : (ingresosViewMode === 'area' ? 'Área' : (ingresosViewMode === 'tipo' ? 'Tipo' : 'Modalidad')),
+                    tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
+                    valueFormatter: (value, context) => {
+                      if (isMobile && context?.location === 'tick' && value && String(value).length > 6) {
+                        return String(value).substring(0, 4) + '...';
+                      }
+                      return value;
+                    }
                   }]}
                   series={ingresosChartData.series}
-                  margin={{ top: 15, right: 15, bottom: 80, left: 50 }}
-                  slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                  margin={{ top: 15, right: 15, bottom: isMobile ? 70 : 80, left: isMobile ? 40 : 50 }}
+                  slotProps={{ 
+                    legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: isMobile ? '9px' : '10px' } },
+                    tooltip: { trigger: 'axis' }
+                  }}
                 />
               ) : (
                 <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
@@ -806,7 +1172,7 @@ export const DashboardEducacionContinua = () => {
           </div>
 
           {/* Card 5: Matrícula por programa (Radar Chart) */}
-          <div id="matricula-por-programa" className="chart-card" style={{ gridColumn: '1 / -1', height: '520px' }}>
+          <div id="matricula-por-programa" className="chart-card" style={{ gridColumn: '1 / -1', minHeight: '480px', height: 'auto' }}>
             <div className="chart-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -824,19 +1190,28 @@ export const DashboardEducacionContinua = () => {
               </div>
             </div>
 
-            <div className="chart-wrapper" style={{ height: '390px' }}>
+            <div className="chart-wrapper" style={{ height: isMobile ? '340px' : '390px' }}>
               {matriculaChartData.labels.length > 0 ? (
                 <BarChart
-                  height={370}
+                  height={isMobile ? 330 : 370}
                   xAxis={[{
                     scaleType: 'band',
                     data: matriculaChartData.labels,
-                    label: matriculaViewMode === 'total' ? 'Año' : (matriculaViewMode === 'area' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo')),
-                    tickLabelStyle: { fontSize: 11 }
+                    label: isMobile ? undefined : (matriculaViewMode === 'total' ? 'Año' : (matriculaViewMode === 'area' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo'))),
+                    tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
+                    valueFormatter: (value, context) => {
+                      if (isMobile && context?.location === 'tick' && value && String(value).length > 6) {
+                        return String(value).substring(0, 4) + '...';
+                      }
+                      return value;
+                    }
                   }]}
                   series={matriculaChartData.series}
-                  margin={{ top: 15, right: 15, bottom: 80, left: 50 }}
-                  slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
+                  margin={{ top: 15, right: 15, bottom: isMobile ? 70 : 80, left: isMobile ? 40 : 50 }}
+                  slotProps={{ 
+                    legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: isMobile ? '9px' : '10px' } },
+                    tooltip: { trigger: 'axis' }
+                  }}
                 />
               ) : (
                 <div style={{ color: '#64748b', fontSize: '13px', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>Sin datos disponibles</div>
@@ -853,7 +1228,7 @@ export const DashboardEducacionContinua = () => {
               </div>
             </div>
 
-            <div className="chart-wrapper" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', padding: '8px' }}>
+            <div className="chart-wrapper" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', padding: '8px' }}>
               {aprobacionProgramasData.length > 0 ? (
                 aprobacionProgramasData.map(row => (
                   <div key={row.area} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
@@ -920,17 +1295,18 @@ export const DashboardEducacionContinua = () => {
                     {
                       data: perfilParticipantesData,
                       innerRadius: 20,
-                      outerRadius: 85,
+                      outerRadius: isMobile ? 70 : 85,
                       paddingAngle: 3,
                       cornerRadius: 4,
                     },
                   ]}
-                  height={220}
+                  height={isMobile ? 260 : 220}
+                  margin={{ top: 10, bottom: isMobile ? 50 : 10, left: 10, right: 10 }}
                   slotProps={{
                     legend: {
-                      direction: 'column',
-                      position: { vertical: 'middle', horizontal: 'right' },
-                      labelStyle: { fontSize: '10px', fill: '#1e293b' }
+                      direction: isMobile ? 'row' : 'column',
+                      position: { vertical: isMobile ? 'bottom' : 'middle', horizontal: isMobile ? 'middle' : 'right' },
+                      labelStyle: { fontSize: isMobile ? '9px' : '10px', fill: '#1e293b' }
                     }
                   }}
                 />
@@ -1062,8 +1438,8 @@ export const DashboardEducacionContinua = () => {
 
       </Box>
 
-      {/* SECCIÓN DE FILTROS PERSISTENTES (DERECHA) */}
-      <Box component="aside" sx={styles.filtersSidebar}>
+      {/* SECCIÓN DE FILTROS PERSISTENTES (DERECHA EN ESCRITORIO) */}
+      <Box component="aside" sx={{ ...styles.filtersSidebar, display: { xs: 'none', md: 'flex' } }}>
         {/* Cabecera Filtros */}
         <Box sx={styles.filtersHeader}>
           <FilterIcon sx={{ color: '#1E2875', fontSize: 20 }} />
@@ -1074,239 +1450,7 @@ export const DashboardEducacionContinua = () => {
 
         {/* Contenido Scrollable de Filtros */}
         <Box sx={styles.filtersScrollContent}>
-          
-          {/* Selector de Año (Slider) */}
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Año
-              </Typography>
-            </Box>
-            <Box sx={{ px: 1, mt: 0.5 }}>
-              <Slider
-                value={[parseInt(cohorteDesde), parseInt(cohorteHasta)]}
-                onChange={(e, newValue) => {
-                  setCohorteDesde(newValue[0].toString());
-                  setCohorteHasta(newValue[1].toString());
-                }}
-                valueLabelDisplay="auto"
-                min={2023}
-                max={2026}
-                step={1}
-                marks={[
-                  { value: 2023, label: '2023' },
-                  { value: 2024, label: '2024' },
-                  { value: 2025, label: '2025' },
-                  { value: 2026, label: '2026' }
-                ]}
-                sx={styles.ageSliderStyle}
-              />
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-                <Typography sx={styles.ageRangeLabels}>
-                  <span>{cohorteDesde}</span> — <span>{cohorteHasta}</span>
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-
-          {/* Selector de Semestre (Selector Múltiple) */}
-          {hasData && (
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Semestre
-              </Typography>
-            </Box>
-            <FormControl fullWidth size="small">
-              <InputLabel id="semestre-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-              <Select
-                labelId="semestre-select-label"
-                multiple
-                value={semestresSeleccionados}
-                onChange={(e) => setSemestresSeleccionados(e.target.value)}
-                input={<OutlinedInput label="Seleccionar" />}
-                renderValue={(selected) => selected.join(', ')}
-                sx={styles.selectInputStyle}
-              >
-                {(dynamicSemestres.length > 0 ? dynamicSemestres : SEMESTRES_LIST).map((name) => (
-                  <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                    <Checkbox checked={semestresSeleccionados.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                    <ListItemText primary={name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-          )}
-
-          {/* Selector de Mes (Rango) */}
-          {hasData && (
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Mes
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel id="mes-desde-label" sx={styles.selectLabelStyle}>Desde</InputLabel>
-                <Select
-                  labelId="mes-desde-label"
-                  value={mesDesde}
-                  label="Desde"
-                  onChange={(e) => setMesDesde(e.target.value)}
-                  sx={styles.selectInputStyle}
-                >
-                  {MESES_LIST.map((m) => {
-                    const isDisabled = MESES_LIST.indexOf(m) > MESES_LIST.indexOf(mesHasta);
-                    return (
-                      <MenuItem key={m} value={m} disabled={isDisabled}>
-                        {m}
-                      </MenuItem>
-                    );
-                  })}
-                </Select>
-              </FormControl>
-              <Typography sx={{ color: '#94A3B8' }}>—</Typography>
-              <FormControl fullWidth size="small">
-                <InputLabel id="mes-hasta-label" sx={styles.selectLabelStyle}>Hasta</InputLabel>
-                <Select
-                  labelId="mes-hasta-label"
-                  value={mesHasta}
-                  label="Hasta"
-                  onChange={(e) => setMesHasta(e.target.value)}
-                  sx={styles.selectInputStyle}
-                >
-                  {MESES_LIST.map((m) => {
-                    const isDisabled = MESES_LIST.indexOf(m) < MESES_LIST.indexOf(mesDesde);
-                    return (
-                      <MenuItem key={m} value={m} disabled={isDisabled}>
-                        {m}
-                      </MenuItem>
-                    );
-                  })}
-                </Select>
-              </FormControl>
-            </Box>
-          </Box>
-          )}
-
-          {/* Tipo de programa (Selector Múltiple) */}
-          {hasData && (
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <AssignmentIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Tipo de programa
-              </Typography>
-            </Box>
-            <FormControl fullWidth size="small">
-              <InputLabel id="tipo-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-              <Select
-                labelId="tipo-select-label"
-                multiple
-                value={tipoSeleccionado}
-                onChange={(e) => setTipoSeleccionado(e.target.value)}
-                input={<OutlinedInput label="Seleccionar" />}
-                renderValue={(selected) => selected.join(', ')}
-                sx={styles.selectInputStyle}
-              >
-                {(dynamicTipos.length > 0 ? dynamicTipos : TIPOS_LIST).map((name) => (
-                  <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                    <Checkbox checked={tipoSeleccionado.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                    <ListItemText primary={name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-          )}
-
-          {/* Modalidad (Selector Múltiple) */}
-          {hasData && (
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PublicIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Modalidad
-              </Typography>
-            </Box>
-            <FormControl fullWidth size="small">
-              <InputLabel id="modalidad-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-              <Select
-                labelId="modalidad-select-label"
-                multiple
-                value={modalidadSeleccionada}
-                onChange={(e) => setModalidadSeleccionada(e.target.value)}
-                input={<OutlinedInput label="Seleccionar" />}
-                renderValue={(selected) => selected.join(', ')}
-                sx={styles.selectInputStyle}
-              >
-                {(dynamicModalidades.length > 0 ? dynamicModalidades : MODALIDADES_LIST).map((name) => (
-                  <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                    <Checkbox checked={modalidadSeleccionada.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                    <ListItemText primary={name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-          )}
-
-          {/* Área (Selector Múltiple) */}
-          {hasData && (
-          <Box sx={styles.filterSection}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CategoryIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-              <Typography sx={styles.filterSectionTitle}>
-                Área de programa
-              </Typography>
-            </Box>
-            <FormControl fullWidth size="small">
-              <InputLabel id="area-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-              <Select
-                labelId="area-select-label"
-                multiple
-                value={areaSeleccionada}
-                onChange={(e) => setAreaSeleccionada(e.target.value)}
-                input={<OutlinedInput label="Seleccionar" />}
-                renderValue={(selected) => selected.join(', ')}
-                sx={styles.selectInputStyle}
-              >
-                {(dynamicAreas.length > 0 ? dynamicAreas : AREAS_LIST).map((name) => (
-                  <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                    <Checkbox checked={areaSeleccionada.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                    <ListItemText primary={name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-          )}
-        </Box>
-
-        {!apiLoading && !hasData && (
-          <Box sx={{ mx: 2, mb: 2, p: 2, bgcolor: '#FEF3C7', borderRadius: 2, border: '1px solid #F59E0B' }}>
-            <Typography sx={{ fontSize: '13px', color: '#92400E', textAlign: 'center', fontWeight: 500 }}>
-              No hay datos disponibles para los filtros.
-            </Typography>
-          </Box>
-        )}
-
-        {/* Botón de Limpiar Filtros */}
-        <Box sx={styles.filtersFooter}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<ResetIcon />}
-            onClick={handleResetFilters}
-            sx={styles.resetFiltersButton}
-          >
-            Restablecer filtros
-          </Button>
+          {filtersContent}
         </Box>
       </Box>
 
