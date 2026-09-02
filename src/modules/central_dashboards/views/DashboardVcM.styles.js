@@ -333,6 +333,21 @@ export const styles = {
     '& .MuiSlider-rail': {
       color: '#E2E8F0',
     },
+    '& .MuiSlider-mark': {
+      bgcolor: '#94A3B8',
+      height: 6,
+      width: 6,
+      borderRadius: '50%',
+    },
+    '& .MuiSlider-markLabel': {
+      fontSize: '11px',
+      color: '#64748B',
+      fontWeight: 600,
+    },
+    '& .MuiSlider-markLabelActive': {
+      color: '#1E2875',
+      fontWeight: 700,
+    },
   },
 
   ageRangeLabels: {

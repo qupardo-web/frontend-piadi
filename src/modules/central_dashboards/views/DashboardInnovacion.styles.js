@@ -150,11 +150,11 @@ export const styles = {
   // Contenido principal
   contentArea: {
     flexGrow: 1,
-    p: { xs: 2.5, md: 4 },
+    p: { xs: 3, md: 4 },
     pt: { xs: 11, md: 4 },
     display: 'flex',
     flexDirection: 'column',
-    gap: 3,
+    gap: 4,
     minWidth: 0,
   },
 
@@ -171,14 +171,13 @@ export const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: 2,
-    mt: 0.5,
   },
 
   panelIconContainer: {
     width: 48,
     height: 48,
     borderRadius: '12px',
-    bgcolor: '#161796',
+    bgcolor: '#1E2875',
     color: '#3EC9FF',
     display: 'flex',
     alignItems: 'center',
@@ -188,17 +187,15 @@ export const styles = {
 
   panelTitle: {
     fontWeight: 700,
-    fontSize: { xs: '26px', md: '32px' },
-    color: '#161796',
-    letterSpacing: '-0.02em',
-    lineHeight: 1.15,
-    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+    fontSize: { xs: '28px', md: '36px' },
+    color: '#1E2875',
+    fontFamily: "'Inter', sans-serif",
   },
 
   panelSubtitle: {
     fontSize: '14px',
-    color: '#666666',
-    mt: 0.5,
+    color: '#6B7280',
+    fontFamily: "'Inter', sans-serif",
   },
 
   sessionCard: {
@@ -233,60 +230,73 @@ export const styles = {
   kpiRow: {
     display: 'grid',
     gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-    gap: 2,
+    gap: 3,
   },
 
-  kpiCard: {
+  kpiCard: (color = '#3EC9FF') => ({
     bgcolor: '#FFFFFF',
-    border: '1px solid #e5e7eb',
-    borderRadius: '12px',
-    p: 3,
-    cursor: 'pointer',
-    transition: 'all 150ms ease-out',
-    '&:hover': {
-      boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
-      transform: 'translateY(-2px)',
-    },
-  },
-
-  kpiHeader: {
+    border: '1px solid #E2E8F0',
+    borderLeft: `4px solid ${color}`,
+    borderRadius: '8px',
+    p: 2.5,
     display: 'flex',
+    flexDirection: 'column',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    mb: 1,
-  },
+    flexGrow: 1,
+    height: '100%',
+    minHeight: 120,
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: `0 8px 16px -4px ${color}1f`,
+      borderColor: color,
+    },
+  }),
 
-  kpiLabel: {
-    fontSize: '11px',
+  kpiCardHeaderLabel: (color = '#64748b') => ({
+    fontSize: '13px',
     fontWeight: 600,
-    letterSpacing: '0.06em',
+    color: color,
     textTransform: 'uppercase',
-    color: '#212121',
-  },
+    letterSpacing: '0.06em',
+    mb: 1,
+    lineHeight: 1.2,
+  }),
 
-  kpiIcon: {
-    fontSize: '20px',
-    color: '#9E9E9E',
-  },
-
-  kpiValue: {
-    fontSize: '30px',
+  kpiCardHeaderVal: {
     fontWeight: 700,
-    letterSpacing: '-0.02em',
-    lineHeight: 1.1,
-    color: '#0E86B8',
-    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
-    my: 0.5,
+    color: '#1e1b4b',
+    fontSize: '26px',
+    mb: 0.5,
+    fontFamily: "'Inter', sans-serif",
+    lineHeight: 1.2,
   },
 
-  kpiMeta: {
-    fontSize: '12px',
-    color: '#616161',
+  kpiCardHeaderIcon: (color = '#3EC9FF') => ({
+    color: color,
     display: 'flex',
     alignItems: 'center',
-    gap: 0.5,
-    mt: 1,
+    justifyContent: 'center',
+  }),
+
+  kpiCardFooterLabel: {
+    fontSize: '12px',
+    color: '#64748b',
+    fontWeight: 500,
   },
+
+  kpiEvoBadge: (isPositive) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    px: 1,
+    py: 0.2,
+    borderRadius: 1,
+    bgcolor: isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+    color: isPositive ? '#10B981' : '#ef4444',
+    fontWeight: 700,
+    fontSize: '12px',
+  }),
 
   // Chart Section
   chartSection: {
@@ -311,27 +321,28 @@ export const styles = {
   },
 
   chartTitle: {
-    fontSize: '15px',
+    fontSize: '18px',
     fontWeight: 600,
     letterSpacing: '-0.01em',
     display: 'flex',
     alignItems: 'center',
-    gap: 1,
-    color: '#212121',
-    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+    gap: 1.25,
+    color: '#1E2875',
+    fontFamily: "'Inter', sans-serif",
   },
 
   chartToggleBtn: {
-    color: '#9E9E9E',
+    color: '#1E2875',
     p: 0.5,
     transition: 'transform 200ms ease-out',
   },
 
   chartSubtitle: {
-    fontSize: '13px',
+    fontSize: '14px',
     fontWeight: 500,
-    color: '#212121',
-    mb: 1,
+    color: '#64748B',
+    mb: 1.5,
+    fontFamily: "'Inter', sans-serif",
   },
 
   chartCanvasWrap: {
@@ -340,29 +351,60 @@ export const styles = {
     width: '100%',
   },
 
-  // Panel lateral derecho de Filtros
-  filtersColumn: (collapsed) => ({
-    width: collapsed ? 0 : 280,
-    opacity: collapsed ? 0 : 1,
-    overflow: collapsed ? 'hidden' : 'visible',
-    pointerEvents: collapsed ? 'none' : 'auto',
-    flexShrink: 0,
-    display: { xs: 'none', lg: 'flex' },
-    flexDirection: 'column',
-    transition: 'width 200ms ease-out, opacity 200ms ease-out',
-    position: 'sticky',
-    top: 24,
-    alignSelf: 'flex-start',
-  }),
-
-  filtersPanel: {
-    bgcolor: '#FFFFFF',
-    border: '1px solid #e5e7eb',
-    borderRadius: '12px',
-    p: 2,
-    width: 280,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+  // Slider de años en filtros
+  ageSliderStyle: {
+    color: '#3EC9FF',
+    '& .MuiSlider-thumb': {
+      bgcolor: '#FFFFFF',
+      border: '2px solid #3EC9FF',
+      width: 16,
+      height: 16,
+    },
+    '& .MuiSlider-track': {
+      bgcolor: '#3EC9FF',
+      height: 4,
+    },
+    '& .MuiSlider-rail': {
+      bgcolor: '#E2E8F0',
+      height: 4,
+    },
+    '& .MuiSlider-mark': {
+      bgcolor: '#94A3B8',
+      height: 6,
+      width: 6,
+      borderRadius: '50%',
+    },
+    '& .MuiSlider-markLabel': {
+      fontSize: '11px',
+      color: '#64748B',
+      fontWeight: 600,
+    },
+    '& .MuiSlider-markLabelActive': {
+      color: '#161796',
+      fontWeight: 700,
+    },
   },
+
+  // Panel lateral derecho de Filtros (Desktop Sticky)
+  filtersSidebar: (filtersCollapsed) => ({
+    width: filtersCollapsed ? 'auto' : '290px',
+    height: filtersCollapsed ? 'auto' : 'calc(100vh - 40px)',
+    transition: 'width 250ms cubic-bezier(0.4, 0, 0.2, 1), height 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+    display: { xs: 'none', md: 'flex' },
+    flexDirection: 'column',
+    position: 'sticky',
+    top: '20px',
+    alignSelf: 'flex-start',
+    mr: '20px',
+    my: '20px',
+    borderRadius: filtersCollapsed ? '10px' : '16px',
+    overflow: filtersCollapsed ? 'visible' : 'hidden',
+    bgcolor: filtersCollapsed ? 'transparent' : '#FFFFFF',
+    border: filtersCollapsed ? 'none' : '1px solid #E2E8F0',
+    boxShadow: filtersCollapsed ? 'none' : '0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02)',
+    flexShrink: 0,
+    zIndex: 90,
+  }),
 
   filtersHeader: {
     fontSize: '14px',

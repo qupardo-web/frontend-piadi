@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './DashboardVcM.styles';
+import { DashboardHeader, KpiCard } from '../components';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
@@ -970,111 +971,39 @@ export const DashboardVcM = () => {
       <Box component="main" sx={styles.contentArea} className="vcm-dashboard">
         
         {/* Encabezado y Breadcrumbs */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Box sx={styles.breadcrumbsContainer}>
-            <Typography 
-              variant="body1" 
-              onClick={() => navigate('/')}
-              sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-            >
-              Inicio
-            </Typography>
-            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
-            <Typography 
-              variant="body1" 
-              onClick={() => navigate('/dashboard')}
-              sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-            >
-              Central de Dashboards
-            </Typography>
-            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
-            <Typography variant="body1" sx={{ color: '#1E2875', fontWeight: 600 }}>
-              Vinculación con el medio
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
-            <Box sx={styles.panelHeader}>
-              <Box sx={styles.panelIconContainer}>
-                <PublicIcon />
-              </Box>
-              <Box>
-                 <Typography variant="h5" sx={styles.panelTitle}>
-                  Dashboard de Vinculación con el Medio
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                  Visualización de estadísticas y métricas del departamento de Vinculación con el Medio
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-
-
+        <DashboardHeader
+          title="Dashboard de Vinculación con el Medio"
+          subtitle="Visualización de estadísticas y métricas del departamento de Vinculación con el Medio"
+          icon={<PublicIcon />}
+          iconColor="#E27800"
+          loading={apiLoading}
+        />
 
         {/* ----------------- SECCIÓN 1: TARJETAS KPI (3 de Vinculación) ----------------- */}
-        <Grid container spacing={3}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 3, width: '100%' }}>
           {kpiCardsData.map((kpi) => {
             const Icon = kpi.icon;
             return (
-              <Grid item xs={12} sm={6} md={4} key={kpi.key} sx={{ display: 'flex' }}>
-                <Card 
-                  id={kpi.key} 
-                  sx={{ 
-                    p: 2.5, 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    justifyContent: 'space-between',
-                    flexGrow: 1,
-                    height: '100%',
-                    minHeight: 120,
-                    borderLeft: `4px solid ${kpi.color}`,
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: `0 8px 16px -4px ${kpi.color}1f`,
-                      borderColor: kpi.color
-                    }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="caption" sx={{ ...styles.kpiCardHeaderLabel, color: kpi.color }}>
-                        {kpi.title}
-                      </Typography>
-                      <Typography variant="h4" sx={styles.kpiCardHeaderVal}>
-                        {apiLoading ? '...' : (isNoData ? '-' : kpi.value)}
-                      </Typography>
-                    </Box>
-                    <Box sx={styles.kpiCardHeaderIcon(kpi.color)}>
-                      <Icon size={24} />
-                    </Box>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                    {kpi.isBaseline ? (
-                      <Typography variant="caption" sx={styles.kpiCardFooterLabel}>
-                        Año {cohorteDesde} es la línea base
-                      </Typography>
-                    ) : (
-                      <Typography variant="caption" sx={styles.kpiCardFooterLabel}>
-                        {kpi.isAccumulated 
-                          ? 'vs Año base' 
-                          : (cohorteDesde === cohorteHasta ? 'vs Año anterior' : 'vs Año más anterior')
-                        } ({kpi.compareYearLabel}): {isNoData ? '-' : kpi.baseVal} {' '}
-                        {kpi.hasEvo && (
-                          <Box component="span" sx={styles.kpiEvoBadge(isNoData ? true : kpi.isPositive)}>
-                            {isNoData ? '→' : (kpi.isPositive ? '↑' : '↓')} {isNoData ? '-' : kpi.evolution}
-                          </Box>
-                        )}
-                      </Typography>
-                    )}
-                  </Box>
-                </Card>
-              </Grid>
+              <KpiCard
+                key={kpi.key}
+                id={kpi.key}
+                label={kpi.title}
+                value={kpi.value}
+                icon={<Icon size={24} />}
+                accentColor={kpi.color}
+                hasData={!isNoData}
+                loading={apiLoading}
+                compareText={
+                  kpi.isBaseline
+                    ? `Año ${cohorteDesde} es la línea base`
+                    : `${kpi.isAccumulated ? 'vs Año base' : (cohorteDesde === cohorteHasta ? 'vs Año anterior' : 'vs Año más anterior')} (${kpi.compareYearLabel}): ${kpi.baseVal}`
+                }
+                evolution={kpi.hasEvo ? kpi.evolution : null}
+                isPositive={kpi.isPositive}
+              />
             );
           })}
-        </Grid>
+        </Box>
 
         {/* ----------------- SECCIÓN 1: Total de convenios vigentes ----------------- */}
         <div className="collapsible-card" style={{ marginTop: '12px' }}>
@@ -2200,17 +2129,18 @@ export const DashboardVcM = () => {
       <Box
         component="aside"
         sx={{
-          width: filtersCollapsed ? '40px' : '290px',
-          height: filtersCollapsed ? '40px' : 'calc(100vh - 40px)',
-          transition: 'width 250ms cubic-bezier(0.4, 0, 0.2, 1), height 250ms cubic-bezier(0.4, 0, 0.2, 1), background-color 250ms',
+          width: filtersCollapsed ? 'auto' : '290px',
+          height: filtersCollapsed ? 'auto' : 'calc(100vh - 40px)',
+          transition: 'width 250ms cubic-bezier(0.4, 0, 0.2, 1), height 250ms cubic-bezier(0.4, 0, 0.2, 1)',
           display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           position: 'sticky',
           top: '20px',
+          alignSelf: 'flex-start',
           mr: '20px',
           my: '20px',
-          borderRadius: filtersCollapsed ? '50%' : '16px',
-          overflow: 'hidden',
+          borderRadius: filtersCollapsed ? '10px' : '16px',
+          overflow: filtersCollapsed ? 'visible' : 'hidden',
           bgcolor: filtersCollapsed ? 'transparent' : '#FFFFFF',
           border: filtersCollapsed ? 'none' : '1px solid #E2E8F0',
           boxShadow: filtersCollapsed ? 'none' : '0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02)',
@@ -2218,54 +2148,79 @@ export const DashboardVcM = () => {
           zIndex: 90,
         }}
       >
-        {/* Botón Toggle Colapsar/Expandir en la cabecera */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: filtersCollapsed ? 'center' : 'space-between',
-          p: filtersCollapsed ? '0px' : '16px 12px',
-          bgcolor: filtersCollapsed ? 'transparent' : '#F8FAFC',
-          borderBottom: filtersCollapsed ? 'none' : '1px solid #E2E8F0',
-          height: filtersCollapsed ? '40px' : '56px',
-          width: filtersCollapsed ? '40px' : '100%',
-          boxSizing: 'border-box'
-        }}>
-          {!filtersCollapsed && (
+        {/* Si está colapsado: Botón estilizado 'Filtros' con embudo institucional */}
+        {filtersCollapsed ? (
+          <Box
+            onClick={() => setFiltersCollapsed(false)}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              px: 2,
+              py: 1.1,
+              bgcolor: '#FFFFFF',
+              border: '1.5px solid #E2E8F0',
+              borderRadius: '10px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              cursor: 'pointer',
+              boxSizing: 'border-box',
+              transition: 'all 200ms ease-in-out',
+              '&:hover': {
+                bgcolor: '#FFFDF9',
+                borderColor: '#E27800',
+                boxShadow: '0 4px 12px rgba(226, 120, 0, 0.2)',
+              },
+            }}
+          >
+            <FilterIcon sx={{ color: '#E27800', fontSize: 18 }} />
+            <Typography sx={{ fontWeight: 600, fontSize: '13px', color: '#1E2875', fontFamily: "'Inter', sans-serif" }}>
+              Filtros
+            </Typography>
+          </Box>
+        ) : (
+          /* Cabecera cuando está expandido */
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            p: '16px 14px',
+            bgcolor: '#F8FAFC',
+            borderBottom: '1px solid #E2E8F0',
+            height: '56px',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <FilterIcon sx={{ color: '#E27800', fontSize: 18 }} />
               <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875', fontSize: '14px' }}>
                 Filtros VcM
               </Typography>
             </Box>
-          )}
-          <IconButton 
-            onClick={() => setFiltersCollapsed(!filtersCollapsed)}
-            size="medium"
-            sx={{ 
-              color: '#1E2875',
-              width: filtersCollapsed ? '40px' : '32px',
-              height: filtersCollapsed ? '40px' : '32px',
-              bgcolor: filtersCollapsed ? '#FFFFFF' : 'rgba(30, 40, 117, 0.05)',
-              border: filtersCollapsed ? '1px solid #E2E8F0' : 'none',
-              boxShadow: filtersCollapsed ? '0 2px 4px rgba(0,0,0,0.08)' : 'none',
-              '&:hover': { bgcolor: filtersCollapsed ? '#F8FAFC' : 'rgba(30, 40, 117, 0.1)' }
-            }}
-          >
-            {filtersCollapsed ? <ChevronRightIcon /> : <ChevronRightIcon style={{ transform: 'rotate(180deg)', transition: 'transform 200ms' }} />}
-          </IconButton>
-        </Box>
+            <IconButton 
+              onClick={() => setFiltersCollapsed(true)}
+              size="small"
+              sx={{ 
+                color: '#1E2875',
+                width: '32px',
+                height: '32px',
+                bgcolor: 'rgba(30, 40, 117, 0.05)',
+                '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.1)' }
+              }}
+            >
+              <ChevronRightIcon />
+            </IconButton>
+          </Box>
+        )}
 
         {/* Contenido de los filtros (solo visible si no está colapsado) */}
-        <Box sx={{ 
-          flexGrow: 1, 
-          opacity: filtersCollapsed ? 0 : 1,
-          visibility: filtersCollapsed ? 'hidden' : 'visible',
-          transition: 'opacity 150ms ease-in-out, visibility 150ms ease-in-out',
-          display: 'flex',
-          flexDirection: 'column',
-          height: 'calc(100% - 56px)',
-          overflow: 'hidden'
-        }}>
+        {!filtersCollapsed && (
+          <Box sx={{ 
+            flexGrow: 1, 
+            display: 'flex',
+            flexDirection: 'column',
+            height: 'calc(100% - 56px)',
+            overflow: 'hidden'
+          }}>
           <Box sx={{ 
             flexGrow: 1, 
             overflowY: 'auto',
@@ -2532,6 +2487,7 @@ export const DashboardVcM = () => {
             </Button>
           </Box>
         </Box>
+      )}
       </Box>
       </Box>
     </ThemeProvider>

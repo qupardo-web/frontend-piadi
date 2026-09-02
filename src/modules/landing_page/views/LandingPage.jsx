@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLandingPage } from './LandingPage.hooks';
 import { styles } from './LandingPage.styles';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
@@ -62,6 +62,41 @@ export const LandingPage = () => {
     handleTabChange,
     handleDrawerToggle,
   } = useLandingPage();
+
+  const [saludo] = useState(() => {
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const lastDate = localStorage.getItem('greeting_shown_date');
+    const lastTs = Number(localStorage.getItem('greeting_shown_ts') || 0);
+    const now = Date.now();
+
+    // Si ya se mostró hoy y es una navegación posterior o recarga (más de 3 segundos después)
+    if (lastDate === today && (now - lastTs > 3000)) {
+      return null;
+    }
+
+    localStorage.setItem('greeting_shown_date', today);
+    if (!lastTs || lastDate !== today) {
+      localStorage.setItem('greeting_shown_ts', String(now));
+    }
+
+    let name = user?.username;
+    if (!name) {
+      try {
+        const saved = sessionStorage.getItem('auth_user');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          name = parsed?.username || parsed?.name;
+        }
+      } catch (e) {}
+    }
+
+    const hour = d.getHours();
+    const saludoTexto = hour >= 6 && hour < 12 ? 'Buenos días'
+      : hour >= 12 && hour < 20 ? 'Buenas tardes'
+      : 'Buenas noches';
+    return `${saludoTexto}, ${name || 'Usuario'} ✍️`;
+  });
 
   const handleKpiCardClick = (targetHash) => {
     let dashboardPath = '/dashboard-educacion-continua';
@@ -232,9 +267,11 @@ export const LandingPage = () => {
       <Box sx={styles.contentArea}>
         {/* Cabecera y Bienvenida */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Typography variant="body1" sx={{ color: '#6B7280', fontWeight: 500, fontSize: '16px' }}>
-            Buenos días, {user?.username || 'John'} ✍️
-          </Typography>
+          {saludo && (
+            <Typography variant="body1" sx={{ color: '#6B7280', fontWeight: 500, fontSize: '16px' }}>
+              {saludo}
+            </Typography>
+          )}
           
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
             <Box sx={styles.panelHeader}>

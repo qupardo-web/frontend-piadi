@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './DashboardEducacionContinua.styles';
+import { DashboardHeader, KpiCard } from '../components';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
@@ -898,38 +899,13 @@ export const DashboardEducacionContinua = () => {
       <Box component="main" sx={styles.contentArea} className="taller-devops-dashboard">
         
         {/* Cabecera del Panel Principal */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          {/* Breadcrumbs */}
-          <Box sx={styles.breadcrumbsContainer}>
-            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/')}>
-              Inicio
-            </Typography>
-            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
-            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/dashboard')}>
-              Central de Dashboards
-            </Typography>
-            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
-            <Typography variant="body1" sx={{ color: '#1E2875', fontWeight: 600 }}>
-              Dashboard de Educación Continua
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
-            <Box sx={styles.panelHeader}>
-              <Box sx={styles.panelIconContainer}>
-                <SchoolIcon />
-              </Box>
-              <Box>
-                <Typography variant="h5" sx={styles.panelTitle}>
-                  Dashboard de Educación Continua
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                  Visualización de estadísticas y métricas del departamento de Educación Continua
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
+        <DashboardHeader
+          title="Dashboard de Educación Continua"
+          subtitle="Visualización de estadísticas y métricas del departamento de Educación Continua"
+          icon={<SchoolIcon />}
+          iconColor="#46D19F"
+          loading={apiLoading}
+        />
 
         {/* SECCIÓN DE FILTROS EN MÓVIL (COLAPSABLE / ACORDEÓN ABIERTO POR DEFECTO) */}
         <Box sx={{ display: { xs: 'block', md: 'none' }, width: '100%' }}>
@@ -962,33 +938,32 @@ export const DashboardEducacionContinua = () => {
         </Box>
 
         {/* Top Summary Cards — 4 indicadores clave con evolución 2023→2026 */}
-        <div className="kpi-container">
+        <Grid container spacing={2.5} sx={{ mb: 3 }}>
           {kpiCardsData.map(card => {
             const { Icon } = card;
             const evoPos = card.evo != null && card.evo >= 0;
+            const hasDiffYears = card.yHasta !== card.yDesde;
             return (
-              <div key={card.key} className="kpi-card" style={{ borderLeft: `4px solid ${card.borderColor}` }}>
-                <div className="kpi-header" style={{ color: card.color }}>
-                  <span>{card.label}</span>
-                  <Icon size={16} style={{ color: card.color }} />
-                </div>
-                <div className="kpi-value" style={{ color: card.color }}>
-                  {card.valHasta != null ? card.fmt(card.valHasta) : apiLoading ? '...' : '—'}
-                </div>
-                <div className="kpi-trend" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  {card.valDesde != null && card.yHasta !== card.yDesde && (
-                    <span style={{ color: '#64748b' }}>{card.yDesde}: {card.fmt(card.valDesde)}</span>
-                  )}
-                  {card.evo != null && card.yHasta !== card.yDesde && (
-                    <span style={{ color: evoPos ? '#10B981' : '#ef4444', fontWeight: 700 }}>
-                      {evoPos ? '↑' : '↓'} {Math.abs(card.evo)}%
-                    </span>
-                  )}
-                </div>
-              </div>
+              <Grid item xs={12} sm={6} md={3} key={card.key} sx={{ display: 'flex' }}>
+                <KpiCard
+                  label={card.label}
+                  value={card.valHasta != null ? card.fmt(card.valHasta) : '-'}
+                  icon={<Icon size={24} />}
+                  accentColor={card.borderColor}
+                  hasData={card.valHasta != null}
+                  loading={apiLoading}
+                  compareText={
+                    card.valDesde != null && hasDiffYears
+                      ? `${card.yDesde}: ${card.fmt(card.valDesde)}`
+                      : null
+                  }
+                  evolution={card.evo != null && hasDiffYears ? `${Math.abs(card.evo)}%` : null}
+                  isPositive={evoPos}
+                />
+              </Grid>
             );
           })}
-        </div>
+        </Grid>
 
         {/* Subheader Period Banner */}
         <div className="info-banner">
