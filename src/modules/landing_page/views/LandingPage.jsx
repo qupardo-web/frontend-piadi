@@ -64,10 +64,12 @@ export const LandingPage = () => {
   } = useLandingPage();
 
   const handleKpiCardClick = (targetHash) => {
-    const hash = targetHash ? `#${targetHash}` : '';
-    const dashboardPath = currentData.departmentId === 'vinculacion_medio'
-      ? '/dashboard-vcm'
-      : '/dashboard-educacion-continua';
+    let dashboardPath = '/dashboard-educacion-continua';
+    if (currentData.departmentId === 'vinculacion_medio') {
+      dashboardPath = '/dashboard-vcm';
+    } else if (currentData.departmentId === 'innovacion') {
+      dashboardPath = '/dashboard-innovacion';
+    }
     navigate(`${dashboardPath}${hash}`);
   };
 
@@ -632,9 +634,12 @@ export const LandingPage = () => {
                                 '&:hover': { bgcolor: '#eff6ff' }
                               }}
                               onClick={() => {
-                                const dashboardPath = currentData.departmentId === 'vinculacion_medio'
-                                  ? '/dashboard-vcm'
-                                  : '/dashboard-educacion-continua';
+                                let dashboardPath = '/dashboard-educacion-continua';
+                                if (currentData.departmentId === 'vinculacion_medio') {
+                                  dashboardPath = '/dashboard-vcm';
+                                } else if (currentData.departmentId === 'innovacion') {
+                                  dashboardPath = '/dashboard-innovacion';
+                                }
                                 navigate(dashboardPath);
                               }}
                             >
