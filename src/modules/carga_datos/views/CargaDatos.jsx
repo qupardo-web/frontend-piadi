@@ -802,6 +802,8 @@ export const CargaDatos = () => {
                             {detail.fila && <> | <strong>Fila:</strong> {detail.fila}</>}
                             {detail.columna && <> | <strong>Columna:</strong> {detail.columna}</>}
                             {detail.celda && <> | <strong>Celda:</strong> {detail.celda}</>}
+                            {detail.valor && <> | <strong>Valor recibido:</strong> {detail.valor}</>}
+                            {detail.esperado && <> | <strong>Formato esperado:</strong> {detail.esperado}</>}
                             {' '}| <strong>Fallo:</strong> {detail.message}
                           </Typography>
                         ))}
