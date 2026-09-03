@@ -16,7 +16,9 @@ export const normalizeUploadErrorDetail = (detail = {}) => ({
   hoja: toPublicText(detail.hoja ?? detail.sheet) || 'General',
   fila: toPublicText(detail.fila ?? detail.row),
   columna: toPublicText(detail.columna ?? detail.column),
-  celda: toPublicText(detail.celda ?? detail.cell)
+  celda: toPublicText(detail.celda ?? detail.cell),
+  valor: toPublicText(detail.valor ?? detail.value),
+  esperado: toPublicText(detail.esperado ?? detail.expected)
 });
 
 const normalizeName = (value) => String(value || '').trim().toLocaleLowerCase('es');
