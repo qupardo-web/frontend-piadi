@@ -53,7 +53,8 @@ const getUserFromToken = (token) => {
   return {
     id: decoded.id,
     username: decoded.name || decoded.email,
-    role: decoded.role
+    role: decoded.role,
+    roleGroup: decoded.roleGroup
   };
 };
 
@@ -64,16 +65,17 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Al iniciar la app, se intenta restaurar la sesion guardada.
     // Si el JWT ya expiro o es invalido, se limpia la sesion local.
-    const savedUser = sessionStorage.getItem('auth_user');
     const token = sessionStorage.getItem('auth_token');
 
-    if (savedUser && token) {
+    if (token) {
       try {
         if (isTokenExpired(token)) {
           clearStoredSession();
           setUser(null);
         } else {
-          setUser(JSON.parse(savedUser));
+          const userData = getUserFromToken(token);
+          setUser(userData);
+          sessionStorage.setItem('auth_user', JSON.stringify(userData));
         }
       } catch (e) {
         clearStoredSession();

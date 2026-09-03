@@ -60,5 +60,6 @@ async function apiMutate(path, method, body) {
 export const createMeta = (body) => apiMutate('/api/metas', 'POST', body);
 export const updateMeta = (id, body) => apiMutate(`/api/metas/${id}`, 'PUT', body);
 export const getMetas = (params) => apiFetch(`/api/metas${buildParams(params)}`);
+export const getInstitutionalMetas = () => apiFetch('/api/metas/institucional');
 export const getMetaById = (id) => apiFetch(`/api/metas/${id}`);
 export const deleteMeta = (id) => apiMutate(`/api/metas/${id}`, 'DELETE');

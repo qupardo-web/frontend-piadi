@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLandingPage } from './LandingPage.hooks';
 import { styles } from './LandingPage.styles';
+import { isRectoriaUser } from '../../metas/access';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
   Box,
@@ -140,6 +141,9 @@ export const LandingPage = () => {
             { text: 'Inicio', icon: <HomeIcon />, path: '/' },
             { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
             { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
+            ...(isRectoriaUser(user)
+              ? [{ text: 'Metas Institucionales', icon: <TargetIcon />, path: '/metas-institucionales' }]
+              : []),
             { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
             { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
           ].filter((item) => {

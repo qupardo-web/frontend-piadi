@@ -1,5 +1,6 @@
 import React from 'react';
 import { useVisualizacionMetas } from './VisualizacionMetas.hooks';
+import { isRectoriaUser } from '../access';
 import { styles } from './VisualizacionMetas.styles';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 import {
@@ -47,7 +48,7 @@ import {
   RestartAlt as ResetIcon,
 } from '@mui/icons-material';
 
-export const VisualizacionMetas = () => {
+export const VisualizacionMetas = ({ institutionalOnly = false }) => {
   const {
     navigate,
     user,
@@ -96,13 +97,16 @@ export const VisualizacionMetas = () => {
     handleOpenDeleteDialog,
     handleCloseDeleteDialog,
     handleConfirmDelete,
-  } = useVisualizacionMetas();
+  } = useVisualizacionMetas({ institutionalOnly });
 
   // Sidebar navigation menu options
   const navItems = [
     { text: 'Inicio', icon: <HomeIcon />, path: '/' },
     { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
+    ...(isRectoriaUser(user)
+      ? [{ text: 'Metas Institucionales', icon: <TargetIcon />, path: '/metas-institucionales' }]
+      : []),
     { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
     { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
   ].filter((item) => {
@@ -151,7 +155,7 @@ export const VisualizacionMetas = () => {
         {/* Menu Navigation */}
         <Box sx={styles.menuContainer}>
           {navItems.map((item) => {
-            const isSelected = activeMenu === item.text || item.text === 'Metas';
+            const isSelected = activeMenu === item.text;
             return (
               <Box
                 key={item.text}
@@ -269,7 +273,7 @@ export const VisualizacionMetas = () => {
             </Typography>
             <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
             <Typography variant="body1" sx={styles.breadcrumbCurrent}>
-              Metas
+              {institutionalOnly ? 'Metas Institucionales' : 'Metas'}
             </Typography>
           </Box>
 
@@ -280,10 +284,12 @@ export const VisualizacionMetas = () => {
               </Box>
               <Box>
                 <Typography variant="h5" sx={styles.pageTitle}>
-                  Visualización de Metas
+                  {institutionalOnly ? 'Metas Institucionales' : 'Visualización de Metas'}
                 </Typography>
                 <Typography variant="body2" sx={styles.pageSubtitle}>
-                  Gestiona y da seguimiento a las metas institucionales por área
+                  {institutionalOnly
+                    ? 'Gestiona y da seguimiento a las metas institucionales'
+                    : 'Gestiona y da seguimiento a las metas institucionales por área'}
                 </Typography>
               </Box>
             </Box>

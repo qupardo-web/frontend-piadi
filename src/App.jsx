@@ -40,6 +40,7 @@ import { CargaDatos, RepositorioArchivos } from './modules/carga_datos';
 import { Auditoria } from './modules/auditoria';
 import { CentralDashboards, DashboardEducacionContinua, DashboardVcM, DashboardInnovacion } from './modules/central_dashboards';
 import { VisualizacionMetas, MetaForm, MetaEditForm } from './modules/metas';
+import { isRectoriaUser } from './modules/metas/access';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 
@@ -369,7 +370,7 @@ function Dashboard() {
 // - Si la sesión se está cargando (loading), muestra un spinner de carga.
 // - Si está autenticado, permite ver la vista hija (children).
 // - Si NO está autenticado, lo redirige automáticamente a la pantalla de /login.
-function ProtectedRoute({ children, allowedRoles }) {
+function ProtectedRoute({ children, allowedRoles, rectoriaOnly = false }) {
   const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
@@ -385,6 +386,10 @@ function ProtectedRoute({ children, allowedRoles }) {
   }
 
   if (allowedRoles && !allowedRoles.includes(user?.role)) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (rectoriaOnly && !isRectoriaUser(user)) {
     return <Navigate to="/" replace />;
   }
 
@@ -552,6 +557,15 @@ function App() {
                   <VisualizacionMetas />
                 </ProtectedRoute>
               } 
+            />
+
+            <Route
+              path="/metas-institucionales"
+              element={
+                <ProtectedRoute rectoriaOnly>
+                  <VisualizacionMetas institutionalOnly />
+                </ProtectedRoute>
+              }
             />
 
             {/* 

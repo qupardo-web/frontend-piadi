@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
-import { getMetas, deleteMeta, getDepartments } from '../../../services/piadiApi';
+import { getMetas, getInstitutionalMetas, deleteMeta, getDepartments } from '../../../services/piadiApi';
 
 const PRIORIDAD_RANK = { alta: 0, media: 1, baja: 2 };
 
-export const useVisualizacionMetas = () => {
+export const useVisualizacionMetas = ({ institutionalOnly = false } = {}) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -19,7 +19,7 @@ export const useVisualizacionMetas = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await getMetas();
+      const res = await (institutionalOnly ? getInstitutionalMetas() : getMetas());
       if (res.success && Array.isArray(res.data)) {
         const DEPT_MAP = {
           'educacion_continua': 'Educación Continua',
@@ -85,10 +85,12 @@ export const useVisualizacionMetas = () => {
       }
     };
     fetchDepts();
-  }, []);
+  }, [institutionalOnly]);
 
   // Navigation and menus
-  const [activeMenu, setActiveMenu] = useState('Metas');
+  const [activeMenu, setActiveMenu] = useState(
+    institutionalOnly ? 'Metas Institucionales' : 'Metas'
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openHelpDialog, setOpenHelpDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
