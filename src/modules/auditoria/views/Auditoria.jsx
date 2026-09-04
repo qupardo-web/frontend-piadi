@@ -89,12 +89,15 @@ export const Auditoria = () => {
     paginatedLogs,
     canExportCsv,
     handleExportCsv,
+    isLoading,
+    loadError,
   } = useAuditoria();
 
   const getActionBadgeStyle = (action) => {
     if (action === 'Carga' || action === 'Carga de plantilla') return styles.badgeCarga;
     if (action === 'Creación') return styles.badgeCreacion;
     if (action === 'Edición') return styles.badgeEdicion;
+    if (action === 'Modificación departamental por Rectoría') return styles.badgeEdicion;
     if (action === 'Eliminación') return styles.badgeEliminacion;
     if (action === 'Inicio sesión' || action === 'Inicio de sesión exitoso') return styles.badgeInicioSesion;
     if (
@@ -409,6 +412,7 @@ export const Auditoria = () => {
             >
               <Tab value="carga" label="Carga de datos" />
               <Tab value="session" label="Inicios de sesión" />
+              <Tab value="metas" label="Metas" />
             </Tabs>
           </Box>
 
@@ -461,7 +465,15 @@ export const Auditoria = () => {
                 {filteredLogs.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={activeTab === 'carga' ? 7 : 6} sx={{ textAlign: 'center', color: '#94A3B8', py: 4, fontSize: '14px' }}>
-                      {activeTab === 'session' ? 'No hay registros de sesión disponibles.' : 'No hay registros disponibles.'}
+                      {isLoading
+                        ? 'Cargando registros...'
+                        : loadError
+                          ? 'No se pudieron cargar los registros de auditoría.'
+                          : activeTab === 'session'
+                            ? 'No hay registros de sesión disponibles.'
+                            : activeTab === 'metas'
+                              ? 'No hay registros de Metas disponibles.'
+                              : 'No hay registros disponibles.'}
                     </TableCell>
                   </TableRow>
                 )}
@@ -527,6 +539,19 @@ export const Auditoria = () => {
               VISTA MÓVIL: DISEÑO DE TARJETAS RESPONSIVO
               ------------------------------------------------------------------------- */}
           <Box sx={styles.mobileCardsContainer}>
+            {filteredLogs.length === 0 && (
+              <Typography sx={{ textAlign: 'center', color: '#94A3B8', py: 3, fontSize: '14px' }}>
+                {isLoading
+                  ? 'Cargando registros...'
+                  : loadError
+                    ? 'No se pudieron cargar los registros de auditoría.'
+                    : activeTab === 'session'
+                      ? 'No hay registros de sesión disponibles.'
+                      : activeTab === 'metas'
+                        ? 'No hay registros de Metas disponibles.'
+                        : 'No hay registros disponibles.'}
+              </Typography>
+            )}
             {paginatedLogs.map((log, index) => (
               <Box key={index} sx={styles.mobileAuditCard}>
                 <Box sx={styles.mobileCardHeader}>
