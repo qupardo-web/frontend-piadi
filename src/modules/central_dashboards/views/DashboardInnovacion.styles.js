@@ -748,4 +748,29 @@ export const styles = {
     borderRadius: 2,
     border: '1px solid #F59E0B',
   },
+
+  filtersFooter: {
+    p: 2.5,
+    borderTop: '1px solid #F1F5F9',
+    bgcolor: '#FFFFFF',
+  },
+
+  resetFiltersButton: {
+    borderColor: '#1E2875',
+    color: '#1E2875',
+    borderWidth: '1.5px',
+    textTransform: 'none',
+    fontWeight: 600,
+    fontSize: '13px',
+    py: 1,
+    borderRadius: '8px',
+    transition: 'all 0.2s ease-in-out',
+    '&:hover': {
+      bgcolor: '#EEF2FF',
+      borderColor: '#1E2875',
+      borderWidth: '1.5px',
+      color: '#1E2875',
+      boxShadow: '0 2px 8px rgba(30, 40, 117, 0.15)',
+    },
+  },
 };

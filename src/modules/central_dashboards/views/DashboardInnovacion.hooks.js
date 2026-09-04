@@ -116,6 +116,7 @@ export const useDashboardInnovacion = () => {
   const [currentIndicatorKey, setCurrentIndicatorKey] = useState('proyectos-activos');
   const [drawerPeriodIndex, setDrawerPeriodIndex] = useState(YEARS.length - 1);
   const [drawerLoading, setDrawerLoading] = useState(false);
+  const [periodoAcumulado, setPeriodoAcumulado] = useState(false);
 
   // Estados de API y carga real
   const [apiSummary, setApiSummary] = useState(null);
@@ -124,18 +125,11 @@ export const useDashboardInnovacion = () => {
   const [proyectosActivosSeries, setProyectosActivosSeries] = useState([]);
   const [proyectosFinalizadosSeries, setProyectosFinalizadosSeries] = useState([]);
   const [proyectosAreasBreakdown, setProyectosAreasBreakdown] = useState([]);
+  const [seccionesOtonoSeries, setSeccionesOtonoSeries] = useState([]);
+  const [seccionesPrimaveraSeries, setSeccionesPrimaveraSeries] = useState([]);
   const [seccionesBreakdown, setSeccionesBreakdown] = useState([]);
   const [docentesSeries, setDocentesSeries] = useState([]);
   const [financiamientoSeries, setFinanciamientoSeries] = useState([]);
-
-  // Tooltip interactivo
-  const [tooltip, setTooltip] = useState({
-    visible: false,
-    x: 0,
-    y: 0,
-    label: '',
-    detail: ''
-  });
 
   // Fetch de filtros del departamento
   useEffect(() => {
@@ -170,24 +164,36 @@ export const useDashboardInnovacion = () => {
     if (selectedChips.tipo.length > 0) params.tipo = selectedChips.tipo;
     if (selectedChips.semestre.length > 0) params.semesters = selectedChips.semestre;
 
+    const hasSemFilter = selectedChips.semestre.length > 0;
+    const includeOtono = !hasSemFilter || selectedChips.semestre.some(s => s.toLowerCase().includes('otoño') || s.toLowerCase().includes('otono'));
+    const includePrimavera = !hasSemFilter || selectedChips.semestre.some(s => s.toLowerCase().includes('primavera'));
+
+    const otonoParams = includeOtono ? { ...params, semesters: ['Otoño'] } : null;
+    const primaveraParams = includePrimavera ? { ...params, semesters: ['Primavera'] } : null;
+
     Promise.allSettled([
       getDashboardSummary(params),
       getIndicatorSeries('proyectos_activos', params),
       getIndicatorSeries('proyectos_finalizados', params),
       getIndicatorBreakdown('total_proyectos', { ...params, groupBy: 'areaTematica' }),
+      otonoParams ? getIndicatorSeries('secciones_curso', otonoParams) : Promise.resolve({ data: { points: [] } }),
+      primaveraParams ? getIndicatorSeries('secciones_curso', primaveraParams) : Promise.resolve({ data: { points: [] } }),
       getIndicatorBreakdown('secciones_curso', { ...params, groupBy: 'semestre' }),
       getIndicatorSeries('docentes_involucrados', params),
-      getIndicatorSeries('financiamiento_obtenido', params)
+      getIndicatorSeries('proyectos_con_financiamiento_externo', params)
     ])
-      .then(([summaryRes, activosRes, finalizadosRes, areasRes, seccionesRes, docentesRes, finRes]) => {
-        console.group('🔍 [DEBUG INNOVACIÓN - Respuestas de la API]');
+      .then(([summaryRes, activosRes, finalizadosRes, areasRes, otonoRes, primaveraRes, seccionesRes, docentesRes, finRes]) => {
+        console.groupCollapsed('🔍 [DEBUG INNOVACIÓN - Respuestas de la API]');
         console.log('📡 Parámetros enviados:', params);
-        console.log('📊 1. Proyectos Activos:', activosRes.status === 'fulfilled' ? activosRes.value : activosRes.reason);
-        console.log('📊 2. Proyectos Finalizados:', finalizadosRes.status === 'fulfilled' ? finalizadosRes.value : finalizadosRes.reason);
-        console.log('📊 3. Áreas Temáticas:', areasRes.status === 'fulfilled' ? areasRes.value : areasRes.reason);
-        console.log('📊 4. Secciones Curso:', seccionesRes.status === 'fulfilled' ? seccionesRes.value : seccionesRes.reason);
-        console.log('📊 5. Docentes Involucrados:', docentesRes.status === 'fulfilled' ? docentesRes.value : docentesRes.reason);
-        console.log('💰 6. Financiamiento Obtenido (FDI):', finRes.status === 'fulfilled' ? finRes.value : finRes.reason);
+        console.log('📊 1. Proyectos Activos (puntos):', activosRes.status === 'fulfilled' ? activosRes.value?.data?.points : activosRes.reason);
+        console.log('📊 2. Proyectos Finalizados (puntos):', finalizadosRes.status === 'fulfilled' ? finalizadosRes.value?.data?.points : finalizadosRes.reason);
+        console.log('📊 3. Áreas Temáticas (desglose):', areasRes.status === 'fulfilled' ? areasRes.value?.data?.items : areasRes.reason);
+        console.log('📊 4. Secciones Otoño (puntos):', otonoRes.status === 'fulfilled' ? otonoRes.value?.data?.points : otonoRes.reason);
+        console.log('📊 4.1 Secciones Primavera (puntos):', primaveraRes.status === 'fulfilled' ? primaveraRes.value?.data?.points : primaveraRes.reason);
+        console.log('📊 4.2 Secciones Semestre (desglose):', seccionesRes.status === 'fulfilled' ? seccionesRes.value?.data?.items : seccionesRes.reason);
+        console.log('📊 5. Docentes Involucrados (puntos):', docentesRes.status === 'fulfilled' ? docentesRes.value?.data?.points : docentesRes.reason);
+        console.log('💰 6. Proyectos con Financiamiento Externo (puntos):', finRes.status === 'fulfilled' ? finRes.value?.data?.points : finRes.reason);
+        console.log('📦 Respuesta Completa de Financiamiento:', finRes.status === 'fulfilled' ? finRes.value : finRes.reason);
         console.groupEnd();
 
         if (summaryRes.status === 'fulfilled' && summaryRes.value?.data) {
@@ -212,6 +218,18 @@ export const useDashboardInnovacion = () => {
           setProyectosAreasBreakdown(areasRes.value.data.items);
         } else {
           setProyectosAreasBreakdown([]);
+        }
+
+        if (otonoRes.status === 'fulfilled' && otonoRes.value?.data?.points) {
+          setSeccionesOtonoSeries(otonoRes.value.data.points);
+        } else {
+          setSeccionesOtonoSeries([]);
+        }
+
+        if (primaveraRes.status === 'fulfilled' && primaveraRes.value?.data?.points) {
+          setSeccionesPrimaveraSeries(primaveraRes.value.data.points);
+        } else {
+          setSeccionesPrimaveraSeries([]);
         }
 
         if (seccionesRes.status === 'fulfilled' && seccionesRes.value?.data?.items) {
@@ -239,16 +257,31 @@ export const useDashboardInnovacion = () => {
         setApiLoading(false);
       });
 
-    // Función auxiliar disponible globalmente en la consola (F12) para pruebas directas
-    window.debugFinanciamiento = async () => {
-      console.log('🔄 Ejecutando prueba directa de financiamiento_obtenido...');
+    // Funciones auxiliares disponibles globalmente en la consola (F12) para pruebas interactivas
+    window.debugFinanciamiento = async (customParams = {}) => {
+      const qParams = { ...params, ...customParams };
+      console.log('🔄 Ejecutando prueba de proyectos_con_financiamiento_externo con params:', qParams);
       try {
-        const res = await getIndicatorSeries('financiamiento_obtenido', params);
-        console.log('✅ Resultado directo de /api/indicators/financiamiento_obtenido/series:', res);
+        const res = await getIndicatorSeries('proyectos_con_financiamiento_externo', qParams);
+        console.log('✅ Resultado de /api/indicators/proyectos_con_financiamiento_externo/series:', res);
         return res;
       } catch (err) {
         console.error('❌ Error en prueba directa:', err);
       }
+    };
+
+    window.debugInnovacion = async () => {
+      console.log('🔍 Ejecutando diagnóstico completo de Innovación con params:', params);
+      const results = await Promise.allSettled([
+        getDashboardSummary(params),
+        getIndicatorSeries('proyectos_activos', params),
+        getIndicatorSeries('proyectos_finalizados', params),
+        getIndicatorBreakdown('total_proyectos', { ...params, groupBy: 'areaTematica' }),
+        getIndicatorSeries('proyectos_con_financiamiento_externo', params),
+        getIndicatorSeries('docentes_involucrados', params)
+      ]);
+      console.log('📋 Diagnóstico Completo Innovación:', results);
+      return results;
     };
   }, [yearRange, selectedChips]);
 
@@ -305,11 +338,13 @@ export const useDashboardInnovacion = () => {
     const hasActivos = proyectosActivosSeries.length > 0 && proyectosActivosSeries.some(p => p.value > 0);
     const hasFinalizados = proyectosFinalizadosSeries.length > 0 && proyectosFinalizadosSeries.some(p => p.value > 0);
     const hasAreas = proyectosAreasBreakdown.length > 0 && proyectosAreasBreakdown.some(a => a.value > 0);
-    const hasSecciones = seccionesBreakdown.length > 0 && seccionesBreakdown.some(s => s.value > 0);
+    const hasSecciones = (seccionesOtonoSeries.length > 0 && seccionesOtonoSeries.some(s => s.value > 0)) ||
+      (seccionesPrimaveraSeries.length > 0 && seccionesPrimaveraSeries.some(s => s.value > 0)) ||
+      (seccionesBreakdown.length > 0 && seccionesBreakdown.some(s => s.value > 0));
     const hasDocentes = docentesSeries.length > 0 && docentesSeries.some(d => d.value > 0);
     const hasFin = financiamientoSeries.length > 0 && financiamientoSeries.some(f => f.value > 0);
     return hasActivos || hasFinalizados || hasAreas || hasSecciones || hasDocentes || hasFin;
-  }, [proyectosActivosSeries, proyectosFinalizadosSeries, proyectosAreasBreakdown, seccionesBreakdown, docentesSeries, financiamientoSeries]);
+  }, [proyectosActivosSeries, proyectosFinalizadosSeries, proyectosAreasBreakdown, seccionesOtonoSeries, seccionesPrimaveraSeries, seccionesBreakdown, docentesSeries, financiamientoSeries]);
 
   // 1. Proyectos activos por año
   const proyActivos = useMemo(() => {
@@ -330,7 +365,22 @@ export const useDashboardInnovacion = () => {
       .map(item => ({ label: item.label, value: Number(item.value) }));
   }, [proyectosAreasBreakdown]);
 
-  // 4. Secciones del curso
+  // 4. Secciones del curso por año (Otoño y Primavera)
+  const seccionesOtono = useMemo(() => {
+    const pointsMap = new Map(seccionesOtonoSeries.map(s => [Number(s.year), Number(s.value)]));
+    return visibleYears.map(y => pointsMap.get(y) ?? 0);
+  }, [seccionesOtonoSeries, visibleYears]);
+
+  const seccionesPrimavera = useMemo(() => {
+    const pointsMap = new Map(seccionesPrimaveraSeries.map(s => [Number(s.year), Number(s.value)]));
+    return visibleYears.map(y => pointsMap.get(y) ?? 0);
+  }, [seccionesPrimaveraSeries, visibleYears]);
+
+  const totalSeccionesMax = useMemo(() => {
+    return Math.max(...visibleYears.map((_, i) => (seccionesOtono[i] || 0) + (seccionesPrimavera[i] || 0)), 0);
+  }, [visibleYears, seccionesOtono, seccionesPrimavera]);
+
+  // 4.1 Desglose de secciones del curso
   const seccionesCurso = useMemo(() => {
     return seccionesBreakdown
       .filter(item => Number(item.value) > 0)
@@ -373,9 +423,44 @@ export const useDashboardInnovacion = () => {
           val: String(vHasta),
           baseYear: yDesde,
           baseVal: vDesde,
-          compareText: `Línea base (${yDesde})`,
+          compareText: `Año ${yDesde} es la línea base`,
           evo: null,
           isPositive: true
+        };
+      }
+
+      if (periodoAcumulado) {
+        const sumVal = seriesPoints.reduce((sum, p) => {
+          const yr = Number(p.year);
+          if (yr >= yDesde && yr <= yHasta) {
+            return sum + Number(p.value || 0);
+          }
+          return sum;
+        }, 0);
+
+        let evo = null;
+        let isPositive = true;
+
+        if (vDesde > 0) {
+          const diff = sumVal - vDesde;
+          const pct = Math.round((diff / vDesde) * 100);
+          evo = `${pct >= 0 ? '+' : ''}${pct}%`;
+          isPositive = pct >= 0;
+        } else if (sumVal > 0) {
+          evo = '+100%';
+          isPositive = true;
+        } else {
+          evo = '0%';
+          isPositive = true;
+        }
+
+        return {
+          val: String(sumVal),
+          baseYear: yDesde,
+          baseVal: vDesde,
+          compareText: `vs Año base (${yDesde}): ${vDesde}`,
+          evo,
+          isPositive
         };
       }
 
@@ -399,7 +484,7 @@ export const useDashboardInnovacion = () => {
         val: String(vHasta),
         baseYear: yDesde,
         baseVal: vDesde,
-        compareText: `vs base (${yDesde}): ${vDesde}`,
+        compareText: `vs Año más anterior (${yDesde}): ${vDesde}`,
         evo,
         isPositive
       };
@@ -410,17 +495,18 @@ export const useDashboardInnovacion = () => {
       finalizados: calcKpi(proyectosFinalizadosSeries),
       docentes: calcKpi(docentesSeries)
     };
-  }, [hasData, yearRange, proyectosActivosSeries, proyectosFinalizadosSeries, docentesSeries]);
+  }, [hasData, yearRange, proyectosActivosSeries, proyectosFinalizadosSeries, docentesSeries, periodoAcumulado]);
 
   // Conteo de filtros activos
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (yearRange[0] !== 2023 || yearRange[1] !== 2026) count += 1;
+    if (periodoAcumulado) count += 1;
     Object.values(selectedChips).forEach(arr => {
       count += arr.length;
     });
     return count;
-  }, [yearRange, selectedChips]);
+  }, [yearRange, selectedChips, periodoAcumulado]);
 
   // Manejo de Chips
   const handleToggleChip = useCallback((group, value) => {
@@ -437,6 +523,7 @@ export const useDashboardInnovacion = () => {
   // Restablecer filtros
   const handleResetFilters = useCallback(() => {
     setYearRange([minYear, maxYear]);
+    setPeriodoAcumulado(false);
     setSelectedChips({
       estado: [],
       area: [],
@@ -487,30 +574,6 @@ export const useDashboardInnovacion = () => {
     });
   }, []);
 
-  // Manejo de Tooltip
-  const showTooltip = useCallback((label, detail, e) => {
-    const rect = e.currentTarget?.getBoundingClientRect?.() || { left: e.clientX, top: e.clientY };
-    setTooltip({
-      visible: true,
-      x: e.clientX || rect.left + 10,
-      y: e.clientY || rect.top - 10,
-      label,
-      detail
-    });
-  }, []);
-
-  const moveTooltip = useCallback((e) => {
-    setTooltip(prev => ({
-      ...prev,
-      x: e.clientX,
-      y: e.clientY
-    }));
-  }, []);
-
-  const hideTooltip = useCallback(() => {
-    setTooltip(prev => ({ ...prev, visible: false }));
-  }, []);
-
   const handleDrawerToggle = () => setMobileOpen(prev => !prev);
 
   // FAQ Data
@@ -543,6 +606,8 @@ export const useDashboardInnovacion = () => {
     setFiltersCollapsed,
     yearRange,
     setYearRange,
+    periodoAcumulado,
+    setPeriodoAcumulado,
     selectedChips,
     handleToggleChip,
     handleResetFilters,
@@ -558,10 +623,6 @@ export const useDashboardInnovacion = () => {
     handleOpenIndicator,
     handleCloseDrawer,
     handleDrawerStep,
-    tooltip,
-    showTooltip,
-    moveTooltip,
-    hideTooltip,
     faqData,
     apiLoading,
     apiFilters,
@@ -581,6 +642,9 @@ export const useDashboardInnovacion = () => {
     proyActivos,
     proyFinalizados,
     proyAreas,
+    seccionesOtono,
+    seccionesPrimavera,
+    totalSeccionesMax,
     seccionesCurso,
     docentes,
     finExterno,

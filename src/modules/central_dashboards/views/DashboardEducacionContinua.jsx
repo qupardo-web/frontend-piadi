@@ -1013,8 +1013,8 @@ export const DashboardEducacionContinua = () => {
                   margin={{ top: 15, right: 15, bottom: isMobile ? 65 : 60, left: isMobile ? 35 : 40 }}
                   slotProps={{
                     legend: {
-                      direction: 'row',
-                      position: { vertical: 'bottom', horizontal: 'middle' },
+                      direction: 'horizontal',
+                      position: { vertical: 'bottom', horizontal: 'center' },
                       labelStyle: { fontSize: isMobile ? '10px' : '11px', fill: '#1e293b' }
                     },
                     tooltip: { trigger: 'axis' }
@@ -1051,8 +1051,8 @@ export const DashboardEducacionContinua = () => {
                   margin={{ top: 15, right: 15, bottom: isMobile ? 55 : 40, left: isMobile ? 35 : 40 }}
                   slotProps={{
                     legend: {
-                      direction: 'row',
-                      position: { vertical: 'bottom', horizontal: 'middle' },
+                      direction: 'horizontal',
+                      position: { vertical: 'bottom', horizontal: 'center' },
                       labelStyle: { fontSize: isMobile ? '9px' : '10px', fill: '#1e293b' }
                     },
                     tooltip: { trigger: 'axis' }
@@ -1136,7 +1136,7 @@ export const DashboardEducacionContinua = () => {
                   series={ingresosChartData.series}
                   margin={{ top: 15, right: 15, bottom: isMobile ? 70 : 80, left: isMobile ? 40 : 50 }}
                   slotProps={{ 
-                    legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: isMobile ? '9px' : '10px' } },
+                    legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: isMobile ? '9px' : '10px' } },
                     tooltip: { trigger: 'axis' }
                   }}
                 />
@@ -1184,7 +1184,7 @@ export const DashboardEducacionContinua = () => {
                   series={matriculaChartData.series}
                   margin={{ top: 15, right: 15, bottom: isMobile ? 70 : 80, left: isMobile ? 40 : 50 }}
                   slotProps={{ 
-                    legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: isMobile ? '9px' : '10px' } },
+                    legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: isMobile ? '9px' : '10px' } },
                     tooltip: { trigger: 'axis' }
                   }}
                 />
