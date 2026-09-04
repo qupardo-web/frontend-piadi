@@ -44,6 +44,7 @@ export const useMetaEditForm = () => {
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [successDesc, setSuccessDesc] = useState('');
 
   // Modals Visibility
   const [metricModalOpen, setMetricModalOpen] = useState(false);
@@ -327,6 +328,7 @@ export const useMetaEditForm = () => {
       await updateMeta(id, payload);
 
       setSuccessMsg('Meta guardada con éxito');
+      setSuccessDesc('La meta se ha editado correctamente.');
       setShowSuccessAlert(true);
     } catch (err) {
       console.error('Error saving meta:', err);
@@ -378,6 +380,7 @@ export const useMetaEditForm = () => {
     showSuccessAlert,
     setShowSuccessAlert,
     successMsg,
+    successDesc,
     metricModalOpen,
     setMetricModalOpen,
     previewModalOpen,

@@ -318,20 +318,8 @@ export const DashboardVcM = () => {
     getSortedData,
     getFilteredYears,
     datasetsSec1,
-    filteredProgramasData,
-    ofertaChartData,
-    dictadosSummaryData,
-    effectiveDictadosSeries,
-    effectiveEjecucionSeries,
     kpiCardsData,
-    uniqueParticipantsData,
-    filteredUniqueParticipantsLocal,
-    uniqueParticipantsAgeDist,
-    recurrenceFreqDist,
-    uniqueParticipantsTotal,
-    recurrenciaStats,
     apiFilters,
-    apiPerfilMap,
     apiSummary,
     apiLoading,
     apiError,
@@ -546,255 +534,243 @@ export const DashboardVcM = () => {
 
       {/* Scroll de Filtros */}
       <Box sx={styles.filtersScrollContent}>
-        {/* Filtro Rango de Años (Slider de dos perillas) */}
-        <Box sx={{ ...styles.filterSection, pt: 2.5 }}>
-          <Typography variant="subtitle2" sx={styles.filterSectionTitle}>
-            Año
-          </Typography>
-          <Box sx={{ px: 1, mt: 1 }}>
-            <Slider
-              value={[parseInt(cohorteDesde), parseInt(cohorteHasta)]}
-              onChange={(e, val) => {
-                setCohorteDesde(String(val[0]));
-                setCohorteHasta(String(val[1]));
-              }}
-              min={minYear}
-              max={maxYear}
-              step={1}
-              marks={availableYears.length ? availableYears.map(y => ({ value: y, label: String(y) })) : [
-                { value: 2023, label: '2023' },
-                { value: 2024, label: '2024' },
-                { value: 2025, label: '2025' },
-                { value: 2026, label: '2026' }
-              ]}
-              valueLabelDisplay="auto"
-              sx={styles.ageSliderStyle}
-            />
-            {/* Indicador del rango seleccionado */}
-            <Typography variant="body2" sx={{ textAlign: 'center', mt: 1.5, fontWeight: 600, color: '#1E2875', fontSize: '13px' }}>
-              {cohorteDesde === cohorteHasta ? cohorteDesde : `${cohorteDesde} - ${cohorteHasta}`}
+        {!hasRealData ? (
+          <Box sx={{ mt: 2, p: 2, bgcolor: '#FEF3C7', borderRadius: 2, border: '1px solid #F59E0B' }}>
+            <Typography sx={{ fontSize: '13px', color: '#92400E', textAlign: 'center', fontWeight: 500 }}>
+              No hay datos disponibles para los filtros.
             </Typography>
-
-            {/* Checkbox para Periodo Acumulado */}
-            {cohorteDesde !== cohorteHasta && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={periodoAcumulado}
-                      onChange={(e) => setPeriodoAcumulado(e.target.checked)}
-                      size="small"
-                      sx={{
-                        color: '#1E2875',
-                        '&.Mui-checked': {
-                          color: '#1DC2A0',
-                        },
-                      }}
-                    />
-                  }
-                  label={
-                    <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: '#475569' }}>
-                      Período acumulado
-                    </Typography>
-                  }
-                  sx={{ mx: 0 }}
-                />
-              </Box>
-            )}
           </Box>
-        </Box>
-
-        {hasRealData && (
-        <>
-        {/* Accordion: Convenios (default expanded) */}
-        <Accordion defaultExpanded sx={{ boxShadow: 'none', border: 'none', mt: -1.5, '&:before': { display: 'none' } }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ p: 0, minHeight: 0, '& .MuiAccordionSummary-content': { my: 1 } }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
-              Convenios
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            
-            {/* Sector */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Sector
+        ) : (
+          <>
+            {/* Filtro Rango de Años (Slider de dos perillas) */}
+            <Box sx={{ ...styles.filterSection, pt: 2.5 }}>
+              <Typography variant="subtitle2" sx={styles.filterSectionTitle}>
+                Año
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {sectorsList.map((chip) => (
-                  <FilterChip
-                    key={chip.val}
-                    label={chip.label}
-                    selected={selectedSectores.includes(chip.val)}
-                    onClick={() => toggleChip(selectedSectores, setSelectedSectores, chip.val)}
-                  />
-                ))}
+              <Box sx={{ px: 1, mt: 1 }}>
+                <Slider
+                  value={[parseInt(cohorteDesde), parseInt(cohorteHasta)]}
+                  onChange={(e, val) => {
+                    setCohorteDesde(String(val[0]));
+                    setCohorteHasta(String(val[1]));
+                  }}
+                  min={minYear}
+                  max={maxYear}
+                  step={1}
+                  marks={availableYears.length ? availableYears.map(y => ({ value: y, label: String(y) })) : [
+                    { value: 2023, label: '2023' },
+                    { value: 2024, label: '2024' },
+                    { value: 2025, label: '2025' },
+                    { value: 2026, label: '2026' }
+                  ]}
+                  valueLabelDisplay="auto"
+                  sx={styles.ageSliderStyle}
+                />
+                {/* Indicador del rango seleccionado */}
+                <Typography variant="body2" sx={{ textAlign: 'center', mt: 1.5, fontWeight: 600, color: '#1E2875', fontSize: '13px' }}>
+                  {cohorteDesde === cohorteHasta ? cohorteDesde : `${cohorteDesde} - ${cohorteHasta}`}
+                </Typography>
+
+                {/* Checkbox para Periodo Acumulado */}
+                {cohorteDesde !== cohorteHasta && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={periodoAcumulado}
+                          onChange={(e) => setPeriodoAcumulado(e.target.checked)}
+                          size="small"
+                          sx={{
+                            color: '#1E2875',
+                            '&.Mui-checked': {
+                              color: '#1DC2A0',
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: '#475569' }}>
+                          Período acumulado
+                        </Typography>
+                      }
+                      sx={{ mx: 0 }}
+                    />
+                  </Box>
+                )}
               </Box>
             </Box>
 
-            {/* Tipo de convenio */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Tipo de convenio
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {dynamicTipos.map((chip) => (
-                  <FilterChip
-                    key={chip.val}
-                    label={chip.label}
-                    selected={selectedTiposConvenio.includes(chip.val)}
-                    onClick={() => toggleChip(selectedTiposConvenio, setSelectedTiposConvenio, chip.val)}
-                  />
-                ))}
-              </Box>
-            </Box>
+            {/* Accordion: Convenios */}
+            {(sectorsList.length > 0 || dynamicTipos.length > 0 || dynamicAreas.length > 0) && (
+              <Accordion defaultExpanded sx={{ boxShadow: 'none', border: 'none', mt: -1.5, '&:before': { display: 'none' } }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ p: 0, minHeight: 0, '& .MuiAccordionSummary-content': { my: 1 } }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                    Convenios
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {/* Sector */}
+                  {sectorsList.length > 0 && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Sector
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                        {sectorsList.map((chip) => (
+                          <FilterChip
+                            key={chip.val}
+                            label={chip.label}
+                            selected={selectedSectores.includes(chip.val)}
+                            onClick={() => toggleChip(selectedSectores, setSelectedSectores, chip.val)}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
 
-            {/* Estado */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Estado
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {(apiFilters?.filters?.estados?.length
-                  ? apiFilters.filters.estados.map(e => ({ label: e, val: e }))
-                  : [
-                      { label: 'Activo', val: 'Activo' },
-                      { label: 'Cerrado', val: 'Cerrado' },
-                      { label: 'En renovación', val: 'En renovación' }
-                    ]
-                ).map((chip) => (
-                  <FilterChip
-                    key={chip.val}
-                    label={chip.label}
-                    selected={selectedEstados.includes(chip.val)}
-                    onClick={() => toggleChip(selectedEstados, setSelectedEstados, chip.val)}
-                  />
-                ))}
-              </Box>
-            </Box>
+                  {/* Tipo de convenio */}
+                  {dynamicTipos.length > 0 && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Tipo de convenio
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                        {dynamicTipos.map((chip) => (
+                          <FilterChip
+                            key={chip.val}
+                            label={chip.label}
+                            selected={selectedTiposConvenio.includes(chip.val)}
+                            onClick={() => toggleChip(selectedTiposConvenio, setSelectedTiposConvenio, chip.val)}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
 
-            {/* Área vinculada */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Área vinculada
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {dynamicAreas.map((chip) => (
-                  <FilterChip
-                    key={chip.val}
-                    label={chip.label}
-                    selected={selectedAreas.includes(chip.val)}
-                    onClick={() => toggleChip(selectedAreas, setSelectedAreas, chip.val)}
-                  />
-                ))}
-              </Box>
-            </Box>
+                  {/* Área vinculada */}
+                  {dynamicAreas.length > 0 && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Área vinculada
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                        {dynamicAreas.map((chip) => (
+                          <FilterChip
+                            key={chip.val}
+                            label={chip.label}
+                            selected={selectedAreas.includes(chip.val)}
+                            onClick={() => toggleChip(selectedAreas, setSelectedAreas, chip.val)}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </AccordionDetails>
+              </Accordion>
+            )}
 
-          </AccordionDetails>
-        </Accordion>
+            {/* Accordion: Actividades */}
+            {(dynamicLineas.length > 0 || modalidadesList.length > 0) && (
+              <Accordion sx={{ boxShadow: 'none', border: 'none', '&:before': { display: 'none' } }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ p: 0, minHeight: 0, '& .MuiAccordionSummary-content': { my: 1 } }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                    Actividades
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {/* Línea VcM */}
+                  {dynamicLineas.length > 0 && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Línea VcM
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                        {dynamicLineas.map((chip) => (
+                          <FilterChip
+                            key={chip.val}
+                            label={chip.label}
+                            selected={selectedLineas.includes(chip.val)}
+                            onClick={() => toggleChip(selectedLineas, setSelectedLineas, chip.val)}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
 
-        {/* Accordion: Actividades (default collapsed) */}
-        <Accordion sx={{ boxShadow: 'none', border: 'none', '&:before': { display: 'none' } }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ p: 0, minHeight: 0, '& .MuiAccordionSummary-content': { my: 1 } }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
-              Actividades
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {/* Modalidad */}
+                  {modalidadesList.length > 0 && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Modalidad
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                        {modalidadesList.map((chip) => (
+                          <FilterChip
+                            key={chip.val}
+                            label={chip.label}
+                            selected={selectedModalidades.includes(chip.val)}
+                            onClick={() => toggleChip(selectedModalidades, setSelectedModalidades, chip.val)}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </AccordionDetails>
+              </Accordion>
+            )}
 
-            {/* Línea VcM */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Línea VcM
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {dynamicLineas.map((chip) => (
-                  <FilterChip
-                    key={chip.val}
-                    label={chip.label}
-                    selected={selectedLineas.includes(chip.val)}
-                    onClick={() => toggleChip(selectedLineas, setSelectedLineas, chip.val)}
-                  />
-                ))}
-              </Box>
-            </Box>
+            {/* Accordion: Articulaciones TP */}
+            {(dynamicPlataformas.length > 0 || dynamicTiposArticulacion.length > 0) && (
+              <Accordion sx={{ boxShadow: 'none', border: 'none', '&:before': { display: 'none' } }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ p: 0, minHeight: 0, '& .MuiAccordionSummary-content': { my: 1 } }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                    Articulaciones TP
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {/* Plataforma */}
+                  {dynamicPlataformas.length > 0 && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Plataforma
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                        {dynamicPlataformas.map((chip) => (
+                          <FilterChip
+                            key={chip.val}
+                            label={chip.label}
+                            selected={selectedPlataformas.includes(chip.val)}
+                            onClick={() => toggleChip(selectedPlataformas, setSelectedPlataformas, chip.val)}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
 
-            {/* Modalidad */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Modalidad
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {modalidadesList.map((chip) => (
-                  <FilterChip
-                    key={chip.val}
-                    label={chip.label}
-                    selected={selectedModalidades.includes(chip.val)}
-                    onClick={() => toggleChip(selectedModalidades, setSelectedModalidades, chip.val)}
-                  />
-                ))}
-              </Box>
-            </Box>
-
-          </AccordionDetails>
-        </Accordion>
-
-        {/* Accordion: Articulaciones TP (default collapsed) */}
-        <Accordion sx={{ boxShadow: 'none', border: 'none', '&:before': { display: 'none' } }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ p: 0, minHeight: 0, '& .MuiAccordionSummary-content': { my: 1 } }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
-              Articulaciones TP
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-
-            {/* Plataforma */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Plataforma
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {dynamicPlataformas.map((chip) => (
-                  <FilterChip
-                    key={chip.val}
-                    label={chip.label}
-                    selected={selectedPlataformas.includes(chip.val)}
-                    onClick={() => toggleChip(selectedPlataformas, setSelectedPlataformas, chip.val)}
-                  />
-                ))}
-              </Box>
-            </Box>
-
-            {/* Tipo articulación */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Tipo articulación
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                {dynamicTiposArticulacion.map((chip) => (
-                  <FilterChip
-                    key={chip.val}
-                    label={chip.label}
-                    selected={selectedTiposArticulacion.includes(chip.val)}
-                    onClick={() => toggleChip(selectedTiposArticulacion, setSelectedTiposArticulacion, chip.val)}
-                  />
-                ))}
-              </Box>
-            </Box>
-
-          </AccordionDetails>
-        </Accordion>
-        </>
+                  {/* Tipo articulación */}
+                  {dynamicTiposArticulacion.length > 0 && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Tipo articulación
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                        {dynamicTiposArticulacion.map((chip) => (
+                          <FilterChip
+                            key={chip.val}
+                            label={chip.label}
+                            selected={selectedTiposArticulacion.includes(chip.val)}
+                            onClick={() => toggleChip(selectedTiposArticulacion, setSelectedTiposArticulacion, chip.val)}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </AccordionDetails>
+              </Accordion>
+            )}
+          </>
         )}
       </Box>
-
-      {!apiLoading && !hasRealData && (
-        <Box sx={{ mx: 2, mb: 2, p: 2, bgcolor: '#FEF3C7', borderRadius: 2, border: '1px solid #F59E0B' }}>
-          <Typography sx={{ fontSize: '13px', color: '#92400E', textAlign: 'center', fontWeight: 500 }}>
-            No hay datos disponibles para los filtros.
-          </Typography>
-        </Box>
-      )}
 
       {/* Footer Filtros */}
       <Box sx={styles.filtersFooter}>
@@ -991,7 +967,7 @@ export const DashboardVcM = () => {
                 value={kpi.value}
                 icon={<Icon size={24} />}
                 accentColor={kpi.color}
-                hasData={!isNoData}
+                hasData={hasRealData && kpi.value !== null}
                 loading={apiLoading}
                 compareText={
                   kpi.isBaseline
@@ -1050,11 +1026,11 @@ export const DashboardVcM = () => {
                           }]}
                           height={270}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
+                          slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '11px' } } }}
                         />
                       ) : (
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9E9E9E' }}>
-                          No hay datos en el rango seleccionado
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                          Sin datos disponibles
                         </Box>
                       )}
                     </Box>
@@ -1086,7 +1062,8 @@ export const DashboardVcM = () => {
                     </Box>
 
                     <Box sx={{ minHeight: 260, pb: 2 }}>
-                      {sec1Segment === 'Sector' && (
+                      {sec1Segment === 'Sector' && renderDataOrPlaceholder(
+                        datasetsSec1.Sector.some(d => d.value > 0),
                         <PieChart
                           colors={cheerfulFiestaPalette}
                           series={[{
@@ -1096,11 +1073,13 @@ export const DashboardVcM = () => {
                           }]}
                           height={260}
                           margin={{ top: 10, bottom: 65, left: 10, right: 10 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } } }}
-                        />
+                          slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '10px' } } }}
+                        />,
+                        260
                       )}
 
-                      {sec1Segment === 'Tipo' && (
+                      {sec1Segment === 'Tipo' && renderDataOrPlaceholder(
+                        datasetsSec1.Tipo.some(d => d.value > 0),
                         <BarChart
                           colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
@@ -1130,13 +1109,15 @@ export const DashboardVcM = () => {
                           height={250}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
                           slotProps={{
-                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '10px' } },
                             tooltip: { trigger: 'axis' }
                           }}
-                        />
+                        />,
+                        250
                       )}
 
-                      {sec1Segment === 'Contraparte' && (
+                      {sec1Segment === 'Contraparte' && renderDataOrPlaceholder(
+                        datasetsSec1.Contraparte.some(d => d.value > 0),
                         <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #E0E0E0', borderRadius: 4 }}>
                           <table className="vcm-table">
                             <thead>
@@ -1158,10 +1139,12 @@ export const DashboardVcM = () => {
                               ))}
                             </tbody>
                           </table>
-                        </div>
+                        </div>,
+                        220
                       )}
 
-                      {sec1Segment === 'Área vinculada' && (
+                      {sec1Segment === 'Área vinculada' && renderDataOrPlaceholder(
+                        datasetsSec1['Área vinculada'].some(d => d.value > 0),
                         <BarChart
                           colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
@@ -1191,10 +1174,11 @@ export const DashboardVcM = () => {
                           height={250}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
                           slotProps={{
-                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '10px' } },
                             tooltip: { trigger: 'axis' }
                           }}
-                        />
+                        />,
+                        250
                       )}
                     </Box>
                   </Grid>
@@ -1249,11 +1233,11 @@ export const DashboardVcM = () => {
                           }]}
                           height={270}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
+                          slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '11px' } } }}
                         />
                       ) : (
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9E9E9E' }}>
-                          No hay datos en el rango seleccionado
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                          Sin datos disponibles
                         </Box>
                       )}
                     </Box>
@@ -1285,7 +1269,8 @@ export const DashboardVcM = () => {
                     </Box>
 
                     <Box sx={{ minHeight: 260, pb: 2 }}>
-                      {sec2Segment === 'Sector' && (
+                      {sec2Segment === 'Sector' && renderDataOrPlaceholder(
+                        datasetsSec2.Sector.some(d => d.value > 0),
                         <BarChart
                           colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
@@ -1315,13 +1300,15 @@ export const DashboardVcM = () => {
                           height={250}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
                           slotProps={{
-                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '10px' } },
                             tooltip: { trigger: 'axis' }
                           }}
-                        />
+                        />,
+                        250
                       )}
 
-                      {sec2Segment === 'Tipo' && (
+                      {sec2Segment === 'Tipo' && renderDataOrPlaceholder(
+                        datasetsSec2.Tipo.some(d => d.value > 0),
                         <BarChart
                           colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
@@ -1351,13 +1338,15 @@ export const DashboardVcM = () => {
                           height={250}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
                           slotProps={{
-                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '10px' } },
                             tooltip: { trigger: 'axis' }
                           }}
-                        />
+                        />,
+                        250
                       )}
 
-                      {sec2Segment === 'Responsable' && (
+                      {sec2Segment === 'Responsable' && renderDataOrPlaceholder(
+                        datasetsSec2.Responsable.some(d => d.value > 0),
                         <BarChart
                           colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
@@ -1387,10 +1376,11 @@ export const DashboardVcM = () => {
                           height={250}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
                           slotProps={{
-                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '10px' } },
                             tooltip: { trigger: 'axis' }
                           }}
-                        />
+                        />,
+                        250
                       )}
                     </Box>
                   </Grid>
@@ -1420,59 +1410,67 @@ export const DashboardVcM = () => {
                   {/* Donut Chart */}
                   <Grid item xs={12} md={6}>
                     <Box sx={{ minHeight: 270, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                      <PieChart
-                        colors={cheerfulFiestaPalette}
-                        series={[{
-                          data: datasetsSec3.filter(d => d.vigentes > 0).map((d, i) => ({ id: i, value: d.vigentes, label: d.label })),
-                          innerRadius: 50,
-                          outerRadius: 90,
-                          paddingAngle: 2,
-                          cornerRadius: 4,
-                        }]}
-                        height={270}
-                        margin={{ top: 10, bottom: 65, left: 10, right: 10 }}
-                        slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
-                      >
-                        <PieCenterLabel
-                          primary={datasetsSec3.reduce((sum, d) => sum + (d.vigentes || 0), 0)}
-                          secondary="Vigentes"
-                        />
-                      </PieChart>
+                      {renderDataOrPlaceholder(
+                        datasetsSec3.some(d => d.vigentes > 0),
+                        <PieChart
+                          colors={cheerfulFiestaPalette}
+                          series={[{
+                            data: datasetsSec3.filter(d => d.vigentes > 0).map((d, i) => ({ id: i, value: d.vigentes, label: d.label })),
+                            innerRadius: 50,
+                            outerRadius: 90,
+                            paddingAngle: 2,
+                            cornerRadius: 4,
+                          }]}
+                          height={270}
+                          margin={{ top: 10, bottom: 65, left: 10, right: 10 }}
+                          slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '11px' } } }}
+                        >
+                          <PieCenterLabel
+                            primary={datasetsSec3.reduce((sum, d) => sum + (d.vigentes || 0), 0)}
+                            secondary="Vigentes"
+                          />
+                        </PieChart>,
+                        270
+                      )}
                     </Box>
                   </Grid>
 
                   {/* Tabla de detalle */}
                   <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #E0E0E0', borderRadius: 4, width: '100%' }}>
-                      <table className="vcm-table">
-                        <thead>
-                          <tr style={{ background: '#F8FAFC' }}>
-                            <th style={{ padding: '10px', fontWeight: 600, borderBottom: '2px solid #E0E0E0' }}>
-                              Sector
-                            </th>
-                            <th style={{ padding: '10px', fontWeight: 600, borderBottom: '2px solid #E0E0E0', textAlign: 'right' }}>
-                              Vigentes
-                            </th>
-                            <th style={{ padding: '10px', fontWeight: 600, borderBottom: '2px solid #E0E0E0', textAlign: 'right' }}>
-                              Cerrados
-                            </th>
-                            <th style={{ padding: '10px', fontWeight: 600, borderBottom: '2px solid #E0E0E0', textAlign: 'right' }}>
-                              Total
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {datasetsSec3.map((row, idx) => (
-                            <tr key={idx}>
-                              <td style={{ fontWeight: 600 }}>{row.label}</td>
-                              <td style={{ textAlign: 'right', color: '#E27800', fontWeight: 600 }}>{row.vigentes}</td>
-                              <td style={{ textAlign: 'right', color: '#6B7280' }}>{row.cerrados}</td>
-                              <td style={{ textAlign: 'right', fontWeight: 600 }}>{row.total}</td>
+                    {renderDataOrPlaceholder(
+                      datasetsSec3.some(d => (d.vigentes > 0 || d.cerrados > 0 || d.total > 0)),
+                      <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #E0E0E0', borderRadius: 4, width: '100%' }}>
+                        <table className="vcm-table">
+                          <thead>
+                            <tr style={{ background: '#F8FAFC' }}>
+                              <th style={{ padding: '10px', fontWeight: 600, borderBottom: '2px solid #E0E0E0' }}>
+                                Sector
+                              </th>
+                              <th style={{ padding: '10px', fontWeight: 600, borderBottom: '2px solid #E0E0E0', textAlign: 'right' }}>
+                                Vigentes
+                              </th>
+                              <th style={{ padding: '10px', fontWeight: 600, borderBottom: '2px solid #E0E0E0', textAlign: 'right' }}>
+                                Cerrados
+                              </th>
+                              <th style={{ padding: '10px', fontWeight: 600, borderBottom: '2px solid #E0E0E0', textAlign: 'right' }}>
+                                Total
+                              </th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          </thead>
+                          <tbody>
+                            {datasetsSec3.map((row, idx) => (
+                              <tr key={idx}>
+                                <td style={{ fontWeight: 600 }}>{row.label}</td>
+                                <td style={{ textAlign: 'right', color: '#E27800', fontWeight: 600 }}>{row.vigentes}</td>
+                                <td style={{ textAlign: 'right', color: '#6B7280' }}>{row.cerrados}</td>
+                                <td style={{ textAlign: 'right', fontWeight: 600 }}>{row.total}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>,
+                      240
+                    )}
                   </Grid>
                 </Grid>
               )}
@@ -1521,11 +1519,11 @@ export const DashboardVcM = () => {
                           }]}
                           height={270}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
+                          slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '11px' } } }}
                         />
                       ) : (
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9E9E9E' }}>
-                          No hay datos en el rango seleccionado
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                          Sin datos disponibles
                         </Box>
                       )}
                     </Box>
@@ -1557,7 +1555,8 @@ export const DashboardVcM = () => {
                     </Box>
 
                     <Box sx={{ minHeight: 260 }}>
-                      {sec4Segment === 'Línea VcM' && (
+                      {sec4Segment === 'Línea VcM' && renderDataOrPlaceholder(
+                        datasetsSec4['Línea VcM'].some(d => d.value > 0),
                         <BarChart
                           colors={cheerfulFiestaPalette}
                           grid={{ horizontal: false, vertical: false }}
@@ -1586,13 +1585,15 @@ export const DashboardVcM = () => {
                           height={270}
                           margin={{ top: 10, right: 50, bottom: 70, left: isMobile ? 65 : 130 }}
                           slotProps={{
-                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '10px' } },
                             tooltip: { trigger: 'axis' }
                           }}
-                        />
+                        />,
+                        270
                       )}
 
-                      {sec4Segment === 'Modalidad' && (
+                      {sec4Segment === 'Modalidad' && renderDataOrPlaceholder(
+                        datasetsSec4.Modalidad.some(d => d.value > 0),
                         <BarChart
                           colors={cheerfulFiestaPalette}
                           grid={{ horizontal: false, vertical: false }}
@@ -1621,13 +1622,15 @@ export const DashboardVcM = () => {
                           height={270}
                           margin={{ top: 10, right: 50, bottom: 70, left: isMobile ? 65 : 120 }}
                           slotProps={{
-                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '10px' } },
                             tooltip: { trigger: 'axis' }
                           }}
-                        />
+                        />,
+                        270
                       )}
 
-                      {sec4Segment === 'Tipo de Actividad' && (
+                      {sec4Segment === 'Tipo de Actividad' && renderDataOrPlaceholder(
+                        datasetsSec4['Tipo de Actividad'].some(d => d.months?.some(m => m > 0)),
                         <div style={{ overflowX: 'auto', border: '1px solid #E0E0E0', borderRadius: 4, padding: '12px' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                             <thead>
@@ -1679,10 +1682,12 @@ export const DashboardVcM = () => {
                               ))}
                             </tbody>
                           </table>
-                        </div>
+                        </div>,
+                        260
                       )}
 
-                      {sec4Segment === 'Comuna' && (
+                      {sec4Segment === 'Comuna' && renderDataOrPlaceholder(
+                        datasetsSec4.Comuna?.some(d => d.value > 0),
                         <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #E0E0E0', borderRadius: 4, width: '100%' }}>
                           <table className="vcm-table">
                             <thead>
@@ -1691,7 +1696,7 @@ export const DashboardVcM = () => {
                                   Comuna {sortStates.sec4.key === 'label' ? (sortStates.sec4.asc ? ' ▲' : ' ▼') : ''}
                                 </th>
                                 <th className="sortable-th" style={{ textAlign: 'right' }} onClick={() => handleSort('sec4', 'value')}>
-                                  Cantidad {sortStates.sec4.key === 'value' ? (sortStates.sec4.asc ? ' ▲' : ' ▼') : ''}
+                                  Actividades {sortStates.sec4.key === 'value' ? (sortStates.sec4.asc ? ' ▲' : ' ▼') : ''}
                                 </th>
                               </tr>
                             </thead>
@@ -1704,7 +1709,8 @@ export const DashboardVcM = () => {
                               ))}
                             </tbody>
                           </table>
-                        </div>
+                        </div>,
+                        240
                       )}
                     </Box>
                   </Grid>
@@ -1754,11 +1760,11 @@ export const DashboardVcM = () => {
                           }]}
                           height={270}
                           margin={{ top: 30, right: 10, bottom: 65, left: 55 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
+                          slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '11px' } } }}
                         />
                       ) : (
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9E9E9E' }}>
-                          No hay datos en el rango seleccionado
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                          Sin datos disponibles
                         </Box>
                       )}
                     </Box>
@@ -1790,7 +1796,8 @@ export const DashboardVcM = () => {
                     </Box>
 
                     <Box sx={{ minHeight: 260, pb: 2 }}>
-                      {sec5Segment === 'Público objetivo' && (
+                      {sec5Segment === 'Público objetivo' && renderDataOrPlaceholder(
+                        datasetsSec5['Público objetivo']?.some(d => d.value > 0),
                         <BarChart
                           colors={cheerfulFiestaPalette}
                           grid={{ horizontal: false, vertical: false }}
@@ -1819,12 +1826,14 @@ export const DashboardVcM = () => {
                           height={380}
                           margin={{ top: 10, right: 50, bottom: 70, left: isMobile ? 65 : 130 }}
                           slotProps={{
-                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '10px' } },
                             tooltip: { trigger: 'axis' }
                           }}
-                        />
+                        />,
+                        380
                       )}
-                      {sec5Segment === 'Sexo' && (
+                      {sec5Segment === 'Sexo' && renderDataOrPlaceholder(
+                        datasetsSec5.Sexo?.some(d => d.value > 0),
                         <Box sx={{ minHeight: 270, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                           <PieChart
                             colors={cheerfulFiestaPalette}
@@ -1837,17 +1846,19 @@ export const DashboardVcM = () => {
                             }]}
                             height={270}
                             margin={{ top: 10, bottom: 65, left: 10, right: 10 }}
-                            slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
+                            slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '11px' } } }}
                           >
                             <PieCenterLabel
                               primary={datasetsSec5.Sexo.reduce((sum, d) => sum + (d.value || 0), 0)}
                               secondary="TOTAL"
                             />
                           </PieChart>
-                        </Box>
+                        </Box>,
+                        270
                       )}
 
-                      {sec5Segment === 'Institución' && (
+                      {sec5Segment === 'Institución' && renderDataOrPlaceholder(
+                        datasetsSec5['Institución']?.some(d => d.value > 0),
                         <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #E0E0E0', borderRadius: 4, width: '100%' }}>
                           <table className="vcm-table">
                             <thead>
@@ -1869,10 +1880,12 @@ export const DashboardVcM = () => {
                               ))}
                             </tbody>
                           </table>
-                        </div>
+                        </div>,
+                        240
                       )}
 
-                      {sec5Segment === 'Comuna' && (
+                      {sec5Segment === 'Comuna' && renderDataOrPlaceholder(
+                        datasetsSec5.Comuna?.some(d => d.value > 0),
                         <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #E0E0E0', borderRadius: 4, width: '100%' }}>
                           <table className="vcm-table">
                             <thead>
@@ -1894,7 +1907,8 @@ export const DashboardVcM = () => {
                               ))}
                             </tbody>
                           </table>
-                        </div>
+                        </div>,
+                        240
                       )}
                     </Box>
                   </Grid>
@@ -1945,11 +1959,11 @@ export const DashboardVcM = () => {
                           }]}
                           height={270}
                           margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
-                          slotProps={{ legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '11px' } } }}
+                          slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '11px' } } }}
                         />
                       ) : (
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9E9E9E' }}>
-                          No hay datos en el rango seleccionado
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                          Sin datos disponibles
                         </Box>
                       )}
                     </Box>
@@ -1981,7 +1995,8 @@ export const DashboardVcM = () => {
                     </Box>
 
                     <Box sx={{ minHeight: 260 }}>
-                      {sec6Segment === 'Plataforma' && (
+                      {sec6Segment === 'Plataforma' && renderDataOrPlaceholder(
+                        datasetsSec6.Plataforma?.some(d => d.value > 0),
                         <BarChart
                           colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
@@ -2011,13 +2026,15 @@ export const DashboardVcM = () => {
                           height={270}
                           margin={{ top: 30, right: 10, bottom: 75, left: 40 }}
                           slotProps={{
-                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '10px' } },
                             tooltip: { trigger: 'axis' }
                           }}
-                        />
+                        />,
+                        270
                       )}
 
-                      {sec6Segment === 'Tipo' && (
+                      {sec6Segment === 'Tipo' && renderDataOrPlaceholder(
+                        datasetsSec6.Tipo?.some(d => d.value > 0),
                         <BarChart
                           colors={cheerfulFiestaPalette}
                           grid={{ horizontal: true }}
@@ -2047,13 +2064,15 @@ export const DashboardVcM = () => {
                           height={270}
                           margin={{ top: 30, right: 10, bottom: 75, left: 40 }}
                           slotProps={{
-                            legend: { direction: 'row', position: { vertical: 'bottom', horizontal: 'middle' }, labelStyle: { fontSize: '10px' } },
+                            legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: '10px' } },
                             tooltip: { trigger: 'axis' }
                           }}
-                        />
+                        />,
+                        270
                       )}
 
-                      {sec6Segment === 'Especialidad' && (
+                      {sec6Segment === 'Especialidad' && renderDataOrPlaceholder(
+                        datasetsSec6.Especialidad?.some(d => d.value > 0),
                         <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #E0E0E0', borderRadius: 4, width: '100%' }}>
                           <table className="vcm-table">
                             <thead>
@@ -2075,10 +2094,12 @@ export const DashboardVcM = () => {
                               ))}
                             </tbody>
                           </table>
-                        </div>
+                        </div>,
+                        240
                       )}
 
-                      {sec6Segment === 'Colegio' && (
+                      {sec6Segment === 'Colegio' && renderDataOrPlaceholder(
+                        datasetsSec6.Colegio?.some(d => d.value > 0),
                         <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #E0E0E0', borderRadius: 4, width: '100%' }}>
                           <table className="vcm-table">
                             <thead>
@@ -2100,7 +2121,8 @@ export const DashboardVcM = () => {
                               ))}
                             </tbody>
                           </table>
-                        </div>
+                        </div>,
+                        240
                       )}
                     </Box>
                   </Grid>
@@ -2332,22 +2354,6 @@ export const DashboardVcM = () => {
                      ))}
                   </Box>
                 </Box>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Estado
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                    {['Activo', 'Cerrado'].map((lbl) => (
-                      <FilterChip
-                        key={lbl}
-                        label={lbl}
-                        selected={selectedEstados.includes(lbl.toLowerCase())}
-                        onClick={() => toggleChip(selectedEstados, setSelectedEstados, lbl.toLowerCase())}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-
                 {/* Área vinculada */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>

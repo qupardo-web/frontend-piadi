@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, LinearProgress } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { ChevronRight as ChevronRightIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -138,18 +138,6 @@ export const DashboardHeader = ({
 
         {rightAction && <Box sx={{ display: 'flex', alignItems: 'center' }}>{rightAction}</Box>}
       </Box>
-
-      {/* 3. Barra de progreso lineal animada cuando los datos están cargando */}
-      {loading && (
-        <LinearProgress
-          sx={{
-            borderRadius: 1,
-            height: 4,
-            bgcolor: 'rgba(30, 40, 117, 0.08)',
-            '& .MuiLinearProgress-bar': { bgcolor: iconColor },
-          }}
-        />
-      )}
     </Box>
   );
 };

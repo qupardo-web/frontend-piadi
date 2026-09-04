@@ -21,6 +21,9 @@ import {
   DialogContent,
   LinearProgress,
   Card,
+  Button,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -35,6 +38,7 @@ import {
   ChevronRight as ChevronRightIcon,
   ExpandMore as ExpandMoreIcon,
   FilterAlt as FilterIcon,
+  RestartAlt as ResetIcon,
   Refresh as RefreshIcon,
   Check as CheckIcon,
   CheckCircleOutline,
@@ -120,6 +124,8 @@ export const DashboardInnovacion = () => {
     setFiltersCollapsed,
     yearRange,
     setYearRange,
+    periodoAcumulado,
+    setPeriodoAcumulado,
     selectedChips,
     handleToggleChip,
     handleResetFilters,
@@ -135,10 +141,6 @@ export const DashboardInnovacion = () => {
     handleOpenIndicator,
     handleCloseDrawer,
     handleDrawerStep,
-    tooltip,
-    showTooltip,
-    moveTooltip,
-    hideTooltip,
     faqData,
     apiLoading,
     apiFilters,
@@ -157,6 +159,9 @@ export const DashboardInnovacion = () => {
     proyActivos,
     proyFinalizados,
     proyAreas,
+    seccionesOtono,
+    seccionesPrimavera,
+    totalSeccionesMax,
     seccionesCurso,
     docentes,
     finExterno,
@@ -164,7 +169,10 @@ export const DashboardInnovacion = () => {
   } = useDashboardInnovacion();
 
   const getAxisMax = (val) => {
-    if (val <= 0) return 10;
+    if (val <= 0) return 4;
+    if (val <= 4) return 4;
+    if (val <= 8) return 8;
+    if (val <= 10) return 10;
     const paddedVal = val * 1.15;
     if (paddedVal <= 50) return Math.ceil(paddedVal / 10) * 10;
     if (paddedVal <= 200) return Math.ceil(paddedVal / 40) * 40;
@@ -175,7 +183,9 @@ export const DashboardInnovacion = () => {
   };
 
   const getAxisTicks = (val) => {
-    if (val <= 0) return 5;
+    if (val <= 4) return 1;
+    if (val <= 8) return 2;
+    if (val <= 10) return 2;
     if (val <= 50) return 10;
     if (val <= 200) return 40;
     if (val <= 500) return 100;
@@ -309,19 +319,7 @@ export const DashboardInnovacion = () => {
         gap: 2.5,
         bgcolor: '#FFFFFF',
       }}>
-        {/* Indicador de Filtros Activos */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography
-            sx={{
-              fontSize: '12px',
-              fontWeight: activeFiltersCount > 0 ? 600 : 500,
-              color: activeFiltersCount > 0 ? '#0E86B8' : '#94A3B8',
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
-            {activeFiltersCount} {activeFiltersCount === 1 ? 'filtro activo' : 'filtros activos'}
-          </Typography>
-        </Box>
+
 
         {/* Slider de Años */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -347,6 +345,33 @@ export const DashboardInnovacion = () => {
             <Typography variant="body2" sx={{ textAlign: 'center', mt: 1.5, fontWeight: 600, color: '#1E2875', fontSize: '13px' }}>
               {yearRange[0] === yearRange[1] ? yearRange[0] : `${yearRange[0]} — ${yearRange[1]}`}
             </Typography>
+
+            {/* Checkbox para Periodo Acumulado */}
+            {yearRange[0] !== yearRange[1] && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={periodoAcumulado}
+                      onChange={(e) => setPeriodoAcumulado(e.target.checked)}
+                      size="small"
+                      sx={{
+                        color: '#1E2875',
+                        '&.Mui-checked': {
+                          color: '#1DC2A0',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: '#475569' }}>
+                      Período acumulado
+                    </Typography>
+                  }
+                  sx={{ mx: 0 }}
+                />
+              </Box>
+            )}
           </Box>
         </Box>
 
@@ -555,23 +580,24 @@ export const DashboardInnovacion = () => {
         </Box>
       )}
 
-      {/* Footer Reset Button */}
-      <Box sx={{ p: 2, borderTop: '1px solid #E2E8F0', bgcolor: '#F8FAFC' }}>
-        <Box
-          component="button"
-          sx={styles.btnReset}
+      {/* Footer Filtros */}
+      <Box sx={styles.filtersFooter}>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<ResetIcon />}
           onClick={handleResetFilters}
+          sx={styles.resetFiltersButton}
         >
-          <RefreshIcon sx={{ fontSize: '16px' }} />
           Restablecer filtros
-        </Box>
+        </Button>
       </Box>
     </Box>
   );
 
   return (
     <ThemeProvider theme={dashboardLightTheme}>
-      <Box sx={styles.mainLayout} onMouseMove={moveTooltip}>
+      <Box sx={styles.mainLayout}>
       {/* APP BAR MÓVIL */}
       <AppBar position="fixed" sx={styles.mobileAppBar}>
         <Toolbar sx={styles.mobileToolbar}>
@@ -750,23 +776,36 @@ export const DashboardInnovacion = () => {
         {/* 4. Secciones del curso de innovación */}
         <DashboardSection
           title="Secciones del curso de innovación"
-          subtitle="Secciones por semestre"
+          subtitle="Distribución por año (Otoño vs Primavera)"
           icon={<CalendarIcon />}
           iconColor="#3EC9FF"
           isOpen={!collapsedSections['secciones-hbar']}
           onToggle={() => handleToggleSection('secciones-hbar')}
-          hasData={hasData && seccionesCurso.length > 0}
+          hasData={hasData && (seccionesOtono.some(v => v > 0) || seccionesPrimavera.some(v => v > 0))}
         >
           <Box sx={{ minHeight: 260, width: '100%' }}>
             <BarChart
-              layout="horizontal"
-              colors={['#3EC9FF']}
-              grid={{ vertical: true }}
-              yAxis={[{ scaleType: 'band', data: seccionesCurso.map(d => d.label) }]}
-              series={[{ data: seccionesCurso.map(d => d.value), label: 'Secciones' }]}
+              grid={{ horizontal: true }}
+              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
+              series={[
+                { data: seccionesOtono, label: 'Otoño', stack: 'total', color: '#3EC9FF' },
+                { data: seccionesPrimavera, label: 'Primavera', stack: 'total', color: '#1E2875' }
+              ]}
+              yAxis={[{ 
+                min: 0, 
+                max: getAxisMax(totalSeccionesMax), 
+                width: 35, 
+                tickInterval: getAxisTicks(totalSeccionesMax) 
+              }]}
               height={270}
-              margin={{ top: 20, right: 30, bottom: 40, left: 120 }}
-              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
+              slotProps={{ 
+                legend: { 
+                  direction: 'horizontal', 
+                  position: { vertical: 'bottom', horizontal: 'center' },
+                  labelStyle: { fontSize: '11px' }
+                } 
+              }}
             />
           </Box>
         </DashboardSection>
@@ -801,8 +840,8 @@ export const DashboardInnovacion = () => {
               margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
               slotProps={{ 
                 legend: { 
-                  direction: 'row', 
-                  position: { vertical: 'bottom', horizontal: 'middle' }, 
+                  direction: 'horizontal', 
+                  position: { vertical: 'bottom', horizontal: 'center' }, 
                   labelStyle: { fontSize: '11px' } 
                 } 
               }}
@@ -826,6 +865,13 @@ export const DashboardInnovacion = () => {
               grid={{ horizontal: true }}
               xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
               series={[{ data: finExterno, label: 'Proyectos FDI' }]}
+              yAxis={[{ 
+                min: 0, 
+                max: getAxisMax(Math.max(...finExterno, 0)), 
+                width: 35, 
+                tickInterval: getAxisTicks(Math.max(...finExterno, 0)),
+                valueFormatter: (val) => Number.isInteger(val) ? String(val) : ''
+              }]}
               height={270}
               margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
               slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
@@ -1048,29 +1094,6 @@ export const DashboardInnovacion = () => {
         </Box>
       </Box>
 
-      {/* TOOLTIP INTERACTIVO FLOTANTE */}
-      {tooltip.visible && (
-        <Box
-          sx={{
-            position: 'fixed',
-            left: tooltip.x + 12,
-            top: tooltip.y - 35,
-            pointerEvents: 'none',
-            bgcolor: '#212121',
-            opacity: 0.95,
-            color: '#FFFFFF',
-            borderRadius: '6px',
-            p: '6px 10px',
-            fontSize: '12px',
-            fontFamily: 'Inter',
-            zIndex: 2000,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-          }}
-        >
-          <Box sx={{ fontWeight: 700 }}>{tooltip.label}</Box>
-          {tooltip.detail && <Box sx={{ fontSize: '11px', color: '#E0E0E0', mt: 0.3 }}>{tooltip.detail}</Box>}
-        </Box>
-      )}
 
       {/* BOTÓN FLOTANTE DE CENTRO DE AYUDA (?) */}
       <IconButton
