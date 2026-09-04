@@ -59,6 +59,79 @@ const getParsedDetails = (item) => {
 const getRawAction = (item) =>
   item?.accion || item?.action || item?.detail?.accion || item?.detail?.action || '-';
 
+const META_ACTIONS = new Set([
+  'META_CREATED', 'META_UPDATED', 'META_DELETED', 'UPDATE_DEPARTMENTAL_META'
+]);
+
+const META_FIELD_LABELS = {
+  departmentId: 'Departamento',
+  anio: 'Año',
+  periodo: 'Periodo',
+  nombre: 'Nombre',
+  fechaInicio: 'Fecha de inicio',
+  fechaLimite: 'Fecha límite',
+  prioridad: 'Prioridad',
+  comportamiento: 'Comportamiento',
+  indicatorKey: 'Indicador',
+  valorMeta: 'Valor meta',
+  metrics: 'Métricas',
+};
+
+const DEPARTMENT_LABELS = {
+  educacion_continua: 'Educación Continua',
+  vinculacion_medio: 'Vinculación con el Medio',
+  innovacion: 'Innovación',
+  calidad: 'Calidad',
+  admision: 'Admisión',
+  desarrollo_curricular: 'Desarrollo Curricular',
+  relaciones_estudiantiles: 'Relaciones Estudiantiles',
+};
+
+const formatMetaValue = (value) => {
+  if (value === null || value === undefined || value === '') return 'sin valor';
+  if (Array.isArray(value)) return `${value.length} métrica${value.length === 1 ? '' : 's'}`;
+  if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+  if (typeof value === 'object') return 'valor actualizado';
+  return String(value);
+};
+
+const describeMetaChanges = (changes) => {
+  if (!changes || typeof changes !== 'object' || Array.isArray(changes)) return '';
+  return Object.entries(changes).map(([field, values]) => {
+    const label = META_FIELD_LABELS[field] || field;
+    return `${label}: ${formatMetaValue(values?.before)} → ${formatMetaValue(values?.after)}`;
+  }).join('; ');
+};
+
+const resolveMetaDetail = (item) => {
+  const parsed = getParsedDetails(item) || {};
+  const action = getRawAction(item);
+  const meta = parsed.metaId !== null && parsed.metaId !== undefined ? `Meta #${parsed.metaId}` : 'Meta';
+  const department = DEPARTMENT_LABELS[parsed.departmentId] || parsed.departmentId;
+  const context = department ? ` de ${department}` : '';
+
+  if (action === 'META_CREATED') {
+    const metricCount = Number(parsed.metricCount);
+    const metrics = Number.isFinite(metricCount)
+      ? ` con ${metricCount} métrica${metricCount === 1 ? '' : 's'}`
+      : '';
+    return `${meta} creada${context}${metrics}.`;
+  }
+  if (action === 'META_DELETED') {
+    const reference = parsed.reference || {};
+    const name = reference.nombre ? ` (${reference.nombre})` : '';
+    return `${meta}${name} eliminada${context}.`;
+  }
+  if (action === 'META_UPDATED' || action === 'UPDATE_DEPARTMENTAL_META') {
+    const changes = describeMetaChanges(parsed.changes);
+    const prefix = action === 'UPDATE_DEPARTMENTAL_META'
+      ? `${meta} departamental modificada por Rectoría${context}`
+      : `${meta} modificada${context}`;
+    return changes ? `${prefix}. Cambios: ${changes}.` : `${prefix}.`;
+  }
+  return '';
+};
+
 const resolveUser = (item) => {
   const parsed = getParsedDetails(item);
   const value =
@@ -101,6 +174,10 @@ const resolveAction = (item, type) => {
     LOGIN_FAILED: 'Inicio de sesión fallido',
     LOGOUT_SUCCESS: 'Cierre de sesión',
     UPLOAD_TEMPLATE: 'Carga de plantilla',
+    META_CREATED: 'Creación',
+    META_UPDATED: 'Edición',
+    META_DELETED: 'Eliminación',
+    UPDATE_DEPARTMENTAL_META: 'Modificación departamental por Rectoría',
   };
   if (rawAction === '-' && type === 'carga') return 'Carga de plantilla';
   return labels[rawAction] || toText(rawAction);
@@ -142,7 +219,10 @@ const cleanPlainDetail = (value) => {
   return parseJsonString(text) ? '' : text;
 };
 
-const resolveDetail = (item) => {
+const resolveDetail = (item, type) => {
+  if (type === 'metas' && META_ACTIONS.has(getRawAction(item))) {
+    return resolveMetaDetail(item);
+  }
   const detail = item?.detail || {};
   const parsed = getParsedDetails(item);
   const plainDetail =
@@ -196,19 +276,25 @@ const resolveDetail = (item) => {
   );
 };
 
-const mapAuditLog = (item, type, index) => ({
-  id: item?.id ?? `${type}-${item?.createdAt || index}`,
-  fecha: formatDate(item?.createdAt),
-  fechaRaw: item?.createdAt || null,
-  usuario: resolveUser(item),
-  rol: resolveRole(item),
-  accion: resolveAction(item, type),
-  entidad: resolveEntity(item, type === 'session' ? 'Sistema' : '-'),
-  registros: resolveRecords(item),
-  plantilla: type === 'carga' ? resolveTemplate(item) : '-',
-  archivo: type === 'carga' ? resolveFile(item) : '-',
-  detalle: resolveDetail(item),
-});
+const mapAuditLog = (item, type, index) => {
+  const parsed = getParsedDetails(item);
+  const metaId = type === 'metas' ? parsed?.metaId : null;
+  return {
+    id: item?.id ?? `${type}-${item?.createdAt || index}`,
+    fecha: formatDate(item?.createdAt),
+    fechaRaw: item?.createdAt || null,
+    usuario: resolveUser(item),
+    rol: resolveRole(item),
+    accion: resolveAction(item, type),
+    entidad: metaId !== null && metaId !== undefined
+      ? `Meta #${metaId}`
+      : resolveEntity(item, type === 'session' ? 'Sistema' : '-'),
+    registros: resolveRecords(item),
+    plantilla: type === 'carga' ? resolveTemplate(item) : '-',
+    archivo: type === 'carga' ? resolveFile(item) : '-',
+    detalle: resolveDetail(item, type),
+  };
+};
 
 const getSortValue = (log, key) => {
   if (key === 'fecha') {
@@ -296,28 +382,38 @@ export const useAuditoria = () => {
 
   const [realCargaLogs, setRealCargaLogs] = useState([]);
   const [realSessionLogs, setRealSessionLogs] = useState([]);
+  const [realMetaLogs, setRealMetaLogs] = useState([]);
+  const [loadingTabs, setLoadingTabs] = useState({ carga: true, session: true, metas: true });
+  const [errorTabs, setErrorTabs] = useState({ carga: false, session: false, metas: false });
   const [apiRoleOptions, setApiRoleOptions] = useState([]);
 
   useEffect(() => {
     const token = sessionStorage.getItem('auth_token');
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-    const fetchLogs = async (type, setter) => {
+    const fetchLogs = async (apiType, displayType, module, setter) => {
       try {
-        const res = await fetch(`${API_URL}/api/audit-logs?type=${type}&limit=100`, {
+        const params = new URLSearchParams({ type: apiType, limit: '100' });
+        if (module) params.set('module', module);
+        const res = await fetch(`${API_URL}/api/audit-logs?${params.toString()}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        if (!res.ok) return;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         const items = json?.data?.items || [];
-        setter(items.map((item, index) => mapAuditLog(item, type, index)));
+        setter(items.map((item, index) => mapAuditLog(item, displayType, index)));
+        setErrorTabs((current) => ({ ...current, [displayType]: false }));
       } catch {
         setter([]);
+        setErrorTabs((current) => ({ ...current, [displayType]: true }));
+      } finally {
+        setLoadingTabs((current) => ({ ...current, [displayType]: false }));
       }
     };
 
-    fetchLogs('carga', setRealCargaLogs);
-    fetchLogs('session', setRealSessionLogs);
+    fetchLogs('carga', 'carga', null, setRealCargaLogs);
+    fetchLogs('session', 'session', 'Sesión', setRealSessionLogs);
+    fetchLogs('session', 'metas', 'Meta', setRealMetaLogs);
   }, []);
 
   useEffect(() => {
@@ -337,11 +433,11 @@ export const useAuditoria = () => {
   }, []);
 
   const logRoleOptions = useMemo(() => {
-    const roles = [...realCargaLogs, ...realSessionLogs]
+    const roles = [...realCargaLogs, ...realSessionLogs, ...realMetaLogs]
       .map((log) => log.rol)
       .filter((role) => !isEmptyValue(role));
     return [...new Set(roles)].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
-  }, [realCargaLogs, realSessionLogs]);
+  }, [realCargaLogs, realSessionLogs, realMetaLogs]);
 
   const roleOptions = apiRoleOptions.length > 0 ? apiRoleOptions : logRoleOptions;
 
@@ -406,6 +502,7 @@ export const useAuditoria = () => {
     switch (activeTab) {
       case 'carga': return realCargaLogs;
       case 'session': return realSessionLogs;
+      case 'metas': return realMetaLogs;
       default: return [];
     }
   };
@@ -493,11 +590,21 @@ export const useAuditoria = () => {
         { label: 'Acción', value: (row) => row.accion },
         { label: 'Detalle', value: (row) => row.detalle },
       ],
+      metas: [
+        { label: 'Fecha', value: (row) => row.fecha },
+        { label: 'Usuario', value: (row) => row.usuario },
+        { label: 'Rol', value: (row) => row.rol },
+        { label: 'Acción', value: (row) => row.accion },
+        { label: 'Meta', value: (row) => row.entidad },
+        { label: 'Detalle', value: (row) => row.detalle },
+      ],
     };
 
     const filename = activeTab === 'carga'
       ? 'auditoria-carga-datos.csv'
-      : 'auditoria-inicios-sesion.csv';
+      : activeTab === 'metas'
+        ? 'auditoria-metas.csv'
+        : 'auditoria-inicios-sesion.csv';
     downloadCsv(filename, buildCsv(rows, columnsByTab[activeTab] || columnsByTab.carga));
   };
 
@@ -535,5 +642,7 @@ export const useAuditoria = () => {
     paginatedLogs,
     canExportCsv: sortedLogs.length > 0,
     handleExportCsv,
+    isLoading: loadingTabs[activeTab],
+    loadError: errorTabs[activeTab],
   };
 };
