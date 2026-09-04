@@ -61,6 +61,14 @@ export const useMetaEditForm = () => {
   const [metricUpperLimit, setMetricUpperLimit] = useState('');
   const [metricModalError, setMetricModalError] = useState(null);
 
+  // Restricción: Roles de Calidad no pueden crear ni editar metas (solo lectura)
+  useEffect(() => {
+    const roleLower = String(user?.role || '').toLowerCase();
+    if (user?.role === 'Analista de Calidad' || user?.role === 'Vicerrectoria de Calidad' || roleLower.includes('calidad')) {
+      navigate('/metas');
+    }
+  }, [user, navigate]);
+
   // Load departments from database on mount and filter by role
   useEffect(() => {
     const fetchDepts = async () => {
@@ -133,7 +141,7 @@ export const useMetaEditForm = () => {
           setInicio(formatToInputDate(m.fechaInicio || m.inicio));
           setLimite(formatToInputDate(m.fechaLimite || m.limite));
           setPrioridad(m.prioridad || 'media');
-          setCreadaPor(`Usuario ID: ${m.creatorId || 'N/A'}`);
+          setCreadaPor(user?.username || 'Jane Doe');
           
           if (Array.isArray(m.metrics)) {
             const mappedMetrics = m.metrics.map((metric, index) => ({
@@ -333,7 +341,7 @@ export const useMetaEditForm = () => {
       setShowSuccessAlert(true);
     } catch (err) {
       console.error('Error saving meta:', err);
-      alert('Hubo un error al guardar la meta en el servidor.');
+      alert('Hubo un error al guardar la meta.');
     }
   };
 

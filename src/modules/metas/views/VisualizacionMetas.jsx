@@ -52,6 +52,7 @@ export const VisualizacionMetas = () => {
     navigate,
     user,
     logout,
+    isCalidadUser,
     activeMenu,
     setActiveMenu,
     mobileOpen,
@@ -331,14 +332,16 @@ export const VisualizacionMetas = () => {
         {/* Toolbar */}
         <Box sx={styles.toolbar}>
           {/* Button "Crear meta" */}
-          <Button 
-            variant="contained" 
-            sx={styles.createMetaBtn}
-            onClick={() => navigate('/meta-form')}
-          >
-            <Box component="span" sx={{ display: 'flex', mr: 0.5, fontSize: '18px', fontWeight: 'bold' }}>+</Box>
-            Crear meta
-          </Button>
+          {!isCalidadUser && (
+            <Button 
+              variant="contained" 
+              sx={styles.createMetaBtn}
+              onClick={() => navigate('/meta-form')}
+            >
+              <Box component="span" sx={{ display: 'flex', mr: 0.5, fontSize: '18px', fontWeight: 'bold' }}>+</Box>
+              Crear meta
+            </Button>
+          )}
 
           {/* Sort Control */}
           <Box sx={styles.sortSelectWrap}>
@@ -595,23 +598,25 @@ export const VisualizacionMetas = () => {
                         </Box>
                       </Box>
 
-                      {/* Action buttons (CRUD placeholders) */}
-                      <Box sx={styles.actionBtns}>
-                        <Button 
-                          sx={styles.iconActionBtn('edit')}
-                          aria-label="Editar meta"
-                          onClick={() => navigate(`/meta-form/${meta.id}`)}
-                        >
-                          <EditIcon sx={{ fontSize: 16 }} />
-                        </Button>
-                        <Button 
-                          sx={styles.iconActionBtn('delete')}
-                          aria-label="Eliminar meta"
-                          onClick={() => handleOpenDeleteDialog(meta.id)}
-                        >
-                          <DeleteIcon sx={{ fontSize: 16 }} />
-                        </Button>
-                      </Box>
+                      {/* Action buttons (CRUD) */}
+                      {!isCalidadUser && (
+                        <Box sx={styles.actionBtns}>
+                          <Button 
+                            sx={styles.iconActionBtn('edit')}
+                            aria-label="Editar meta"
+                            onClick={() => navigate(`/meta-form/${meta.id}`)}
+                          >
+                            <EditIcon sx={{ fontSize: 16 }} />
+                          </Button>
+                          <Button 
+                            sx={styles.iconActionBtn('delete')}
+                            aria-label="Eliminar meta"
+                            onClick={() => handleOpenDeleteDialog(meta.id)}
+                          >
+                            <DeleteIcon sx={{ fontSize: 16 }} />
+                          </Button>
+                        </Box>
+                      )}
                     </Box>
                   </Box>
 

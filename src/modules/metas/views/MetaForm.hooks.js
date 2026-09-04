@@ -53,6 +53,14 @@ export const useMetaForm = () => {
   const [creadaPor, setCreadaPor] = useState('');
   const [metricas, setMetricas] = useState([]);
 
+  // Restricción: Roles de Calidad no pueden crear ni editar metas (solo lectura)
+  useEffect(() => {
+    const roleLower = String(user?.role || '').toLowerCase();
+    if (user?.role === 'Analista de Calidad' || user?.role === 'Vicerrectoria de Calidad' || roleLower.includes('calidad')) {
+      navigate('/metas');
+    }
+  }, [user, navigate]);
+
   // Load departments from database on mount and filter by role
   useEffect(() => {
     const fetchDepts = async () => {
@@ -342,7 +350,7 @@ export const useMetaForm = () => {
       }
     } catch (err) {
       console.error('Error saving meta:', err);
-      alert('Hubo un error al guardar la meta en el servidor.');
+      alert('Hubo un error al guardar la meta.');
     }
   };
 
