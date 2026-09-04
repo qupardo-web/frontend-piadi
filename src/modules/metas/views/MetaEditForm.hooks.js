@@ -6,6 +6,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { getDepartments, getDepartmentKpis, updateMeta, getMetaById } from '../../../services/piadiApi';
+import { isRectoria } from '../metaAccess';
 
 export const useMetaEditForm = () => {
   const { id } = useParams();
@@ -61,33 +62,17 @@ export const useMetaEditForm = () => {
   const [metricUpperLimit, setMetricUpperLimit] = useState('');
   const [metricModalError, setMetricModalError] = useState(null);
 
-  // Restricción: Roles de Calidad no pueden crear ni editar metas (solo lectura)
-  useEffect(() => {
-    const roleLower = String(user?.role || '').toLowerCase();
-    if (user?.role === 'Analista de Calidad' || user?.role === 'Vicerrectoria de Calidad' || roleLower.includes('calidad')) {
-      navigate('/metas');
-    }
-  }, [user, navigate]);
-
   // Load departments from database on mount and filter by role
   useEffect(() => {
     const fetchDepts = async () => {
       try {
         const res = await getDepartments();
         if (res.success && Array.isArray(res.data)) {
-          if (user?.role === 'Rector') {
+          if (isRectoria(user)) {
             setDepartmentsList(res.data);
           } else {
-            const roleLower = (user?.role || '').toLowerCase();
-            let userDeptKey = null;
-            if (roleLower.includes('vinculación') || roleLower.includes('vinculacion') || roleLower.includes('vcm')) {
-              userDeptKey = 'vinculacion_medio';
-            } else if (roleLower.includes('continua') || roleLower.includes('académico') || roleLower.includes('academico')) {
-              userDeptKey = 'educacion_continua';
-            }
-
-            if (userDeptKey) {
-              const filtered = res.data.filter(d => d.key === userDeptKey);
+            if (user?.departmentId) {
+              const filtered = res.data.filter(d => d.key === user.departmentId);
               setDepartmentsList(filtered);
             } else {
               setDepartmentsList([]);
@@ -131,6 +116,10 @@ export const useMetaEditForm = () => {
         const res = await getMetaById(id);
         if (res.success && res.data) {
           const m = res.data;
+          if (m.permissions?.canEdit !== true) {
+            navigate('/metas', { replace: true });
+            return;
+          }
           setNombre(m.nombre || '');
           setDepartamento(m.departmentId || '');
           setComportamiento(m.comportamiento || 'no-debe-superar');
@@ -163,7 +152,7 @@ export const useMetaEditForm = () => {
       }
     };
     fetchMeta();
-  }, [id]);
+  }, [id, navigate, user]);
 
   // Compute Total Metrics Aporte Percentage
   const totalAporte = useMemo(() => {
@@ -351,7 +340,7 @@ export const useMetaEditForm = () => {
   };
 
   const filteredDepartments = useMemo(() => {
-    if (user?.role === 'Rector') {
+    if (isRectoria(user)) {
       return departmentsList;
     }
     return departmentsList.filter(d => d.key !== 'institucional');

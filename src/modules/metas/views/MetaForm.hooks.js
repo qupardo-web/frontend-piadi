@@ -6,6 +6,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { getDepartments, getDepartmentKpis, createMeta, updateMeta } from '../../../services/piadiApi';
+import { canCreateMeta, isRectoria } from '../metaAccess';
 
 export const METRICAS_POOL = [
   'Total de deserciones', 
@@ -53,10 +54,9 @@ export const useMetaForm = () => {
   const [creadaPor, setCreadaPor] = useState('');
   const [metricas, setMetricas] = useState([]);
 
-  // Restricción: Roles de Calidad no pueden crear ni editar metas (solo lectura)
+  // La autorización real permanece en backend; esta redirección evita mostrar un formulario inutilizable.
   useEffect(() => {
-    const roleLower = String(user?.role || '').toLowerCase();
-    if (user?.role === 'Analista de Calidad' || user?.role === 'Vicerrectoria de Calidad' || roleLower.includes('calidad')) {
+    if (user && !canCreateMeta(user)) {
       navigate('/metas');
     }
   }, [user, navigate]);
@@ -67,19 +67,11 @@ export const useMetaForm = () => {
       try {
         const res = await getDepartments();
         if (res.success && Array.isArray(res.data)) {
-          if (user?.role === 'Rector') {
+          if (isRectoria(user)) {
             setDepartmentsList(res.data);
           } else {
-            const roleLower = (user?.role || '').toLowerCase();
-            let userDeptKey = null;
-            if (roleLower.includes('vinculación') || roleLower.includes('vinculacion') || roleLower.includes('vcm')) {
-              userDeptKey = 'vinculacion_medio';
-            } else if (roleLower.includes('continua') || roleLower.includes('académico') || roleLower.includes('academico')) {
-              userDeptKey = 'educacion_continua';
-            }
-
-            if (userDeptKey) {
-              const filtered = res.data.filter(d => d.key === userDeptKey);
+            if (user?.departmentId) {
+              const filtered = res.data.filter(d => d.key === user.departmentId);
               setDepartmentsList(filtered);
               if (filtered.length === 1) {
                 setDepartamento(filtered[0].key);
@@ -337,7 +329,7 @@ export const useMetaForm = () => {
 
       // Limpiar campos del formulario
       setNombre('');
-      setDepartamento('');
+      setDepartamento(isRectoria(user) ? '' : (user?.departmentId || ''));
       setComportamiento('no-debe-superar');
       setInicio('');
       setLimite('');
@@ -360,7 +352,7 @@ export const useMetaForm = () => {
   };
 
   const filteredDepartments = useMemo(() => {
-    if (user?.role === 'Rector') {
+    if (isRectoria(user)) {
       return departmentsList;
     }
     return departmentsList.filter(d => d.key !== 'institucional');

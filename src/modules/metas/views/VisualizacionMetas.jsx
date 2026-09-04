@@ -52,7 +52,7 @@ export const VisualizacionMetas = () => {
     navigate,
     user,
     logout,
-    isCalidadUser,
+    canCreateMeta,
     activeMenu,
     setActiveMenu,
     mobileOpen,
@@ -332,7 +332,7 @@ export const VisualizacionMetas = () => {
         {/* Toolbar */}
         <Box sx={styles.toolbar}>
           {/* Button "Crear meta" */}
-          {!isCalidadUser && (
+          {canCreateMeta && (
             <Button 
               variant="contained" 
               sx={styles.createMetaBtn}
@@ -599,22 +599,26 @@ export const VisualizacionMetas = () => {
                       </Box>
 
                       {/* Action buttons (CRUD) */}
-                      {!isCalidadUser && (
+                      {(meta.permissions?.canEdit || meta.permissions?.canDelete) && (
                         <Box sx={styles.actionBtns}>
-                          <Button 
-                            sx={styles.iconActionBtn('edit')}
-                            aria-label="Editar meta"
-                            onClick={() => navigate(`/meta-form/${meta.id}`)}
-                          >
-                            <EditIcon sx={{ fontSize: 16 }} />
-                          </Button>
-                          <Button 
-                            sx={styles.iconActionBtn('delete')}
-                            aria-label="Eliminar meta"
-                            onClick={() => handleOpenDeleteDialog(meta.id)}
-                          >
-                            <DeleteIcon sx={{ fontSize: 16 }} />
-                          </Button>
+                          {meta.permissions?.canEdit && (
+                            <Button
+                              sx={styles.iconActionBtn('edit')}
+                              aria-label="Editar meta"
+                              onClick={() => navigate(`/meta-form/${meta.id}`)}
+                            >
+                              <EditIcon sx={{ fontSize: 16 }} />
+                            </Button>
+                          )}
+                          {meta.permissions?.canDelete && (
+                            <Button
+                              sx={styles.iconActionBtn('delete')}
+                              aria-label="Eliminar meta"
+                              onClick={() => handleOpenDeleteDialog(meta.id)}
+                            >
+                              <DeleteIcon sx={{ fontSize: 16 }} />
+                            </Button>
+                          )}
                         </Box>
                       )}
                     </Box>
