@@ -103,10 +103,21 @@ const describeMetaChanges = (changes) => {
   }).join('; ');
 };
 
+const resolveMetaName = (parsed = {}) => {
+  const name = parsed.metaName
+    ?? parsed.nombre
+    ?? parsed.nombreMeta
+    ?? parsed.entityName
+    ?? parsed.reference?.nombre
+    ?? parsed.changes?.nombre?.after;
+  if (!isEmptyValue(name)) return String(name);
+  return parsed.metaId !== null && parsed.metaId !== undefined ? `Meta #${parsed.metaId}` : 'Meta';
+};
+
 const resolveMetaDetail = (item) => {
   const parsed = getParsedDetails(item) || {};
   const action = getRawAction(item);
-  const meta = parsed.metaId !== null && parsed.metaId !== undefined ? `Meta #${parsed.metaId}` : 'Meta';
+  const meta = resolveMetaName(parsed);
   const department = DEPARTMENT_LABELS[parsed.departmentId] || parsed.departmentId;
   const context = department ? ` de ${department}` : '';
 
@@ -278,7 +289,7 @@ const resolveDetail = (item, type) => {
 
 const mapAuditLog = (item, type, index) => {
   const parsed = getParsedDetails(item);
-  const metaId = type === 'metas' ? parsed?.metaId : null;
+  const isMeta = type === 'metas';
   return {
     id: item?.id ?? `${type}-${item?.createdAt || index}`,
     fecha: formatDate(item?.createdAt),
@@ -286,8 +297,8 @@ const mapAuditLog = (item, type, index) => {
     usuario: resolveUser(item),
     rol: resolveRole(item),
     accion: resolveAction(item, type),
-    entidad: metaId !== null && metaId !== undefined
-      ? `Meta #${metaId}`
+    entidad: isMeta
+      ? resolveMetaName(parsed)
       : resolveEntity(item, type === 'session' ? 'Sistema' : '-'),
     registros: resolveRecords(item),
     plantilla: type === 'carga' ? resolveTemplate(item) : '-',
