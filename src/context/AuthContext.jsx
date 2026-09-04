@@ -53,7 +53,9 @@ const getUserFromToken = (token) => {
   return {
     id: decoded.id,
     username: decoded.name || decoded.email,
-    role: decoded.role
+    role: decoded.role,
+    roleGroup: decoded.roleGroup,
+    departmentId: decoded.departmentId
   };
 };
 
@@ -73,7 +75,7 @@ export const AuthProvider = ({ children }) => {
           clearStoredSession();
           setUser(null);
         } else {
-          setUser(JSON.parse(savedUser));
+          setUser(getUserFromToken(token));
         }
       } catch (e) {
         clearStoredSession();

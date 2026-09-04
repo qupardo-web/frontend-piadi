@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { getMetas, deleteMeta, getDepartments } from '../../../services/piadiApi';
+import { canCreateMeta as userCanCreateMeta } from '../metaAccess';
 
 const PRIORIDAD_RANK = { alta: 0, media: 1, baja: 2 };
 
@@ -59,7 +60,8 @@ export const useVisualizacionMetas = () => {
             comportamiento: firstMetric.behavior || m.comportamiento || 'debe-superar',
             lowerLimit: firstMetric.lowerLimit !== undefined ? firstMetric.lowerLimit : null,
             upperLimit: firstMetric.upperLimit !== undefined ? firstMetric.upperLimit : null,
-            tipoValor: firstMetric.valueType || 'number'
+            tipoValor: firstMetric.valueType || 'number',
+            permissions: m.permissions || { canEdit: false, canDelete: false }
           };
         });
         setMetas(mapped);
@@ -270,21 +272,13 @@ export const useVisualizacionMetas = () => {
     return { total, cumplimiento, riesgo };
   }, [metas]);
 
-  // Identifica si el usuario actual pertenece al rol o área de Calidad (solo lectura)
-  const isCalidadUser = useMemo(() => {
-    const roleLower = String(user?.role || '').toLowerCase();
-    return (
-      user?.role === 'Analista de Calidad' ||
-      user?.role === 'Vicerrectoria de Calidad' ||
-      roleLower.includes('calidad')
-    );
-  }, [user]);
+  const canCreateMeta = useMemo(() => userCanCreateMeta(user), [user]);
 
   return {
     navigate,
     user,
     logout,
-    isCalidadUser,
+    canCreateMeta,
     activeMenu,
     setActiveMenu,
     mobileOpen,
