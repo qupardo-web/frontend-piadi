@@ -45,355 +45,61 @@ import {
   MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { BarChart } from '@mui/x-charts/BarChart';
+import { LineChart } from '@mui/x-charts/LineChart';
+import { PieChart } from '@mui/x-charts/PieChart';
+
 import { useDashboardInnovacion, YEARS, CAT_COLORS } from './DashboardInnovacion.hooks';
 import { styles } from './DashboardInnovacion.styles';
-import { DashboardHeader, KpiCard } from '../components';
+import { DashboardHeader, KpiCard, DashboardSection } from '../components';
 import logoEcas from '../../../assets/logo_ECAS_white.svg';
 
-// =========================================================================
-// SUBCOMPONENTES DE GRÁFICOS SVG INTERACTIVOS
-// =========================================================================
-
-// 1. Gráfico de Barras Verticales por Año
-const YearBarChart = ({ data, years = YEARS, indicatorKey, onBarClick, onHover, onLeave }) => {
-  const width = 600;
-  const height = 240;
-  const m = { top: 20, right: 20, bottom: 35, left: 40 };
-  const iw = width - m.left - m.right;
-  const ih = height - m.top - m.bottom;
-  const maxVal = Math.max(...data, 1) * 1.2;
-
-  const barWidth = iw / data.length * 0.55;
-  const step = iw / data.length;
-
-  return (
-    <Box sx={styles.chartCanvasWrap}>
-      <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
-        {/* Grid lines */}
-        <g transform={`translate(${m.left}, ${m.top})`}>
-          {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
-            const y = ih - ratio * ih;
-            const val = Math.round(ratio * maxVal);
-            return (
-              <g key={idx}>
-                <line x1={0} y1={y} x2={iw} y2={y} stroke="#E5E7EB" strokeDasharray="3 3" />
-                <text x={-10} y={y + 4} textAnchor="end" fontSize="11" fill="#9E9E9E" fontFamily="Inter">
-                  {val}
-                </text>
-              </g>
-            );
-          })}
-          {/* Eje X */}
-          <line x1={0} y1={ih} x2={iw} y2={ih} stroke="#E5E7EB" />
-        </g>
-
-        {/* Barras */}
-        <g transform={`translate(${m.left}, ${m.top})`}>
-          {data.map((val, i) => {
-            const barH = (val / maxVal) * ih;
-            const x = i * step + (step - barWidth) / 2;
-            const y = ih - barH;
-            const isLast = i === data.length - 1;
-            const color = isLast ? '#0E86B8' : i % 2 === 1 ? '#3EC9FF' : '#EAF9FF';
-            const strokeColor = color === '#EAF9FF' ? '#BCE9FC' : 'none';
-            const currentYear = years[i] || YEARS[i];
-
-            return (
-              <g key={i}>
-                <rect
-                  x={x}
-                  y={y}
-                  width={barWidth}
-                  height={barH}
-                  rx={4}
-                  fill={color}
-                  stroke={strokeColor}
-                  style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
-                  onClick={() => onBarClick(indicatorKey)}
-                  onMouseMove={(e) => onHover(String(currentYear), `Valor: ${val}`, e)}
-                  onMouseLeave={onLeave}
-                />
-                <text
-                  x={x + barWidth / 2}
-                  y={y - 8}
-                  textAnchor="middle"
-                  fontSize="12"
-                  fontWeight="600"
-                  fill="#212121"
-                  fontFamily="Inter"
-                >
-                  {val}
-                </text>
-                <text
-                  x={x + barWidth / 2}
-                  y={ih + 20}
-                  textAnchor="middle"
-                  fontSize="12"
-                  fill="#616161"
-                  fontWeight="500"
-                  fontFamily="Inter"
-                >
-                  {currentYear}
-                </text>
-              </g>
-            );
-          })}
-        </g>
-      </svg>
-    </Box>
-  );
-};
-
-// 2. Gráfico Donut para Áreas Temáticas
-const DonutChart = ({ data, onSegmentClick, onHover, onLeave }) => {
-  const width = 600;
-  const height = 260;
-  const cx = width / 2;
-  const cy = height / 2;
-  const radius = 95;
-  const innerRadius = 55;
-  const total = data.reduce((acc, d) => acc + d.value, 0);
-
-  let currentAngle = -Math.PI / 2;
-  const slices = data.map((d, i) => {
-    const angle = (d.value / total) * 2 * Math.PI;
-    const startAngle = currentAngle;
-    const endAngle = currentAngle + angle;
-    currentAngle = endAngle;
-
-    const x1 = cx + radius * Math.cos(startAngle);
-    const y1 = cy + radius * Math.sin(startAngle);
-    const x2 = cx + radius * Math.cos(endAngle);
-    const y2 = cy + radius * Math.sin(endAngle);
-
-    const x1In = cx + innerRadius * Math.cos(startAngle);
-    const y1In = cy + innerRadius * Math.sin(startAngle);
-    const x2In = cx + innerRadius * Math.cos(endAngle);
-    const y2In = cy + innerRadius * Math.sin(endAngle);
-
-    const largeArc = angle > Math.PI ? 1 : 0;
-    const pathData = `M ${x1In} ${y1In} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} L ${x2In} ${y2In} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x1In} ${y1In} Z`;
-
-    const midAngle = startAngle + angle / 2;
-    const labelR = (radius + innerRadius) / 2;
-    const lx = cx + labelR * Math.cos(midAngle);
-    const ly = cy + labelR * Math.sin(midAngle);
-
-    return {
-      ...d,
-      color: CAT_COLORS[i % CAT_COLORS.length],
-      pathData,
-      lx,
-      ly,
-      pct: Math.round((d.value / total) * 100),
-    };
-  });
-
-  return (
-    <Box sx={styles.chartCanvasWrap}>
-      <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
-        {slices.map((slice, i) => (
-          <g key={i}>
-            <path
-              d={slice.pathData}
-              fill={slice.color}
-              stroke="#FFFFFF"
-              strokeWidth={2}
-              style={{ cursor: 'pointer', transition: 'opacity 0.15s ease' }}
-              onClick={() => onSegmentClick('proyectos-areas')}
-              onMouseMove={(e) => onHover(slice.label, `${slice.value} proyectos (${slice.pct}%)`, e)}
-              onMouseLeave={onLeave}
-            />
-            {slice.value > 1 && (
-              <text
-                x={slice.lx}
-                y={slice.ly + 4}
-                textAnchor="middle"
-                fontSize="11"
-                fontWeight="700"
-                fill="#FFFFFF"
-                fontFamily="Inter"
-                pointerEvents="none"
-              >
-                {slice.value}
-              </text>
-            )}
-          </g>
-        ))}
-        {/* Centro del Donut con total */}
-        <text x={cx} y={cy - 4} textAnchor="middle" fontSize="20" fontWeight="700" fill="#161796" fontFamily="Inter">
-          {total}
-        </text>
-        <text x={cx} y={cy + 14} textAnchor="middle" fontSize="10" fontWeight="600" fill="#9E9E9E" textTransform="uppercase" letterSpacing="0.5px" fontFamily="Inter">
-          PROYECTOS
-        </text>
-      </svg>
-    </Box>
-  );
-};
-
-// 3. Gráfico de Barras Horizontales (Secciones del curso)
-const HorizontalBarChart = ({ data, onBarClick, onHover, onLeave }) => {
-  const width = 600;
-  const height = 220;
-  const m = { top: 15, right: 40, bottom: 20, left: 120 };
-  const iw = width - m.left - m.right;
-  const ih = height - m.top - m.bottom;
-  const maxVal = Math.max(...data.map(d => d.value), 1) * 1.2;
-  const barHeight = ih / data.length * 0.55;
-  const step = ih / data.length;
-
-  return (
-    <Box sx={styles.chartCanvasWrap}>
-      <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
-        <g transform={`translate(${m.left}, ${m.top})`}>
-          {/* Líneas de cuadrícula verticales */}
-          {[0, 1, 2, 3, 4, 5, 6].map((tick) => {
-            const x = (tick / maxVal) * iw;
-            if (x > iw) return null;
-            return (
-              <g key={tick}>
-                <line x1={x} y1={0} x2={x} y2={ih} stroke="#E5E7EB" strokeDasharray="3 3" />
-              </g>
-            );
-          })}
-
-          {data.map((d, i) => {
-            const barW = (d.value / maxVal) * iw;
-            const y = i * step + (step - barHeight) / 2;
-
-            return (
-              <g key={i}>
-                <text
-                  x={-12}
-                  y={y + barHeight / 2 + 4}
-                  textAnchor="end"
-                  fontSize="12"
-                  fontWeight="500"
-                  fill="#212121"
-                  fontFamily="Inter"
-                >
-                  {d.label}
-                </text>
-                <rect
-                  x={0}
-                  y={y}
-                  width={barW}
-                  height={barHeight}
-                  rx={4}
-                  fill="#3EC9FF"
-                  style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
-                  onClick={() => onBarClick('secciones')}
-                  onMouseMove={(e) => onHover(d.label, `Secciones: ${d.value}`, e)}
-                  onMouseLeave={onLeave}
-                />
-                <text
-                  x={barW + 8}
-                  y={y + barHeight / 2 + 4}
-                  fontSize="12"
-                  fontWeight="600"
-                  fill="#212121"
-                  fontFamily="Inter"
-                >
-                  {d.value}
-                </text>
-              </g>
-            );
-          })}
-        </g>
-      </svg>
-    </Box>
-  );
-};
-
-// 4. Gráfico de Línea con Área (Docentes involucrados)
-const LineAreaChart = ({ data, years = YEARS, onLineClick, onHover, onLeave }) => {
-  const width = 600;
-  const height = 240;
-  const m = { top: 20, right: 30, bottom: 35, left: 40 };
-  const iw = width - m.left - m.right;
-  const ih = height - m.top - m.bottom;
-  const maxVal = Math.max(...data, 1) * 1.2;
-  const step = data.length > 1 ? iw / (data.length - 1) : 0;
-
-  const points = data.map((d, i) => ({
-    x: data.length > 1 ? i * step : iw / 2,
-    y: ih - (d / maxVal) * ih,
-    val: d,
-    year: years[i] || YEARS[i],
-  }));
-
-  const linePath = points.reduce((acc, pt, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`, '');
-  const areaPath = points.length > 1 ? `${linePath} L ${points[points.length - 1].x} ${ih} L ${points[0].x} ${ih} Z` : '';
-
-  return (
-    <Box sx={styles.chartCanvasWrap}>
-      <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
-        <g transform={`translate(${m.left}, ${m.top})`}>
-          {/* Grid lines */}
-          {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
-            const y = ih - ratio * ih;
-            const val = Math.round(ratio * maxVal);
-            return (
-              <g key={idx}>
-                <line x1={0} y1={y} x2={iw} y2={y} stroke="#E5E7EB" strokeDasharray="3 3" />
-                <text x={-10} y={y + 4} textAnchor="end" fontSize="11" fill="#9E9E9E" fontFamily="Inter">
-                  {val}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* Área */}
-          <path d={areaPath} fill="#EAF9FF" opacity={0.6} />
-
-          {/* Línea */}
-          <path d={linePath} fill="none" stroke="#0E86B8" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-
-          {/* Puntos y etiquetas */}
-          {points.map((pt, i) => (
-            <g key={i}>
-              <circle
-                cx={pt.x}
-                cy={pt.y}
-                r={6}
-                fill="#0E86B8"
-                stroke="#FFFFFF"
-                strokeWidth={2}
-                style={{ cursor: 'pointer', transition: 'transform 0.15s ease' }}
-                onClick={() => onLineClick('docentes')}
-                onMouseMove={(e) => onHover(String(pt.year), `Docentes: ${pt.val}`, e)}
-                onMouseLeave={onLeave}
-              />
-              <text
-                x={pt.x}
-                y={pt.y - 12}
-                textAnchor="middle"
-                fontSize="12"
-                fontWeight="700"
-                fill="#0E86B8"
-                fontFamily="Inter"
-              >
-                {pt.val}
-              </text>
-              <text
-                x={pt.x}
-                y={ih + 20}
-                textAnchor="middle"
-                fontSize="12"
-                fill="#616161"
-                fontWeight="500"
-                fontFamily="Inter"
-              >
-                {pt.year}
-              </text>
-            </g>
-          ))}
-        </g>
-      </svg>
-    </Box>
-  );
-};
+const dashboardLightTheme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#1E2875',
+    },
+    secondary: {
+      main: '#3EC9FF',
+    },
+    background: {
+      default: '#F8F8F8',
+      paper: '#FFFFFF',
+    },
+    text: {
+      primary: '#1e293b',
+      secondary: '#475569',
+    },
+  },
+  typography: {
+    fontFamily: "'Inter', sans-serif",
+  },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+          backgroundColor: '#FFFFFF',
+        },
+      },
+    },
+    MuiAccordion: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'transparent',
+          boxShadow: 'none',
+          '&:before': { display: 'none' },
+          '&.Mui-expanded': {
+            margin: '0',
+            backgroundColor: 'transparent',
+          },
+        },
+      },
+    },
+  },
+});
 
 // =========================================================================
 // COMPONENTE PRINCIPAL
@@ -406,6 +112,8 @@ export const DashboardInnovacion = () => {
     logout,
     mobileOpen,
     handleDrawerToggle,
+    mobileFiltersOpen,
+    setMobileFiltersOpen,
     openHelpDialog,
     setOpenHelpDialog,
     filtersCollapsed,
@@ -442,6 +150,9 @@ export const DashboardInnovacion = () => {
     dynamicExternos,
     hasData,
     kpis,
+    availableYears,
+    minYear,
+    maxYear,
     visibleYears,
     proyActivos,
     proyFinalizados,
@@ -451,6 +162,27 @@ export const DashboardInnovacion = () => {
     finExterno,
     activeMenu,
   } = useDashboardInnovacion();
+
+  const getAxisMax = (val) => {
+    if (val <= 0) return 10;
+    const paddedVal = val * 1.15;
+    if (paddedVal <= 50) return Math.ceil(paddedVal / 10) * 10;
+    if (paddedVal <= 200) return Math.ceil(paddedVal / 40) * 40;
+    if (paddedVal <= 500) return Math.ceil(paddedVal / 100) * 100;
+    if (paddedVal <= 1500) return Math.ceil(paddedVal / 500) * 500;
+    if (paddedVal <= 4000) return Math.ceil(paddedVal / 1000) * 1000;
+    return Math.ceil(paddedVal / 2000) * 2000;
+  };
+
+  const getAxisTicks = (val) => {
+    if (val <= 0) return 5;
+    if (val <= 50) return 10;
+    if (val <= 200) return 40;
+    if (val <= 500) return 100;
+    if (val <= 1500) return 500;
+    if (val <= 4000) return 1000;
+    return 2000;
+  };
 
   // Contenido de la barra lateral institucional
   const sidebarContent = (
@@ -557,8 +289,289 @@ export const DashboardInnovacion = () => {
     </Box>
   );
 
+  // Contenido de los filtros
+  const filtersContent = (
+    <Box sx={{ 
+      flexGrow: 1, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: 'calc(100% - 56px)', 
+      overflow: 'hidden',
+      bgcolor: '#FFFFFF',
+    }}>
+      <Box sx={{ 
+        flexGrow: 1, 
+        overflowY: 'auto', 
+        px: 2.5, 
+        py: 2.5, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 2.5,
+        bgcolor: '#FFFFFF',
+      }}>
+        {/* Indicador de Filtros Activos */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography
+            sx={{
+              fontSize: '12px',
+              fontWeight: activeFiltersCount > 0 ? 600 : 500,
+              color: activeFiltersCount > 0 ? '#0E86B8' : '#94A3B8',
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            {activeFiltersCount} {activeFiltersCount === 1 ? 'filtro activo' : 'filtros activos'}
+          </Typography>
+        </Box>
+
+        {/* Slider de Años */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.5px' }}>
+            Año
+          </Typography>
+          <Box sx={{ px: 1, mt: 0.5 }}>
+            <Slider
+              value={yearRange}
+              onChange={(e, val) => setYearRange(val)}
+              valueLabelDisplay="auto"
+              min={minYear}
+              max={maxYear}
+              step={1}
+              marks={availableYears.length ? availableYears.map(y => ({ value: y, label: String(y) })) : [
+                { value: 2023, label: '2023' },
+                { value: 2024, label: '2024' },
+                { value: 2025, label: '2025' },
+                { value: 2026, label: '2026' }
+              ]}
+              sx={styles.ageSliderStyle}
+            />
+            <Typography variant="body2" sx={{ textAlign: 'center', mt: 1.5, fontWeight: 600, color: '#1E2875', fontSize: '13px' }}>
+              {yearRange[0] === yearRange[1] ? yearRange[0] : `${yearRange[0]} — ${yearRange[1]}`}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Acordeón: Estado */}
+        {dynamicEstados.length > 0 && (
+          <Accordion
+            expanded={accordionsOpen.estado}
+            onChange={() => handleToggleAccordion('estado')}
+            sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', bgcolor: 'transparent !important', '&:before': { display: 'none' } }}
+          >
+            <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
+              <ChevronRightIcon style={{ transform: accordionsOpen.estado ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                Estado
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography sx={styles.filterCatLabel}>Estado de proyecto</Typography>
+              <Box sx={styles.filterChips}>
+                {dynamicEstados.map((chip) => {
+                  const isSel = (selectedChips.estado || []).includes(chip.value);
+                  return (
+                    <Box
+                      key={chip.value}
+                      sx={styles.filterChip(isSel)}
+                      onClick={() => handleToggleChip('estado', chip.value)}
+                    >
+                      {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
+                      {chip.label}
+                    </Box>
+                  );
+                })}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {/* Acordeón: Área temática */}
+        {dynamicAreas.length > 0 && (
+          <Accordion
+            expanded={accordionsOpen.area}
+            onChange={() => handleToggleAccordion('area')}
+            sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', bgcolor: 'transparent !important', '&:before': { display: 'none' } }}
+          >
+            <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
+              <ChevronRightIcon style={{ transform: accordionsOpen.area ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                Área temática
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography sx={styles.filterCatLabel}>Área de innovación</Typography>
+              <Box sx={styles.filterChips}>
+                {dynamicAreas.map((chip) => {
+                  const isSel = (selectedChips.area || []).includes(chip.value);
+                  return (
+                    <Box
+                      key={chip.value}
+                      sx={styles.filterChip(isSel)}
+                      onClick={() => handleToggleChip('area', chip.value)}
+                    >
+                      {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
+                      {chip.label}
+                    </Box>
+                  );
+                })}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {/* Acordeón: Tipo de proyecto */}
+        {dynamicTipos.length > 0 && (
+          <Accordion
+            expanded={accordionsOpen.tipo}
+            onChange={() => handleToggleAccordion('tipo')}
+            sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', bgcolor: 'transparent !important', '&:before': { display: 'none' } }}
+          >
+            <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
+              <ChevronRightIcon style={{ transform: accordionsOpen.tipo ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                Tipo de proyecto
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography sx={styles.filterCatLabel}>Clasificación</Typography>
+              <Box sx={styles.filterChips}>
+                {dynamicTipos.map((chip) => {
+                  const isSel = (selectedChips.tipo || []).includes(chip.value);
+                  return (
+                    <Box
+                      key={chip.value}
+                      sx={styles.filterChip(isSel)}
+                      onClick={() => handleToggleChip('tipo', chip.value)}
+                    >
+                      {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
+                      {chip.label}
+                    </Box>
+                  );
+                })}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {/* Acordeón: Semestre */}
+        {dynamicSemestres.length > 0 && (
+          <Accordion
+            expanded={accordionsOpen.semestre}
+            onChange={() => handleToggleAccordion('semestre')}
+            sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', bgcolor: 'transparent !important', '&:before': { display: 'none' } }}
+          >
+            <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
+              <ChevronRightIcon style={{ transform: accordionsOpen.semestre ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                Semestre
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography sx={styles.filterCatLabel}>Período académico</Typography>
+              <Box sx={styles.filterChips}>
+                {dynamicSemestres.map((chip) => {
+                  const isSel = (selectedChips.semestre || []).includes(chip.value);
+                  return (
+                    <Box
+                      key={chip.value}
+                      sx={styles.filterChip(isSel)}
+                      onClick={() => handleToggleChip('semestre', chip.value)}
+                    >
+                      {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
+                      {chip.label}
+                    </Box>
+                  );
+                })}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {/* Acordeón: Financiamiento */}
+        {(dynamicExternos.length > 0 || dynamicFuentes.length > 0) && (
+          <Accordion
+            expanded={accordionsOpen.financiamiento}
+            onChange={() => handleToggleAccordion('financiamiento')}
+            sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', bgcolor: 'transparent !important', '&:before': { display: 'none' } }}
+          >
+            <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
+              <ChevronRightIcon style={{ transform: accordionsOpen.financiamiento ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                Financiamiento
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {dynamicExternos.length > 0 && (
+                <>
+                  <Typography sx={styles.filterCatLabel}>Financiamiento externo</Typography>
+                  <Box sx={styles.filterChips}>
+                    {dynamicExternos.map((chip) => {
+                      const isSel = (selectedChips.externo || []).includes(chip.value);
+                      return (
+                        <Box
+                          key={chip.value}
+                          sx={styles.filterChip(isSel)}
+                          onClick={() => handleToggleChip('externo', chip.value)}
+                        >
+                          {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
+                          {chip.label}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </>
+              )}
+
+              {dynamicFuentes.length > 0 && (
+                <>
+                  <Typography sx={{ ...styles.filterCatLabel, mt: 1 }}>Fuente</Typography>
+                  <Box sx={styles.filterChips}>
+                    {dynamicFuentes.map((chip) => {
+                      const isSel = (selectedChips.fuente || []).includes(chip.value);
+                      return (
+                        <Box
+                          key={chip.value}
+                          sx={styles.filterChip(isSel)}
+                          onClick={() => handleToggleChip('fuente', chip.value)}
+                        >
+                          {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
+                          {chip.label}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </>
+              )}
+            </AccordionDetails>
+          </Accordion>
+        )}
+      </Box>
+
+      {/* Mensaje sin datos */}
+      {!apiLoading && !hasData && (
+        <Box sx={styles.filterNoDataBox}>
+          <Typography sx={{ fontSize: '13px', color: '#92400E', textAlign: 'center', fontWeight: 500 }}>
+            No hay datos disponibles para los filtros.
+          </Typography>
+        </Box>
+      )}
+
+      {/* Footer Reset Button */}
+      <Box sx={{ p: 2, borderTop: '1px solid #E2E8F0', bgcolor: '#F8FAFC' }}>
+        <Box
+          component="button"
+          sx={styles.btnReset}
+          onClick={handleResetFilters}
+        >
+          <RefreshIcon sx={{ fontSize: '16px' }} />
+          Restablecer filtros
+        </Box>
+      </Box>
+    </Box>
+  );
+
   return (
-    <Box sx={styles.mainLayout} onMouseMove={moveTooltip}>
+    <ThemeProvider theme={dashboardLightTheme}>
+      <Box sx={styles.mainLayout} onMouseMove={moveTooltip}>
       {/* APP BAR MÓVIL */}
       <AppBar position="fixed" sx={styles.mobileAppBar}>
         <Toolbar sx={styles.mobileToolbar}>
@@ -581,6 +594,13 @@ export const DashboardInnovacion = () => {
               PIADI ECAS
             </Typography>
           </Box>
+          <IconButton
+            color="inherit"
+            onClick={() => setMobileFiltersOpen(true)}
+            sx={{ ml: 'auto' }}
+          >
+            <FilterIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
 
@@ -623,8 +643,8 @@ export const DashboardInnovacion = () => {
             accentColor="#3EC9FF"
             hasData={hasData}
             loading={apiLoading}
-            compareText={`vs base (${kpis.activos.baseYear}): ${kpis.activos.baseVal}`}
-            evolution={kpis.activos.evo !== null ? `${kpis.activos.evo}%` : null}
+            compareText={kpis.activos.compareText}
+            evolution={kpis.activos.evo}
             isPositive={kpis.activos.isPositive}
             onClick={() => handleOpenIndicator('proyectos-activos')}
           />
@@ -636,8 +656,8 @@ export const DashboardInnovacion = () => {
             accentColor="#10B981"
             hasData={hasData}
             loading={apiLoading}
-            compareText={`vs base (${kpis.finalizados.baseYear}): ${kpis.finalizados.baseVal}`}
-            evolution={kpis.finalizados.evo !== null ? `${kpis.finalizados.evo}%` : null}
+            compareText={kpis.finalizados.compareText}
+            evolution={kpis.finalizados.evo}
             isPositive={kpis.finalizados.isPositive}
             onClick={() => handleOpenIndicator('proyectos-finalizados')}
           />
@@ -649,590 +669,257 @@ export const DashboardInnovacion = () => {
             accentColor="#7C6FF0"
             hasData={hasData}
             loading={apiLoading}
-            compareText={`vs base (${kpis.docentes.baseYear}): ${kpis.docentes.baseVal}`}
-            evolution={kpis.docentes.evo !== null ? `${kpis.docentes.evo}%` : null}
+            compareText={kpis.docentes.compareText}
+            evolution={kpis.docentes.evo}
             isPositive={kpis.docentes.isPositive}
             onClick={() => handleOpenIndicator('docentes')}
           />
         </Box>
 
-            {/* 1. Proyectos de innovación activos */}
-            <Box sx={styles.chartSection}>
-              <Box sx={styles.chartHeader}>
-                <Box sx={styles.chartHeaderRow}>
-                  <Typography sx={styles.chartTitle}>
-                    <LightbulbIcon sx={{ color: '#0E86B8', fontSize: '20px' }} />
-                    Proyectos de innovación activos
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    sx={{
-                      ...styles.chartToggleBtn,
-                      transform: collapsedSections['proy-year'] ? 'rotate(-90deg)' : 'none',
-                    }}
-                    onClick={() => handleToggleSection('proy-year')}
-                  >
-                    <ExpandMoreIcon />
-                  </IconButton>
-                </Box>
-              </Box>
-              {!collapsedSections['proy-year'] && (
-                <Box>
-                  <Typography sx={styles.chartSubtitle}>Distribución por año</Typography>
-                  {!hasData || proyActivos.every(v => v === 0) ? (
-                    <Box sx={styles.noDataPlaceholder}>Sin datos disponibles</Box>
-                  ) : (
-                    <YearBarChart
-                      data={proyActivos}
-                      years={visibleYears}
-                      indicatorKey="proyectos-activos"
-                      onBarClick={handleOpenIndicator}
-                      onHover={showTooltip}
-                      onLeave={hideTooltip}
-                    />
-                  )}
-                </Box>
-              )}
-            </Box>
-
-            {/* 2. Proyectos finalizados */}
-            <Box sx={styles.chartSection}>
-              <Box sx={styles.chartHeader}>
-                <Box sx={styles.chartHeaderRow}>
-                  <Typography sx={styles.chartTitle}>
-                    <CheckCircleOutline sx={{ color: '#0E86B8', fontSize: '20px' }} />
-                    Proyectos finalizados
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    sx={{
-                      ...styles.chartToggleBtn,
-                      transform: collapsedSections['fin-year'] ? 'rotate(-90deg)' : 'none',
-                    }}
-                    onClick={() => handleToggleSection('fin-year')}
-                  >
-                    <ExpandMoreIcon />
-                  </IconButton>
-                </Box>
-              </Box>
-              {!collapsedSections['fin-year'] && (
-                <Box>
-                  <Typography sx={styles.chartSubtitle}>Distribución por año</Typography>
-                  {!hasData || proyFinalizados.every(v => v === 0) ? (
-                    <Box sx={styles.noDataPlaceholder}>Sin datos disponibles</Box>
-                  ) : (
-                    <YearBarChart
-                      data={proyFinalizados}
-                      years={visibleYears}
-                      indicatorKey="proyectos-finalizados"
-                      onBarClick={handleOpenIndicator}
-                      onHover={showTooltip}
-                      onLeave={hideTooltip}
-                    />
-                  )}
-                </Box>
-              )}
-            </Box>
-
-            {/* 3. Áreas temáticas de innovación */}
-            <Box sx={styles.chartSection}>
-              <Box sx={styles.chartHeader}>
-                <Box sx={styles.chartHeaderRow}>
-                  <Typography sx={styles.chartTitle}>
-                    <TargetIcon sx={{ color: '#0E86B8', fontSize: '20px' }} />
-                    Áreas temáticas de innovación
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    sx={{
-                      ...styles.chartToggleBtn,
-                      transform: collapsedSections['proy-area'] ? 'rotate(-90deg)' : 'none',
-                    }}
-                    onClick={() => handleToggleSection('proy-area')}
-                  >
-                    <ExpandMoreIcon />
-                  </IconButton>
-                </Box>
-              </Box>
-              {!collapsedSections['proy-area'] && (
-                <Box>
-                  <Typography sx={styles.chartSubtitle}>Distribución por área temática</Typography>
-                  {!hasData || proyAreas.length === 0 ? (
-                    <Box sx={styles.noDataPlaceholder}>Sin datos disponibles</Box>
-                  ) : (
-                    <DonutChart
-                      data={proyAreas}
-                      onSegmentClick={handleOpenIndicator}
-                      onHover={showTooltip}
-                      onLeave={hideTooltip}
-                    />
-                  )}
-                </Box>
-              )}
-            </Box>
-
-            {/* 4. Secciones del curso de innovación */}
-            <Box sx={styles.chartSection}>
-              <Box sx={styles.chartHeader}>
-                <Box sx={styles.chartHeaderRow}>
-                  <Typography sx={styles.chartTitle}>
-                    <CalendarIcon sx={{ color: '#0E86B8', fontSize: '20px' }} />
-                    Secciones del curso de innovación
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    sx={{
-                      ...styles.chartToggleBtn,
-                      transform: collapsedSections['secciones-hbar'] ? 'rotate(-90deg)' : 'none',
-                    }}
-                    onClick={() => handleToggleSection('secciones-hbar')}
-                  >
-                    <ExpandMoreIcon />
-                  </IconButton>
-                </Box>
-              </Box>
-              {!collapsedSections['secciones-hbar'] && (
-                <Box>
-                  <Typography sx={styles.chartSubtitle}>Secciones por semestre</Typography>
-                  {!hasData || seccionesCurso.length === 0 ? (
-                    <Box sx={styles.noDataPlaceholder}>Sin datos disponibles</Box>
-                  ) : (
-                    <HorizontalBarChart
-                      data={seccionesCurso}
-                      onBarClick={handleOpenIndicator}
-                      onHover={showTooltip}
-                      onLeave={hideTooltip}
-                    />
-                  )}
-                </Box>
-              )}
-            </Box>
-
-            {/* 5. Docentes involucrados */}
-            <Box sx={styles.chartSection}>
-              <Box sx={styles.chartHeader}>
-                <Box sx={styles.chartHeaderRow}>
-                  <Typography sx={styles.chartTitle}>
-                    <TrendingUpIcon sx={{ color: '#0E86B8', fontSize: '20px' }} />
-                    Docentes involucrados
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    sx={{
-                      ...styles.chartToggleBtn,
-                      transform: collapsedSections['doc-line'] ? 'rotate(-90deg)' : 'none',
-                    }}
-                    onClick={() => handleToggleSection('doc-line')}
-                  >
-                    <ExpandMoreIcon />
-                  </IconButton>
-                </Box>
-              </Box>
-              {!collapsedSections['doc-line'] && (
-                <Box>
-                  <Typography sx={styles.chartSubtitle}>Tendencia por año</Typography>
-                  {!hasData || docentes.every(v => v === 0) ? (
-                    <Box sx={styles.noDataPlaceholder}>Sin datos disponibles</Box>
-                  ) : (
-                    <LineAreaChart
-                      data={docentes}
-                      years={visibleYears}
-                      onLineClick={handleOpenIndicator}
-                      onHover={showTooltip}
-                      onLeave={hideTooltip}
-                    />
-                  )}
-                </Box>
-              )}
-            </Box>
-
-            {/* 6. Proyectos con financiamiento externo */}
-            <Box sx={styles.chartSection}>
-              <Box sx={styles.chartHeader}>
-                <Box sx={styles.chartHeaderRow}>
-                  <Typography sx={styles.chartTitle}>
-                    <AuditoriaIcon sx={{ color: '#0E86B8', fontSize: '20px' }} />
-                    Proyectos con financiamiento externo
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    sx={{
-                      ...styles.chartToggleBtn,
-                      transform: collapsedSections['fin-externo'] ? 'rotate(-90deg)' : 'none',
-                    }}
-                    onClick={() => handleToggleSection('fin-externo')}
-                  >
-                    <ExpandMoreIcon />
-                  </IconButton>
-                </Box>
-              </Box>
-              {!collapsedSections['fin-externo'] && (
-                <Box>
-                  <Typography sx={styles.chartSubtitle}>Proyectos FDI por año</Typography>
-                  {!hasData || finExterno.every(v => v === 0) ? (
-                    <Box sx={styles.noDataPlaceholder}>Sin datos disponibles</Box>
-                  ) : (
-                    <YearBarChart
-                      data={finExterno}
-                      years={visibleYears}
-                      indicatorKey="financiamiento"
-                      onBarClick={handleOpenIndicator}
-                      onHover={showTooltip}
-                      onLeave={hideTooltip}
-                    />
-                  )}
-                </Box>
-              )}
-            </Box>
+        {/* 1. Proyectos de innovación activos */}
+        <DashboardSection
+          title="Proyectos de innovación activos"
+          subtitle="Distribución por año"
+          icon={<LightbulbIcon />}
+          iconColor="#3EC9FF"
+          isOpen={!collapsedSections['proy-year']}
+          onToggle={() => handleToggleSection('proy-year')}
+          hasData={hasData && proyActivos.some(v => v > 0)}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <BarChart
+              colors={['#0E86B8']}
+              grid={{ horizontal: true }}
+              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
+              series={[{ data: proyActivos, label: 'Proyectos Activos' }]}
+              height={270}
+              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
+              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+            />
           </Box>
+        </DashboardSection>
 
-          {/* Sidebar colapsable para Desktop integrado con el diseño (Sticky top 20px) */}
+        {/* 2. Proyectos finalizados */}
+        <DashboardSection
+          title="Proyectos finalizados"
+          subtitle="Distribución por año"
+          icon={<CheckCircleOutline />}
+          iconColor="#10B981"
+          isOpen={!collapsedSections['fin-year']}
+          onToggle={() => handleToggleSection('fin-year')}
+          hasData={hasData && proyFinalizados.some(v => v > 0)}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <BarChart
+              colors={['#10B981']}
+              grid={{ horizontal: true }}
+              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
+              series={[{ data: proyFinalizados, label: 'Proyectos Finalizados' }]}
+              height={270}
+              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
+              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+            />
+          </Box>
+        </DashboardSection>
+
+        {/* 3. Áreas temáticas de innovación */}
+        <DashboardSection
+          title="Áreas temáticas de innovación"
+          subtitle="Distribución por área temática"
+          icon={<TargetIcon />}
+          iconColor="#3EC9FF"
+          isOpen={!collapsedSections['proy-area']}
+          onToggle={() => handleToggleSection('proy-area')}
+          hasData={hasData && proyAreas.length > 0}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <PieChart
+              colors={CAT_COLORS}
+              series={[{
+                data: proyAreas.map((d, i) => ({ id: i, value: d.value, label: d.label })),
+                innerRadius: 45,
+                outerRadius: 85,
+              }]}
+              height={270}
+              margin={{ top: 10, bottom: 60, left: 10, right: 10 }}
+              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+            />
+          </Box>
+        </DashboardSection>
+
+        {/* 4. Secciones del curso de innovación */}
+        <DashboardSection
+          title="Secciones del curso de innovación"
+          subtitle="Secciones por semestre"
+          icon={<CalendarIcon />}
+          iconColor="#3EC9FF"
+          isOpen={!collapsedSections['secciones-hbar']}
+          onToggle={() => handleToggleSection('secciones-hbar')}
+          hasData={hasData && seccionesCurso.length > 0}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <BarChart
+              layout="horizontal"
+              colors={['#3EC9FF']}
+              grid={{ vertical: true }}
+              yAxis={[{ scaleType: 'band', data: seccionesCurso.map(d => d.label) }]}
+              series={[{ data: seccionesCurso.map(d => d.value), label: 'Secciones' }]}
+              height={270}
+              margin={{ top: 20, right: 30, bottom: 40, left: 120 }}
+              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+            />
+          </Box>
+        </DashboardSection>
+
+        {/* 5. Docentes involucrados */}
+        <DashboardSection
+          title="Docentes involucrados"
+          subtitle="Tendencia por año"
+          icon={<TrendingUpIcon />}
+          iconColor="#7C6FF0"
+          isOpen={!collapsedSections['doc-line']}
+          onToggle={() => handleToggleSection('doc-line')}
+          hasData={hasData && docentes.some(v => v > 0)}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <LineChart
+              grid={{ horizontal: true }}
+              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
+              series={[{ 
+                data: docentes, 
+                label: 'Docentes Involucrados', 
+                color: '#7C6FF0',
+                showMark: true 
+              }]}
+              yAxis={[{ 
+                min: 0, 
+                max: getAxisMax(Math.max(...docentes, 0)), 
+                width: 35, 
+                tickInterval: getAxisTicks(Math.max(...docentes, 0)) 
+              }]}
+              height={270}
+              margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
+              slotProps={{ 
+                legend: { 
+                  direction: 'row', 
+                  position: { vertical: 'bottom', horizontal: 'middle' }, 
+                  labelStyle: { fontSize: '11px' } 
+                } 
+              }}
+            />
+          </Box>
+        </DashboardSection>
+
+        {/* 6. Proyectos con financiamiento externo */}
+        <DashboardSection
+          title="Proyectos con financiamiento externo"
+          subtitle="Proyectos FDI por año"
+          icon={<AuditoriaIcon />}
+          iconColor="#3EC9FF"
+          isOpen={!collapsedSections['fin-externo']}
+          onToggle={() => handleToggleSection('fin-externo')}
+          hasData={hasData && finExterno.some(v => v > 0)}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <BarChart
+              colors={['#0E86B8']}
+              grid={{ horizontal: true }}
+              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
+              series={[{ data: finExterno, label: 'Proyectos FDI' }]}
+              height={270}
+              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
+              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+            />
+          </Box>
+        </DashboardSection>
+      </Box>
+
+      {/* SIDEBAR LATERAL DERECHO (Filtros responsive) */}
+      <Drawer
+        anchor="right"
+        variant="temporary"
+        open={mobileFiltersOpen}
+        onClose={() => setMobileFiltersOpen(false)}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 280, border: 'none' },
+        }}
+      >
+        {filtersContent}
+      </Drawer>
+
+      {/* Sidebar colapsable para Desktop integrado con el diseño */}
+      <Box
+        component="aside"
+        sx={styles.filtersSidebar(filtersCollapsed)}
+      >
+        {/* Si está colapsado: Botón estilizado 'Filtros' con embudo institucional */}
+        {filtersCollapsed ? (
           <Box
-            component="aside"
-            sx={styles.filtersSidebar(filtersCollapsed)}
+            onClick={() => setFiltersCollapsed(false)}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              px: 2,
+              py: 1.1,
+              bgcolor: '#FFFFFF',
+              border: '1.5px solid #E2E8F0',
+              borderRadius: '10px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              cursor: 'pointer',
+              boxSizing: 'border-box',
+              transition: 'all 200ms ease-in-out',
+              '&:hover': {
+                bgcolor: '#F4FCFF',
+                borderColor: '#0E86B8',
+                boxShadow: '0 4px 12px rgba(14, 134, 184, 0.2)',
+              },
+            }}
           >
-            {/* Si está colapsado: Botón estilizado 'Filtros' con embudo institucional */}
-            {filtersCollapsed ? (
-              <Box
-                onClick={() => setFiltersCollapsed(false)}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  px: 2,
-                  py: 1.1,
-                  bgcolor: '#FFFFFF',
-                  border: '1.5px solid #E2E8F0',
-                  borderRadius: '10px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  cursor: 'pointer',
-                  boxSizing: 'border-box',
-                  transition: 'all 200ms ease-in-out',
-                  '&:hover': {
-                    bgcolor: '#F4FCFF',
-                    borderColor: '#0E86B8',
-                    boxShadow: '0 4px 12px rgba(14, 134, 184, 0.2)',
-                  },
-                }}
-              >
+            <FilterIcon sx={{ color: '#0E86B8', fontSize: 18 }} />
+            <Typography sx={{ fontWeight: 600, fontSize: '13px', color: '#1E2875', fontFamily: "'Inter', sans-serif" }}>
+              Filtros
+            </Typography>
+          </Box>
+        ) : (
+          /* Cabecera cuando está expandido */
+          <>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              p: '16px 14px',
+              bgcolor: '#F8FAFC',
+              borderBottom: '1px solid #E2E8F0',
+              height: '56px',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <FilterIcon sx={{ color: '#0E86B8', fontSize: 18 }} />
-                <Typography sx={{ fontWeight: 600, fontSize: '13px', color: '#1E2875', fontFamily: "'Inter', sans-serif" }}>
-                  Filtros
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875', fontSize: '14px' }}>
+                  Filtros Innovación
                 </Typography>
               </Box>
-            ) : (
-              /* Cabecera cuando está expandido */
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                p: '16px 14px',
-                bgcolor: '#F8FAFC',
-                borderBottom: '1px solid #E2E8F0',
-                height: '56px',
-                width: '100%',
-                boxSizing: 'border-box'
-              }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <FilterIcon sx={{ color: '#0E86B8', fontSize: 18 }} />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875', fontSize: '14px' }}>
-                    Filtros Innovación
-                  </Typography>
-                </Box>
-                <IconButton 
-                  onClick={() => setFiltersCollapsed(true)}
-                  size="small"
-                  sx={{ 
-                    color: '#1E2875',
-                    width: '32px',
-                    height: '32px',
-                    bgcolor: 'rgba(30, 40, 117, 0.05)',
-                    '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.1)' }
-                  }}
-                >
-                  <ChevronRightIcon />
-                </IconButton>
-              </Box>
-            )}
-
-        {/* Contenido de los filtros (solo visible si no está colapsado) */}
-        {!filtersCollapsed && (
-          <Box sx={{ 
-            flexGrow: 1, 
-            display: 'flex',
-            flexDirection: 'column',
-            height: 'calc(100% - 56px)',
-            overflow: 'hidden'
-          }}>
-            <Box sx={{ 
-              flexGrow: 1, 
-              overflowY: 'auto', 
-              px: 2.5, 
-              py: 2.5, 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: 2.5 
-            }}>
-                {/* Indicador de Filtros Activos */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Typography
-                    sx={{
-                      fontSize: '12px',
-                      fontWeight: activeFiltersCount > 0 ? 600 : 500,
-                      color: activeFiltersCount > 0 ? '#0E86B8' : '#94A3B8',
-                      fontFamily: "'Inter', sans-serif",
-                    }}
-                  >
-                    {activeFiltersCount} {activeFiltersCount === 1 ? 'filtro activo' : 'filtros activos'}
-                  </Typography>
-                </Box>
-
-                {/* Slider de Años */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.5px' }}>
-                    Año
-                  </Typography>
-                  <Box sx={{ px: 1, mt: 0.5 }}>
-                    <Slider
-                      value={yearRange}
-                      onChange={(e, val) => setYearRange(val)}
-                      valueLabelDisplay="auto"
-                      min={2023}
-                      max={2026}
-                      step={1}
-                      marks={[
-                        { value: 2023, label: '2023' },
-                        { value: 2024, label: '2024' },
-                        { value: 2025, label: '2025' },
-                        { value: 2026, label: '2026' }
-                      ]}
-                      sx={styles.ageSliderStyle}
-                    />
-                    <Typography variant="body2" sx={{ textAlign: 'center', mt: 1.5, fontWeight: 600, color: '#1E2875', fontSize: '13px' }}>
-                      {yearRange[0]} — {yearRange[1]}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {/* Acordeón: Estado */}
-                {dynamicEstados.length > 0 && (
-                  <Accordion
-                    expanded={accordionsOpen.estado}
-                    onChange={() => handleToggleAccordion('estado')}
-                    sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', '&:before': { display: 'none' } }}
-                  >
-                    <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
-                      <ChevronRightIcon style={{ transform: accordionsOpen.estado ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
-                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
-                        Estado
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <Typography sx={styles.filterCatLabel}>Estado de proyecto</Typography>
-                      <Box sx={styles.filterChips}>
-                        {dynamicEstados.map((chip) => {
-                          const isSel = (selectedChips.estado || []).includes(chip.value);
-                          return (
-                            <Box
-                              key={chip.value}
-                              sx={styles.filterChip(isSel)}
-                              onClick={() => handleToggleChip('estado', chip.value)}
-                            >
-                              {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
-                              {chip.label}
-                            </Box>
-                          );
-                        })}
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                )}
-
-                {/* Acordeón: Área temática */}
-                {dynamicAreas.length > 0 && (
-                  <Accordion
-                    expanded={accordionsOpen.area}
-                    onChange={() => handleToggleAccordion('area')}
-                    sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', '&:before': { display: 'none' } }}
-                  >
-                    <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
-                      <ChevronRightIcon style={{ transform: accordionsOpen.area ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
-                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
-                        Área temática
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <Typography sx={styles.filterCatLabel}>Área de innovación</Typography>
-                      <Box sx={styles.filterChips}>
-                        {dynamicAreas.map((chip) => {
-                          const isSel = (selectedChips.area || []).includes(chip.value);
-                          return (
-                            <Box
-                              key={chip.value}
-                              sx={styles.filterChip(isSel)}
-                              onClick={() => handleToggleChip('area', chip.value)}
-                            >
-                              {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
-                              {chip.label}
-                            </Box>
-                          );
-                        })}
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                )}
-
-                {/* Acordeón: Tipo de proyecto */}
-                {dynamicTipos.length > 0 && (
-                  <Accordion
-                    expanded={accordionsOpen.tipo}
-                    onChange={() => handleToggleAccordion('tipo')}
-                    sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', '&:before': { display: 'none' } }}
-                  >
-                    <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
-                      <ChevronRightIcon style={{ transform: accordionsOpen.tipo ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
-                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
-                        Tipo de proyecto
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <Typography sx={styles.filterCatLabel}>Clasificación</Typography>
-                      <Box sx={styles.filterChips}>
-                        {dynamicTipos.map((chip) => {
-                          const isSel = (selectedChips.tipo || []).includes(chip.value);
-                          return (
-                            <Box
-                              key={chip.value}
-                              sx={styles.filterChip(isSel)}
-                              onClick={() => handleToggleChip('tipo', chip.value)}
-                            >
-                              {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
-                              {chip.label}
-                            </Box>
-                          );
-                        })}
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                )}
-
-                {/* Acordeón: Semestre */}
-                {dynamicSemestres.length > 0 && (
-                  <Accordion
-                    expanded={accordionsOpen.semestre}
-                    onChange={() => handleToggleAccordion('semestre')}
-                    sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', '&:before': { display: 'none' } }}
-                  >
-                    <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
-                      <ChevronRightIcon style={{ transform: accordionsOpen.semestre ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
-                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
-                        Semestre
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <Typography sx={styles.filterCatLabel}>Período académico</Typography>
-                      <Box sx={styles.filterChips}>
-                        {dynamicSemestres.map((chip) => {
-                          const isSel = (selectedChips.semestre || []).includes(chip.value);
-                          return (
-                            <Box
-                              key={chip.value}
-                              sx={styles.filterChip(isSel)}
-                              onClick={() => handleToggleChip('semestre', chip.value)}
-                            >
-                              {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
-                              {chip.label}
-                            </Box>
-                          );
-                        })}
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                )}
-
-                {/* Acordeón: Financiamiento */}
-                {(dynamicExternos.length > 0 || dynamicFuentes.length > 0) && (
-                  <Accordion
-                    expanded={accordionsOpen.financiamiento}
-                    onChange={() => handleToggleAccordion('financiamiento')}
-                    sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', '&:before': { display: 'none' } }}
-                  >
-                    <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
-                      <ChevronRightIcon style={{ transform: accordionsOpen.financiamiento ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
-                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
-                        Financiamiento
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {dynamicExternos.length > 0 && (
-                        <>
-                          <Typography sx={styles.filterCatLabel}>Financiamiento externo</Typography>
-                          <Box sx={styles.filterChips}>
-                            {dynamicExternos.map((chip) => {
-                              const isSel = (selectedChips.externo || []).includes(chip.value);
-                              return (
-                                <Box
-                                  key={chip.value}
-                                  sx={styles.filterChip(isSel)}
-                                  onClick={() => handleToggleChip('externo', chip.value)}
-                                >
-                                  {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
-                                  {chip.label}
-                                </Box>
-                              );
-                            })}
-                          </Box>
-                        </>
-                      )}
-
-                      {dynamicFuentes.length > 0 && (
-                        <>
-                          <Typography sx={{ ...styles.filterCatLabel, mt: 1 }}>Fuente</Typography>
-                          <Box sx={styles.filterChips}>
-                            {dynamicFuentes.map((chip) => {
-                              const isSel = (selectedChips.fuente || []).includes(chip.value);
-                              return (
-                                <Box
-                                  key={chip.value}
-                                  sx={styles.filterChip(isSel)}
-                                  onClick={() => handleToggleChip('fuente', chip.value)}
-                                >
-                                  {isSel && <CheckIcon sx={{ fontSize: '12px' }} />}
-                                  {chip.label}
-                                </Box>
-                              );
-                            })}
-                          </Box>
-                        </>
-                      )}
-                    </AccordionDetails>
-                  </Accordion>
-                )}
-              </Box>
-
-              {/* Mensaje sin datos */}
-              {!apiLoading && !hasData && (
-                <Box sx={styles.filterNoDataBox}>
-                  <Typography sx={{ fontSize: '13px', color: '#92400E', textAlign: 'center', fontWeight: 500 }}>
-                    No hay datos disponibles para los filtros.
-                  </Typography>
-                </Box>
-              )}
-
-              {/* Footer Reset Button */}
-              <Box sx={{ p: 2, borderTop: '1px solid #E2E8F0', bgcolor: '#F8FAFC' }}>
-                <Box
-                  component="button"
-                  sx={styles.btnReset}
-                  onClick={handleResetFilters}
-                >
-                  <RefreshIcon sx={{ fontSize: '16px' }} />
-                  Restablecer filtros
-                </Box>
-              </Box>
+              <IconButton 
+                onClick={() => setFiltersCollapsed(true)}
+                size="small"
+                sx={{ 
+                  color: '#1E2875',
+                  width: '32px',
+                  height: '32px',
+                  bgcolor: 'rgba(30, 40, 117, 0.05)',
+                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.1)' }
+                }}
+              >
+                <ChevronRightIcon />
+              </IconButton>
             </Box>
-          )}
-        </Box>
+            {filtersContent}
+          </>
+        )}
+      </Box>
 
       {/* DRAWER MODAL: DETALLE DEL INDICADOR */}
       <Box sx={styles.drawerOverlay(drawerOpen)} onClick={handleCloseDrawer} />
@@ -1447,5 +1134,6 @@ export const DashboardInnovacion = () => {
         </DialogContent>
       </Dialog>
     </Box>
+    </ThemeProvider>
   );
 };

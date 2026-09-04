@@ -62,3 +62,6 @@ export const updateMeta = (id, body) => apiMutate(`/api/metas/${id}`, 'PUT', bod
 export const getMetas = (params) => apiFetch(`/api/metas${buildParams(params)}`);
 export const getMetaById = (id) => apiFetch(`/api/metas/${id}`);
 export const deleteMeta = (id) => apiMutate(`/api/metas/${id}`, 'DELETE');
+
+export const getPlantillas = () => apiFetch('/api/plantillas');
+export const getPlantillaById = (id) => apiFetch(`/api/plantillas/${id}`);

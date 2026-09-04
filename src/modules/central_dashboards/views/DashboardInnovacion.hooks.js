@@ -77,6 +77,7 @@ export const useDashboardInnovacion = () => {
 
   // Estados de layout y diálogo
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [openHelpDialog, setOpenHelpDialog] = useState(false);
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
 
@@ -120,15 +121,29 @@ export const useDashboardInnovacion = () => {
   const [apiSummary, setApiSummary] = useState(null);
   const [apiFilters, setApiFilters] = useState(null);
   const [apiLoading, setApiLoading] = useState(false);
-  const [apiProyectos, setApiProyectos] = useState([]);
+  const [proyectosActivosSeries, setProyectosActivosSeries] = useState([]);
+  const [proyectosFinalizadosSeries, setProyectosFinalizadosSeries] = useState([]);
+  const [proyectosAreasBreakdown, setProyectosAreasBreakdown] = useState([]);
+  const [seccionesBreakdown, setSeccionesBreakdown] = useState([]);
+  const [docentesSeries, setDocentesSeries] = useState([]);
+  const [financiamientoSeries, setFinanciamientoSeries] = useState([]);
+
+  // Tooltip interactivo
+  const [tooltip, setTooltip] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    label: '',
+    detail: ''
+  });
 
   // Fetch de filtros del departamento
   useEffect(() => {
     getDepartmentFilters('innovacion')
       .then(res => {
-        if (res?.success && res.data) {
-          setApiFilters(res.data);
-          const years = res.data?.filters?.years ?? [];
+        if (res?.data?.filters) {
+          setApiFilters(res.data.filters);
+          const years = res.data.filters.years ?? [];
           if (years.length > 0) {
             setYearRange([Math.min(...years), Math.max(...years)]);
           }
@@ -150,209 +165,252 @@ export const useDashboardInnovacion = () => {
       delete params.fromYear;
       delete params.toYear;
     }
+    if (selectedChips.estado.length > 0) params.estado = selectedChips.estado;
+    if (selectedChips.area.length > 0) params.area = selectedChips.area;
+    if (selectedChips.tipo.length > 0) params.tipo = selectedChips.tipo;
+    if (selectedChips.semestre.length > 0) params.semesters = selectedChips.semestre;
 
-    getDashboardSummary(params)
-      .then(res => {
-        if (res?.success && res.data) {
-          setApiSummary(res.data.summary || null);
-          setApiProyectos(res.data.items || res.data.proyectos || []);
+    Promise.allSettled([
+      getDashboardSummary(params),
+      getIndicatorSeries('proyectos_activos', params),
+      getIndicatorSeries('proyectos_finalizados', params),
+      getIndicatorBreakdown('total_proyectos', { ...params, groupBy: 'areaTematica' }),
+      getIndicatorBreakdown('secciones_curso', { ...params, groupBy: 'semestre' }),
+      getIndicatorSeries('docentes_involucrados', params),
+      getIndicatorSeries('financiamiento_obtenido', params)
+    ])
+      .then(([summaryRes, activosRes, finalizadosRes, areasRes, seccionesRes, docentesRes, finRes]) => {
+        console.group('🔍 [DEBUG INNOVACIÓN - Respuestas de la API]');
+        console.log('📡 Parámetros enviados:', params);
+        console.log('📊 1. Proyectos Activos:', activosRes.status === 'fulfilled' ? activosRes.value : activosRes.reason);
+        console.log('📊 2. Proyectos Finalizados:', finalizadosRes.status === 'fulfilled' ? finalizadosRes.value : finalizadosRes.reason);
+        console.log('📊 3. Áreas Temáticas:', areasRes.status === 'fulfilled' ? areasRes.value : areasRes.reason);
+        console.log('📊 4. Secciones Curso:', seccionesRes.status === 'fulfilled' ? seccionesRes.value : seccionesRes.reason);
+        console.log('📊 5. Docentes Involucrados:', docentesRes.status === 'fulfilled' ? docentesRes.value : docentesRes.reason);
+        console.log('💰 6. Financiamiento Obtenido (FDI):', finRes.status === 'fulfilled' ? finRes.value : finRes.reason);
+        console.groupEnd();
+
+        if (summaryRes.status === 'fulfilled' && summaryRes.value?.data) {
+          setApiSummary(summaryRes.value.data);
         } else {
           setApiSummary(null);
-          setApiProyectos([]);
+        }
+
+        if (activosRes.status === 'fulfilled' && activosRes.value?.data?.points) {
+          setProyectosActivosSeries(activosRes.value.data.points);
+        } else {
+          setProyectosActivosSeries([]);
+        }
+
+        if (finalizadosRes.status === 'fulfilled' && finalizadosRes.value?.data?.points) {
+          setProyectosFinalizadosSeries(finalizadosRes.value.data.points);
+        } else {
+          setProyectosFinalizadosSeries([]);
+        }
+
+        if (areasRes.status === 'fulfilled' && areasRes.value?.data?.items) {
+          setProyectosAreasBreakdown(areasRes.value.data.items);
+        } else {
+          setProyectosAreasBreakdown([]);
+        }
+
+        if (seccionesRes.status === 'fulfilled' && seccionesRes.value?.data?.items) {
+          setSeccionesBreakdown(seccionesRes.value.data.items);
+        } else {
+          setSeccionesBreakdown([]);
+        }
+
+        if (docentesRes.status === 'fulfilled' && docentesRes.value?.data?.points) {
+          setDocentesSeries(docentesRes.value.data.points);
+        } else {
+          setDocentesSeries([]);
+        }
+
+        if (finRes.status === 'fulfilled' && finRes.value?.data?.points) {
+          setFinanciamientoSeries(finRes.value.data.points);
+        } else {
+          setFinanciamientoSeries([]);
         }
       })
       .catch(err => {
         console.error('Error cargando datos de Innovación:', err);
-        setApiSummary(null);
-        setApiProyectos([]);
       })
       .finally(() => {
         setApiLoading(false);
       });
+
+    // Función auxiliar disponible globalmente en la consola (F12) para pruebas directas
+    window.debugFinanciamiento = async () => {
+      console.log('🔄 Ejecutando prueba directa de financiamiento_obtenido...');
+      try {
+        const res = await getIndicatorSeries('financiamiento_obtenido', params);
+        console.log('✅ Resultado directo de /api/indicators/financiamiento_obtenido/series:', res);
+        return res;
+      } catch (err) {
+        console.error('❌ Error en prueba directa:', err);
+      }
+    };
   }, [yearRange, selectedChips]);
-
-  // Tooltip interactivo global
-  const [tooltip, setTooltip] = useState({
-    visible: false,
-    x: 0,
-    y: 0,
-    label: '',
-    detail: ''
-  });
-
-  // Helper para coincidencia flexible de chips
-  const matchVal = (selectedArr, itemVal) => {
-    if (!selectedArr || selectedArr.length === 0) return true;
-    const normalize = (s) => String(s || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
-    const target = normalize(itemVal);
-    return selectedArr.some(sel => {
-      const nSel = normalize(sel);
-      return nSel === target || target.includes(nSel) || nSel.includes(target);
-    });
-  };
 
   // Listas dinámicas obtenidas de la base de datos (apiFilters)
   const dynamicEstados = useMemo(() => {
-    return (apiFilters?.filters?.estados ?? []).map(e => ({ label: e, value: e }));
+    return (apiFilters?.estados ?? []).map(e => ({ label: e, value: e }));
   }, [apiFilters]);
 
   const dynamicAreas = useMemo(() => {
-    return (apiFilters?.filters?.areas ?? []).map(a => ({ label: a, value: a }));
+    return (apiFilters?.areas ?? []).map(a => ({ label: a, value: a }));
   }, [apiFilters]);
 
   const dynamicTipos = useMemo(() => {
-    return (apiFilters?.filters?.tipos ?? []).map(t => ({ label: t, value: t }));
+    return (apiFilters?.tipos ?? []).map(t => ({ label: t, value: t }));
   }, [apiFilters]);
 
   const dynamicSemestres = useMemo(() => {
-    return (apiFilters?.filters?.semesters ?? []).map(s => ({ label: s, value: s }));
+    return (apiFilters?.semesters ?? []).map(s => ({ label: s, value: s }));
   }, [apiFilters]);
 
   const dynamicFuentes = useMemo(() => {
-    return (apiFilters?.filters?.fuentes ?? []).map(f => ({ label: f, value: f }));
+    return (apiFilters?.fuentes ?? []).map(f => ({ label: f, value: f }));
   }, [apiFilters]);
 
   const dynamicExternos = useMemo(() => {
-    return (apiFilters?.filters?.externos ?? []).map(ex => ({ label: ex, value: ex }));
+    return (apiFilters?.externos ?? []).map(ex => ({ label: ex, value: ex }));
   }, [apiFilters]);
 
-  // Filtrado reactivo de proyectos desde la API
-  const filteredProjects = useMemo(() => {
-    if (!apiProyectos || apiProyectos.length === 0) return [];
-    return apiProyectos.filter(item => {
-      const itemYear = Number(item.year || item.anio || item.periodo || 0);
-      if (itemYear && (itemYear < yearRange[0] || itemYear > yearRange[1])) return false;
-      if (!matchVal(selectedChips.estado, item.estado)) return false;
-      if (!matchVal(selectedChips.area, item.area || item.areaTematica)) return false;
-      if (!matchVal(selectedChips.tipo, item.tipo || item.tipoProyecto)) return false;
-      if (!matchVal(selectedChips.semestre, item.semestre)) return false;
-      if (!matchVal(selectedChips.externo, item.externo || item.financiamientoExterno)) return false;
-      if (!matchVal(selectedChips.fuente, item.fuente || item.fuenteFinanciamiento)) return false;
-      return true;
-    });
-  }, [apiProyectos, yearRange, selectedChips]);
+  // Años disponibles calculados dinámicamente desde la BD
+  const availableYears = useMemo(() => {
+    const years = apiFilters?.years ?? [];
+    return years.length > 0 ? [...years].sort((a, b) => a - b) : YEARS;
+  }, [apiFilters]);
 
-  const hasData = useMemo(() => {
-    if (apiSummary) {
-      return Object.values(apiSummary).some(card => card.hasData || (card.value !== undefined && card.value !== null && card.value !== 0));
-    }
-    return filteredProjects.length > 0;
-  }, [apiSummary, filteredProjects]);
+  const minYear = useMemo(() => {
+    return availableYears.length > 0 ? availableYears[0] : 2023;
+  }, [availableYears]);
 
-  // Años activos en el rango
+  const maxYear = useMemo(() => {
+    return availableYears.length > 0 ? availableYears[availableYears.length - 1] : 2026;
+  }, [availableYears]);
+
+  // Años activos en el rango seleccionado
   const visibleYears = useMemo(() => {
-    return YEARS.filter(y => y >= yearRange[0] && y <= yearRange[1]);
-  }, [yearRange]);
+    const list = [];
+    for (let y = yearRange[0]; y <= yearRange[1]; y++) {
+      list.push(y);
+    }
+    return list.length > 0 ? list : availableYears;
+  }, [yearRange, availableYears]);
 
-  // Series calculadas dinámicamente según filtros
+  // Verificación estricta de existencia de datos reales
+  const hasData = useMemo(() => {
+    const hasActivos = proyectosActivosSeries.length > 0 && proyectosActivosSeries.some(p => p.value > 0);
+    const hasFinalizados = proyectosFinalizadosSeries.length > 0 && proyectosFinalizadosSeries.some(p => p.value > 0);
+    const hasAreas = proyectosAreasBreakdown.length > 0 && proyectosAreasBreakdown.some(a => a.value > 0);
+    const hasSecciones = seccionesBreakdown.length > 0 && seccionesBreakdown.some(s => s.value > 0);
+    const hasDocentes = docentesSeries.length > 0 && docentesSeries.some(d => d.value > 0);
+    const hasFin = financiamientoSeries.length > 0 && financiamientoSeries.some(f => f.value > 0);
+    return hasActivos || hasFinalizados || hasAreas || hasSecciones || hasDocentes || hasFin;
+  }, [proyectosActivosSeries, proyectosFinalizadosSeries, proyectosAreasBreakdown, seccionesBreakdown, docentesSeries, financiamientoSeries]);
+
+  // 1. Proyectos activos por año
   const proyActivos = useMemo(() => {
-    if (!hasData) return visibleYears.map(() => 0);
-    return visibleYears.map(y => {
-      return filteredProjects.filter(p => p.year === y && p.estado === 'En curso').length;
-    });
-  }, [filteredProjects, visibleYears, hasData]);
+    const pointsMap = new Map(proyectosActivosSeries.map(p => [Number(p.year), Number(p.value)]));
+    return visibleYears.map(y => pointsMap.get(y) ?? 0);
+  }, [proyectosActivosSeries, visibleYears]);
 
+  // 2. Proyectos finalizados por año
   const proyFinalizados = useMemo(() => {
-    if (!hasData) return visibleYears.map(() => 0);
-    return visibleYears.map(y => {
-      return filteredProjects.filter(p => p.year === y && p.estado === 'Finalizado').length;
-    });
-  }, [filteredProjects, visibleYears, hasData]);
+    const pointsMap = new Map(proyectosFinalizadosSeries.map(p => [Number(p.year), Number(p.value)]));
+    return visibleYears.map(y => pointsMap.get(y) ?? 0);
+  }, [proyectosFinalizadosSeries, visibleYears]);
 
+  // 3. Áreas temáticas de proyectos (Donut / PieChart)
   const proyAreas = useMemo(() => {
-    if (!hasData) return [];
-    const counts = {};
-    filteredProjects.forEach(p => {
-      counts[p.area] = (counts[p.area] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .map(([label, value]) => ({ label, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [filteredProjects, hasData]);
+    return proyectosAreasBreakdown
+      .filter(item => Number(item.value) > 0)
+      .map(item => ({ label: item.label, value: Number(item.value) }));
+  }, [proyectosAreasBreakdown]);
 
+  // 4. Secciones del curso
   const seccionesCurso = useMemo(() => {
-    if (!hasData) return [];
-    const baseSemestres = [
-      { label: 'Otoño 2025', count: 4, year: 2025, sem: 'Otoño' },
-      { label: 'Primavera 2025', count: 4, year: 2025, sem: 'Primavera' },
-      { label: 'Otoño 2026', count: 5, year: 2026, sem: 'Otoño' },
-      { label: 'Primavera 2026', count: 5, year: 2026, sem: 'Primavera' }
-    ];
-    return baseSemestres
-      .filter(s => s.year >= yearRange[0] && s.year <= yearRange[1])
-      .filter(s => selectedChips.semestre.length === 0 || selectedChips.semestre.includes(s.sem))
-      .map(s => ({ label: s.label, value: s.count }));
-  }, [yearRange, selectedChips.semestre, hasData]);
+    return seccionesBreakdown
+      .filter(item => Number(item.value) > 0)
+      .map(item => ({ label: item.label, value: Number(item.value) }));
+  }, [seccionesBreakdown]);
 
+  // 5. Docentes involucrados por año
   const docentes = useMemo(() => {
-    if (!hasData) return visibleYears.map(() => 0);
-    return visibleYears.map(y => {
-      return filteredProjects
-        .filter(p => p.year === y)
-        .reduce((sum, p) => sum + (p.docentes || 0), 0);
-    });
-  }, [filteredProjects, visibleYears, hasData]);
+    const pointsMap = new Map(docentesSeries.map(p => [Number(p.year), Number(p.value)]));
+    return visibleYears.map(y => pointsMap.get(y) ?? 0);
+  }, [docentesSeries, visibleYears]);
 
+  // 6. Proyectos con financiamiento externo por año
   const finExterno = useMemo(() => {
-    if (!hasData) return visibleYears.map(() => 0);
-    return visibleYears.map(y => {
-      return filteredProjects.filter(p => p.year === y && p.externo === 'Sí').length;
-    });
-  }, [filteredProjects, visibleYears, hasData]);
+    const pointsMap = new Map(financiamientoSeries.map(f => [Number(f.year), Number(f.value)]));
+    return visibleYears.map(y => pointsMap.get(y) ?? 0);
+  }, [financiamientoSeries, visibleYears]);
 
-  // KPIs dinámicos
+  // KPIs dinámicos calculados por año actual (límite superior) vs año base (límite inferior)
   const kpis = useMemo(() => {
     if (!hasData) {
       return {
-        activos: { val: '—', baseVal: '—', evo: null, isPositive: true },
-        finalizados: { val: '—', baseVal: '—', evo: null, isPositive: true },
-        docentes: { val: '—', baseVal: '—', evo: null, isPositive: true }
+        activos: { val: '—', baseVal: '—', evo: null, isPositive: true, compareText: null },
+        finalizados: { val: '—', baseVal: '—', evo: null, isPositive: true, compareText: null },
+        docentes: { val: '—', baseVal: '—', evo: null, isPositive: true, compareText: null }
       };
     }
-    const totActivos = filteredProjects.filter(p => p.estado === 'En curso').length;
-    const totFinalizados = filteredProjects.filter(p => p.estado === 'Finalizado').length;
-    const totDocentes = filteredProjects.reduce((sum, p) => sum + (p.docentes || 0), 0);
 
-    const firstYear = visibleYears[0];
-    const lastYear = visibleYears[visibleYears.length - 1];
+    const yHasta = yearRange[1];
+    const yDesde = yearRange[0];
+    const isSingleYear = yDesde === yHasta;
 
-    const activosBase = filteredProjects.filter(p => p.year === firstYear && p.estado === 'En curso').length;
-    const finalizadosBase = filteredProjects.filter(p => p.year === firstYear && p.estado === 'Finalizado').length;
-    const docentesBase = filteredProjects.filter(p => p.year === firstYear).reduce((sum, p) => sum + (p.docentes || 0), 0);
+    const calcKpi = (seriesPoints) => {
+      const pointsMap = new Map(seriesPoints.map(p => [Number(p.year), Number(p.value)]));
+      const vHasta = pointsMap.get(yHasta) ?? 0;
+      const vDesde = pointsMap.get(yDesde) ?? 0;
 
-    const activosNow = filteredProjects.filter(p => p.year === lastYear && p.estado === 'En curso').length;
-    const finalizadosNow = filteredProjects.filter(p => p.year === lastYear && p.estado === 'Finalizado').length;
-    const docentesNow = filteredProjects.filter(p => p.year === lastYear).reduce((sum, p) => sum + (p.docentes || 0), 0);
+      if (isSingleYear) {
+        return {
+          val: String(vHasta),
+          baseYear: yDesde,
+          baseVal: vDesde,
+          compareText: `Línea base (${yDesde})`,
+          evo: null,
+          isPositive: true
+        };
+      }
 
-    const calcEvo = (now, base) => {
-      if (base === 0) return now > 0 ? 100 : 0;
-      return Math.round(((now - base) / base) * 100);
+      let evo = null;
+      let isPositive = true;
+
+      if (vDesde > 0) {
+        const diff = vHasta - vDesde;
+        const pct = Math.round((diff / vDesde) * 100);
+        evo = `${pct >= 0 ? '+' : ''}${pct}%`;
+        isPositive = pct >= 0;
+      } else if (vHasta > 0) {
+        evo = '+100%';
+        isPositive = true;
+      } else {
+        evo = '0%';
+        isPositive = true;
+      }
+
+      return {
+        val: String(vHasta),
+        baseYear: yDesde,
+        baseVal: vDesde,
+        compareText: `vs base (${yDesde}): ${vDesde}`,
+        evo,
+        isPositive
+      };
     };
 
     return {
-      activos: {
-        val: totActivos,
-        baseYear: firstYear,
-        baseVal: activosBase,
-        evo: firstYear !== lastYear ? calcEvo(activosNow, activosBase) : null,
-        isPositive: activosNow >= activosBase
-      },
-      finalizados: {
-        val: totFinalizados,
-        baseYear: firstYear,
-        baseVal: finalizadosBase,
-        evo: firstYear !== lastYear ? calcEvo(finalizadosNow, finalizadosBase) : null,
-        isPositive: finalizadosNow >= finalizadosBase
-      },
-      docentes: {
-        val: totDocentes,
-        baseYear: firstYear,
-        baseVal: docentesBase,
-        evo: firstYear !== lastYear ? calcEvo(docentesNow, docentesBase) : null,
-        isPositive: docentesNow >= docentesBase
-      }
+      activos: calcKpi(proyectosActivosSeries),
+      finalizados: calcKpi(proyectosFinalizadosSeries),
+      docentes: calcKpi(docentesSeries)
     };
-  }, [filteredProjects, visibleYears, hasData]);
+  }, [hasData, yearRange, proyectosActivosSeries, proyectosFinalizadosSeries, docentesSeries]);
 
   // Conteo de filtros activos
   const activeFiltersCount = useMemo(() => {
@@ -378,7 +436,7 @@ export const useDashboardInnovacion = () => {
 
   // Restablecer filtros
   const handleResetFilters = useCallback(() => {
-    setYearRange([2023, 2026]);
+    setYearRange([minYear, maxYear]);
     setSelectedChips({
       estado: [],
       area: [],
@@ -387,7 +445,7 @@ export const useDashboardInnovacion = () => {
       externo: [],
       fuente: []
     });
-  }, []);
+  }, [minYear, maxYear]);
 
   // Toggle de secciones de gráficos
   const handleToggleSection = useCallback((key) => {
@@ -477,6 +535,8 @@ export const useDashboardInnovacion = () => {
     logout,
     mobileOpen,
     handleDrawerToggle,
+    mobileFiltersOpen,
+    setMobileFiltersOpen,
     openHelpDialog,
     setOpenHelpDialog,
     filtersCollapsed,
@@ -514,6 +574,9 @@ export const useDashboardInnovacion = () => {
     // Datos
     hasData,
     kpis,
+    availableYears,
+    minYear,
+    maxYear,
     visibleYears,
     proyActivos,
     proyFinalizados,

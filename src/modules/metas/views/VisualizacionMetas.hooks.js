@@ -66,7 +66,7 @@ export const useVisualizacionMetas = () => {
       }
     } catch (err) {
       console.error('Error loading metas:', err);
-      setError('No se pudieron obtener las metas desde el servidor.');
+      setError('No se pudieron obtener las metas.');
     } finally {
       setLoading(false);
     }
@@ -252,7 +252,7 @@ export const useVisualizacionMetas = () => {
       await fetchBackendMetas();
     } catch (err) {
       console.error('Error deleting meta:', err);
-      alert('Hubo un error al eliminar la meta en el servidor.');
+      alert('Hubo un error al eliminar la meta.');
     } finally {
       handleCloseDeleteDialog();
     }
@@ -270,10 +270,21 @@ export const useVisualizacionMetas = () => {
     return { total, cumplimiento, riesgo };
   }, [metas]);
 
+  // Identifica si el usuario actual pertenece al rol o área de Calidad (solo lectura)
+  const isCalidadUser = useMemo(() => {
+    const roleLower = String(user?.role || '').toLowerCase();
+    return (
+      user?.role === 'Analista de Calidad' ||
+      user?.role === 'Vicerrectoria de Calidad' ||
+      roleLower.includes('calidad')
+    );
+  }, [user]);
+
   return {
     navigate,
     user,
     logout,
+    isCalidadUser,
     activeMenu,
     setActiveMenu,
     mobileOpen,

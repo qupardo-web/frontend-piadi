@@ -1026,7 +1026,7 @@ export const MetaForm = () => {
             {successMsg}
           </Typography>
           <Typography variant="body2" sx={{ color: '#6b7280', fontFamily: "'Inter', sans-serif" }}>
-            Los datos han sido registrados correctamente en el servidor.
+            Los datos han sido registrados correctamente.
           </Typography>
           <Button
             onClick={() => { setShowSuccessAlert(false); navigate('/metas'); }}
