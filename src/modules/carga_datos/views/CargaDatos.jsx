@@ -1,17 +1,12 @@
 import React from 'react';
 import { useCargaDatos, getTemplateColor } from './CargaDatos.hooks';
 import { styles } from './CargaDatos.styles';
-import logoEcas from '../../../assets/logo_ECAS_white.svg';
+import { Header, Sidebar } from '../../../components';
 import {
   Box,
   Typography,
   Button,
-  Avatar,
   IconButton,
-  Divider,
-  Drawer,
-  AppBar,
-  Toolbar,
   Card,
   CardContent,
   Table,
@@ -32,17 +27,12 @@ import {
   Grid,
   Tooltip,
   Collapse,
+  Divider,
 } from '@mui/material';
 import {
-  Home as HomeIcon,
-  Dashboard as DashboardIcon,
   UploadFile as CargaIcon,
-  Shield as AuditoriaIcon,
-  ExitToApp as LogoutIcon,
   CheckCircle as CheckCircleIcon,
-  MoreVert as MoreVertIcon,
   Help as HelpIcon,
-  Menu as MenuIcon,
   CloudUpload as UploadIcon,
   Info as InfoIcon,
   ChevronRight as ChevronRightIcon,
@@ -53,15 +43,12 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ExpandMore as ExpandMoreIcon,
   Download as DownloadIcon,
-  Adjust as TargetIcon,
 } from '@mui/icons-material';
 
 export const CargaDatos = () => {
   const {
     navigate,
     user,
-    logout,
-    mobileOpen,
     uploads,
     openUploadDialog,
     setOpenUploadDialog,
@@ -80,8 +67,6 @@ export const CargaDatos = () => {
     successSummary,
     filteredTemplates,
     faqData,
-    activeMenu,
-    handleDrawerToggle,
     handleTemplateSelect,
     handleFileChange,
     handleDragOver,
@@ -110,157 +95,10 @@ export const CargaDatos = () => {
 
   const activeTemplateObj = filteredTemplates.find(t => t.id === selectedTemplate);
 
-  // =========================================================================
-  // SUB-COMPONENTE: CONTENIDO DEL SIDEBAR (REUTILIZABLE)
-  // =========================================================================
-  const sidebarContent = (
-    <Box sx={styles.drawerContent}>
-      <Box>
-        {/* Logo y Cabecera del Sidebar */}
-        <Box sx={styles.logoContainer}>
-          <Box 
-            component="img" 
-            src={logoEcas} 
-            alt="Logo ECAS" 
-            sx={{ width: 32, height: 32, objectFit: 'contain' }} 
-          />
-          <Box>
-            <Typography variant="subtitle1" sx={styles.logoTitle}>
-              PIADI
-            </Typography>
-            <Typography variant="caption" sx={styles.logoSubtitle}>
-              ECAS
-            </Typography>
-          </Box>
-        </Box>
-
-        <Divider sx={styles.divider} />
-
-        {/* Menú de Navegación */}
-        <Box sx={styles.menuContainer}>
-          {[
-            { text: 'Inicio', icon: <HomeIcon />, path: '/' },
-            { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
-            { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
-            { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
-            { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
-          ].filter((item) => {
-            if (item.text === 'Auditoría') {
-              return (
-                user?.role === 'Rector' || 
-                user?.role === 'Administrador' || 
-                user?.role === 'Director de Administración' ||
-                user?.role === 'Analista de Calidad' ||
-                user?.role === 'Vicerrectoria de Calidad'
-              );
-            }
-            return true;
-          }).map((item) => {
-            const isSelected = activeMenu === item.text;
-            return (
-              <Box
-                key={item.text}
-                onClick={() => {
-                  handleDrawerToggle(); // Cierra el drawer móvil si se hace click
-                  if (item.path !== '#') {
-                    navigate(item.path);
-                  }
-                }}
-                sx={styles.menuItem(isSelected)}
-              >
-                {item.icon}
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    fontWeight: isSelected ? 600 : 500, 
-                    noWrap: true,
-                    color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)'
-                  }}
-                >
-                  {item.text}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
-      </Box>
-
-      {/* Sección inferior del Sidebar */}
-      <Box sx={styles.bottomSection}>
-        {/* Botón Cerrar Sesión */}
-        <Box onClick={logout} sx={styles.logoutButton}>
-          <LogoutIcon />
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            Cerrar Sesión
-          </Typography>
-        </Box>
-
-        {/* Tarjeta de Usuario */}
-        <Box sx={styles.userCard}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
-            <Avatar sx={styles.userAvatar}>
-              {user?.username ? user.username.split(/[. @]/).filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'JD'}
-            </Avatar>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#ffffff', lineHeight: 1.2 }}>
-                {user?.username || 'John Doe'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
-                Ver perfil
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-            <MoreVertIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </Box>
-    </Box>
-  );
-
   return (
     <Box sx={styles.mainLayout}>
-      
-      {/* =========================================================================
-          BARRA DE NAVEGACIÓN SUPERIOR PARA MÓVILES (APPBAR)
-          ========================================================================= */}
-      <AppBar position="fixed" sx={styles.mobileAppBar}>
-        <Toolbar sx={styles.mobileToolbar}>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerToggle}
-            sx={{ p: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <MenuIcon sx={{ fontSize: 36 }} />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-
-      {/* =========================================================================
-          SECCIÓN 1A: SIDEBAR PERSISTENTE (ESCRITORIO)
-          ========================================================================= */}
-      <Box sx={styles.sidebar}>
-        {sidebarContent}
-      </Box>
-
-      {/* =========================================================================
-          SECCIÓN 1B: SIDEBAR TEMPORAL / DESPLEGABLE (MÓVILES Y TABLETS)
-          ========================================================================= */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Optimiza el rendimiento de apertura en móviles.
-        }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 260, border: 'none' },
-        }}
-      >
-        {sidebarContent}
-      </Drawer>
+      {/* SIDEBAR TRANSVERSAL (Escritorio + Drawer + AppBar Móvil) */}
+      <Sidebar />
 
       {/* =========================================================================
           SECCIÓN 2: ÁREA DE CONTENIDO PRINCIPAL (DERECHA / ABAJO)
@@ -268,34 +106,16 @@ export const CargaDatos = () => {
       <Box sx={styles.contentArea}>
         
         {/* Cabecera del Panel Principal */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          {/* Breadcrumbs */}
-          <Box sx={styles.breadcrumbsContainer}>
-            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/')}>
-              Inicio
-            </Typography>
-            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
-            <Typography variant="body1" sx={{ color: '#1E2875', fontWeight: 600 }}>
-              Carga de datos
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
-            <Box sx={styles.panelHeader}>
-              <Box sx={styles.panelIconContainer}>
-                <CargaIcon />
-              </Box>
-              <Box>
-                <Typography variant="h5" sx={styles.panelTitle}>
-                  Carga de datos
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                  Sube y actualiza los indicadores institucionales mediante archivos de plantilla.
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
+        <Header
+          title="Carga de datos"
+          subtitle="Sube y actualiza los indicadores institucionales mediante archivos de plantilla."
+          icon={<CargaIcon />}
+          iconColor="#FFFFFF"
+          breadcrumbs={[
+            { label: 'Inicio', path: '/' },
+            { label: 'Carga de datos', path: null },
+          ]}
+        />
 
         {/* Alerta de Formato Requerido */}
         <Box sx={styles.formatAlert}>

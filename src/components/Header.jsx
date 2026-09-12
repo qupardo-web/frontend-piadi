@@ -4,26 +4,31 @@ import { ChevronRight as ChevronRightIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * DashboardHeader - Componente estándar de cabecera para los dashboards de PIADI.
+ * Header - Componente estándar de cabecera transversal para las vistas y dashboards de PIADI.
  * Estandariza tipografías, espaciados (gap: 2.5), migas de pan (Breadcrumbs) e icono institucional.
  *
  * @param {Object} props
- * @param {string} props.title - Título principal del Dashboard.
- * @param {string} props.subtitle - Descripción o subtítulo del Dashboard.
- * @param {React.ReactNode} props.icon - Icono representativo del departamento o área.
- * @param {string} [props.iconColor='#1DC2A0'] - Color de acento institucional para el icono y la barra de carga.
- * @param {boolean} [props.loading=false] - Indica si los datos están cargando para mostrar la barra de progreso.
- * @param {Array<{label: string, path?: string}>} [props.breadcrumbs] - Lista personalizada de breadcrumbs.
+ * @param {string} props.title - Título principal del Dashboard o vista.
+ * @param {string} [props.subtitle] - Descripción o subtítulo de la vista.
+ * @param {React.ReactNode} [props.icon] - Icono representativo del departamento o área.
+ * @param {string} [props.iconColor='#1DC2A0'] - Color de acento para el icono.
+ * @param {'square'|'circle'} [props.iconShape='square'] - Forma del contenedor del icono ('square' con 12px de radio o 'circle' con 50%).
+ * @param {boolean} [props.loading=false] - Estado de carga opcional.
+ * @param {Array<{label: string, path?: string}>|false|null} [props.breadcrumbs] - Lista personalizada de breadcrumbs. Si es false/null, no se renderizan breadcrumbs.
+ * @param {React.ReactNode|string} [props.topContent] - Contenido superior personalizado (ej. saludo de bienvenida en LandingPage) en lugar de breadcrumbs.
  * @param {React.ReactNode} [props.rightAction] - Elemento o botón opcional a la derecha de la cabecera.
  */
-export const DashboardHeader = ({
+export const Header = ({
   title,
   subtitle,
   icon,
   iconColor = '#1DC2A0',
+  iconShape = 'square',
   loading = false,
   breadcrumbs,
+  topContent,
   rightAction,
+  sx,
 }) => {
   const navigate = useNavigate();
 
@@ -33,22 +38,44 @@ export const DashboardHeader = ({
     { label: title, path: null },
   ];
 
-  const breadcrumbsList = breadcrumbs || defaultBreadcrumbs;
+  const showBreadcrumbs = !topContent && breadcrumbs !== false && breadcrumbs !== null;
+  const breadcrumbsList = Array.isArray(breadcrumbs) ? breadcrumbs : defaultBreadcrumbs;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, width: '100%' }}>
-      {/* 1. Miga de pan (Breadcrumbs) */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.8,
-          color: '#6B7280',
-          fontSize: '16px',
-          fontWeight: 500,
-          flexWrap: 'wrap',
-        }}
-      >
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, width: '100%', ...sx }}>
+      {/* 1. Contenido superior: Saludo / TopContent o Miga de pan (Breadcrumbs) */}
+      {topContent && (
+        <Box>
+          {typeof topContent === 'string' ? (
+            <Typography
+              variant="body1"
+              sx={{
+                color: '#6B7280',
+                fontWeight: 500,
+                fontSize: '16px',
+                fontFamily: "'Inter', sans-serif",
+              }}
+            >
+              {topContent}
+            </Typography>
+          ) : (
+            topContent
+          )}
+        </Box>
+      )}
+
+      {showBreadcrumbs && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.8,
+            color: '#6B7280',
+            fontSize: '16px',
+            fontWeight: 500,
+            flexWrap: 'wrap',
+          }}
+        >
         {breadcrumbsList.map((item, index) => {
           const isLast = index === breadcrumbsList.length - 1;
           return (
@@ -74,6 +101,7 @@ export const DashboardHeader = ({
           );
         })}
       </Box>
+      )}
 
       {/* 2. Título, Subtítulo, Icono y Acciones */}
       <Box
@@ -90,9 +118,9 @@ export const DashboardHeader = ({
           {icon && (
             <Box
               sx={{
-                width: 48,
-                height: 48,
-                borderRadius: '12px',
+                width: iconShape === 'circle' ? 44 : 48,
+                height: iconShape === 'circle' ? 44 : 48,
+                borderRadius: iconShape === 'circle' ? '50%' : '12px',
                 bgcolor: '#1E2875',
                 color: iconColor,
                 display: 'flex',
@@ -100,7 +128,7 @@ export const DashboardHeader = ({
                 justifyContent: 'center',
                 flexShrink: 0,
                 '& svg': {
-                  fontSize: '28px',
+                  fontSize: iconShape === 'circle' ? '24px' : '28px',
                 },
               }}
             >
@@ -142,4 +170,5 @@ export const DashboardHeader = ({
   );
 };
 
-export default DashboardHeader;
+export const DashboardHeader = Header;
+export default Header;

@@ -1,21 +1,16 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../../auth';
 import { styles } from './DashboardEducacionContinua.styles';
-import { DashboardHeader, KpiCard } from '../components';
-import logoEcas from '../../../assets/logo_ECAS_white.svg';
+import { Header, Sidebar, KpiCard, DashboardChartCard, DashboardPersistentFilterSidebar } from '../../../components';
 import {
   Box,
   Typography,
   Grid,
   Card,
   Button,
-  Avatar,
   IconButton,
   Divider,
   Drawer,
-  AppBar,
-  Toolbar,
   Select,
   MenuItem,
   Slider,
@@ -33,16 +28,7 @@ import {
   AccordionDetails,
 } from '@mui/material';
 import {
-  Home as HomeIcon,
-  Dashboard as DashboardIcon,
-  Adjust as TargetIcon,
-  UploadFile as CargaIcon,
-  Shield as AuditoriaIcon,
   TableChart as TablaIcon,
-  ExitToApp as LogoutIcon,
-  MoreVert as MoreVertIcon,
-  Menu as MenuIcon,
-  ChevronRight as ChevronRightIcon,
   FilterAlt as FilterIcon,
   RestartAlt as ResetIcon,
   School as SchoolIcon,
@@ -226,111 +212,6 @@ export const DashboardEducacionContinua = () => {
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
   }, [location.hash]);
-
-  // NAV NAVEGACIÓN IZQUIERDA
-  const sidebarContent = (
-    <Box sx={styles.drawerContent}>
-      <Box>
-        {/* Logo y Cabecera del Sidebar */}
-        <Box sx={styles.logoContainer}>
-          <Box 
-            component="img" 
-            src={logoEcas} 
-            alt="Logo ECAS" 
-            sx={{ width: 32, height: 32, objectFit: 'contain' }} 
-          />
-          <Box>
-            <Typography variant="subtitle1" sx={styles.logoTitle}>
-              PIADI
-            </Typography>
-            <Typography variant="caption" sx={styles.logoSubtitle}>
-              ECAS
-            </Typography>
-          </Box>
-        </Box>
-
-        <Divider sx={styles.divider} />
-
-        {/* Menú de Navegación */}
-        <Box sx={styles.menuContainer}>
-          {[
-            { text: 'Inicio', icon: <HomeIcon />, path: '/' },
-            { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
-            { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
-            { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
-            { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
-          ].filter((item) => {
-            if (item.text === 'Auditoría') {
-              return (
-                user?.role === 'Rector' || 
-                user?.role === 'Administrador' || 
-                user?.role === 'Director de Administración' ||
-                user?.role === 'Analista de Calidad' ||
-                user?.role === 'Vicerrectoria de Calidad'
-              );
-            }
-            return true;
-          }).map((item) => {
-            const isSelected = activeMenu === item.text;
-            return (
-              <Box
-                key={item.text}
-                onClick={() => {
-                  handleDrawerToggle();
-                  if (item.path !== '#') {
-                    navigate(item.path);
-                  }
-                }}
-                sx={styles.menuItem(isSelected)}
-              >
-                {item.icon}
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    fontWeight: isSelected ? 600 : 500, 
-                    noWrap: true,
-                    color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)'
-                  }}
-                >
-                  {item.text}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
-      </Box>
-
-      {/* Sección inferior del Sidebar */}
-      <Box sx={styles.bottomSection}>
-        <Box onClick={logout} sx={styles.logoutButton}>
-          <LogoutIcon />
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            Cerrar Sesión
-          </Typography>
-        </Box>
-
-        {/* Tarjeta de Usuario */}
-        <Box sx={styles.userCard}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
-            <Avatar sx={styles.userAvatar}>
-              {user?.username ? user.username.split(/[. @]/).filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'JD'}
-            </Avatar>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#ffffff', lineHeight: 1.2 }}>
-                {user?.username || 'John Doe'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
-                Ver perfil
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-            <MoreVertIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </Box>
-    </Box>
-  );
 
   const filtersContent = (
     <>
@@ -545,27 +426,6 @@ export const DashboardEducacionContinua = () => {
         </FormControl>
       </Box>
       )}
-
-      {!apiLoading && !hasData && (
-        <Box sx={{ mx: 2, mb: 2, p: 2, bgcolor: '#FEF3C7', borderRadius: 2, border: '1px solid #F59E0B' }}>
-          <Typography sx={{ fontSize: '13px', color: '#92400E', textAlign: 'center', fontWeight: 500 }}>
-            No hay datos disponibles para los filtros.
-          </Typography>
-        </Box>
-      )}
-
-      {/* Botón de Limpiar Filtros */}
-      <Box sx={{ pt: 1 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<ResetIcon />}
-          onClick={handleResetFilters}
-          sx={styles.resetFiltersButton}
-        >
-          Restablecer filtros
-        </Button>
-      </Box>
     </>
   );
 
@@ -851,55 +711,14 @@ export const DashboardEducacionContinua = () => {
         }
       `}} />
 
-      {/* BARRA DE NAVEGACIÓN SUPERIOR MÓVIL (APPBAR) */}
-      <AppBar position="fixed" sx={styles.mobileAppBar}>
-        <Toolbar sx={styles.mobileToolbar}>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerToggle}
-            sx={{ p: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <MenuIcon sx={{ fontSize: 36 }} />
-          </IconButton>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
-            <Box 
-              component="img" 
-              src={logoEcas} 
-              alt="Logo ECAS" 
-              sx={{ width: 24, height: 24, objectFit: 'contain' }} 
-            />
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#ffffff', letterSpacing: 0.5 }}>
-              PIADI ECAS
-            </Typography>
-          </Box>
-        </Toolbar>
-      </AppBar>
-
-      {/* SIDEBAR LATERAL (ESCRITORIO) */}
-      <Box component="nav" sx={styles.sidebar}>
-        {sidebarContent}
-      </Box>
-
-      {/* SIDEBAR DESPLEGABLE (MÓVIL) */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 260, border: 'none' },
-        }}
-      >
-        {sidebarContent}
-      </Drawer>
+      {/* SIDEBAR TRANSVERSAL (Escritorio + Drawer + AppBar Móvil) */}
+      <Sidebar />
 
       {/* ÁREA DE CONTENIDO CENTRAL */}
       <Box component="main" sx={styles.contentArea} className="taller-devops-dashboard">
         
         {/* Cabecera del Panel Principal */}
-        <DashboardHeader
+        <Header
           title="Dashboard de Educación Continua"
           subtitle="Visualización de estadísticas y métricas del departamento de Educación Continua"
           icon={<SchoolIcon />}
@@ -907,35 +726,15 @@ export const DashboardEducacionContinua = () => {
           loading={apiLoading}
         />
 
-        {/* SECCIÓN DE FILTROS EN MÓVIL (COLAPSABLE / ACORDEÓN ABIERTO POR DEFECTO) */}
-        <Box sx={{ display: { xs: 'block', md: 'none' }, width: '100%' }}>
-          <Accordion
-            defaultExpanded={true}
-            sx={{
-              bgcolor: '#FFFFFF',
-              borderRadius: '12px !important',
-              border: '1px solid #E2E8F0',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-              '&:before': { display: 'none' },
-              overflow: 'hidden',
-            }}
-          >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon sx={{ color: '#1E2875' }} />}
-              sx={{ px: 2.5, py: 1 }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                <FilterIcon sx={{ color: '#1E2875', fontSize: 20 }} />
-                <Typography sx={{ fontWeight: 700, fontSize: '16px', color: '#1E2875', fontFamily: "'Inter', sans-serif" }}>
-                  Filtros
-                </Typography>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails sx={{ px: 2.5, pt: 0, pb: 2.5, display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {filtersContent}
-            </AccordionDetails>
-          </Accordion>
-        </Box>
+        {/* SECCIÓN DE FILTROS EN MÓVIL (ACORDEÓN) */}
+        <DashboardPersistentFilterSidebar
+          variant="accordion"
+          title="Filtros"
+          hasData={hasData}
+          onReset={handleResetFilters}
+        >
+          {filtersContent}
+        </DashboardPersistentFilterSidebar>
 
         {/* Top Summary Cards — 4 indicadores clave con evolución 2023→2026 */}
         <Grid container spacing={2.5} sx={{ mb: 3 }}>
@@ -977,457 +776,396 @@ export const DashboardEducacionContinua = () => {
         {/* Charts Grid */}
         <div className="charts-grid">
 
-          {/* Card 9: Oferta de cursos programada */}
-          <div id="oferta-programada" className="chart-card" style={{ gridColumn: '1 / -1', minHeight: '390px', height: 'auto' }}>
-            <div className="chart-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BookOpen size={16} style={{ color: '#1E2875' }} />
-                <h2 className="chart-title" style={{ margin: 0 }}>Oferta programada</h2>
+          {/* Card 1: Oferta de cursos programada */}
+          <DashboardChartCard
+            id="oferta-programada"
+            fullWidth
+            minHeight="390px"
+            icon={<BookOpen size={16} />}
+            iconColor="#1E2875"
+            title="Oferta programada"
+            actions={
+              <div className="card-toggle-group">
+                <button className={`btn-toggle ${ofertaViewMode === 'total' ? 'active' : ''}`} onClick={() => setOfertaViewMode('total')}>Total</button>
+                <button className={`btn-toggle ${ofertaViewMode === 'area' ? 'active' : ''}`} onClick={() => setOfertaViewMode('area')}>Área</button>
+                <button className={`btn-toggle ${ofertaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setOfertaViewMode('tipo')}>Tipo</button>
+                <button className={`btn-toggle ${ofertaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setOfertaViewMode('modalidad')}>Modalidad</button>
               </div>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div className="card-toggle-group">
-                  <button className={`btn-toggle ${ofertaViewMode === 'total' ? 'active' : ''}`} onClick={() => setOfertaViewMode('total')}>Total</button>
-                  <button className={`btn-toggle ${ofertaViewMode === 'area' ? 'active' : ''}`} onClick={() => setOfertaViewMode('area')}>Área</button>
-                  <button className={`btn-toggle ${ofertaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setOfertaViewMode('tipo')}>Tipo</button>
-                  <button className={`btn-toggle ${ofertaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setOfertaViewMode('modalidad')}>Modalidad</button>
-                </div>
-              </div>
-            </div>
-            
-            <div className="chart-wrapper">
-              {ofertaChartData.labels.length > 0 ? (
-                <BarChart
-                  xAxis={[{
-                    scaleType: 'band',
-                    data: ofertaChartData.labels,
-                    label: isMobile ? undefined : (ofertaViewMode === 'total' ? 'Año' : (ofertaViewMode === 'area' ? 'Área' : (ofertaViewMode === 'tipo' ? 'Tipo' : 'Modalidad'))),
-                    tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
-                    valueFormatter: (value, context) => {
-                      if (isMobile && context?.location === 'tick' && value && String(value).length > 6) {
-                        return String(value).substring(0, 4) + '...';
-                      }
-                      return value;
-                    }
-                  }]}
-                  series={ofertaChartData.series}
-                  margin={{ top: 15, right: 15, bottom: isMobile ? 65 : 60, left: isMobile ? 35 : 40 }}
-                  slotProps={{
-                    legend: {
-                      direction: 'horizontal',
-                      position: { vertical: 'bottom', horizontal: 'center' },
-                      labelStyle: { fontSize: isMobile ? '10px' : '11px', fill: '#1e293b' }
-                    },
-                    tooltip: { trigger: 'axis' }
-                  }}
-                />
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
-              )}
-            </div>
-          </div>
+            }
+            hasData={ofertaChartData.labels.length > 0}
+          >
+            <BarChart
+              xAxis={[{
+                scaleType: 'band',
+                data: ofertaChartData.labels,
+                label: isMobile ? undefined : (ofertaViewMode === 'total' ? 'Año' : (ofertaViewMode === 'area' ? 'Área' : (ofertaViewMode === 'tipo' ? 'Tipo' : 'Modalidad'))),
+                tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
+                valueFormatter: (value, context) => {
+                  if (isMobile && context?.location === 'tick' && value && String(value).length > 6) {
+                    return String(value).substring(0, 4) + '...';
+                  }
+                  return value;
+                }
+              }]}
+              series={ofertaChartData.series}
+              margin={{ top: 15, right: 15, bottom: isMobile ? 65 : 60, left: isMobile ? 35 : 40 }}
+              slotProps={{
+                legend: {
+                  direction: 'horizontal',
+                  position: { vertical: 'bottom', horizontal: 'center' },
+                  labelStyle: { fontSize: isMobile ? '10px' : '11px', fill: '#1e293b' }
+                },
+                tooltip: { trigger: 'axis' }
+              }}
+            />
+          </DashboardChartCard>
 
-          {/* Card 3: Cursos efectivamente dictados */}
-          <div id="cursos-dictados" className="chart-card">
-            <div className="chart-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle size={16} style={{ color: '#10B981' }} />
-                <h2 className="chart-title" style={{ margin: 0 }}>Cursos efectivamente dictados</h2>
-              </div>
-            </div>
-            
-            <div className="chart-wrapper">
-              {effectiveDictadosSeries ? (
-                <BarChart
-                  xAxis={[{ 
-                    scaleType: 'band', 
-                    data: effectiveDictadosSeries.map(d => d.cohorte), 
-                    label: isMobile ? undefined : 'Año',
-                    tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 }
-                  }]}
-                  series={[
-                    { data: effectiveDictadosSeries.map(d => d.planificados), label: 'Programados', color: '#cbd5e1' },
-                    { data: effectiveDictadosSeries.map(d => d.dictados), label: 'Dictados', color: '#10B981' }
-                  ]}
-                  margin={{ top: 15, right: 15, bottom: isMobile ? 55 : 40, left: isMobile ? 35 : 40 }}
-                  slotProps={{
-                    legend: {
-                      direction: 'horizontal',
-                      position: { vertical: 'bottom', horizontal: 'center' },
-                      labelStyle: { fontSize: isMobile ? '9px' : '10px', fill: '#1e293b' }
-                    },
-                    tooltip: { trigger: 'axis' }
-                  }}
-                />
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
-              )}
-            </div>
-          </div>
+          {/* Card 2: Cursos efectivamente dictados */}
+          <DashboardChartCard
+            id="cursos-dictados"
+            icon={<CheckCircle size={16} />}
+            iconColor="#10B981"
+            title="Cursos efectivamente dictados"
+            hasData={Boolean(effectiveDictadosSeries && effectiveDictadosSeries.length > 0)}
+          >
+            <BarChart
+              xAxis={[{ 
+                scaleType: 'band', 
+                data: (effectiveDictadosSeries || []).map(d => d.cohorte), 
+                label: isMobile ? undefined : 'Año',
+                tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 }
+              }]}
+              series={[
+                { data: (effectiveDictadosSeries || []).map(d => d.planificados), label: 'Programados', color: '#cbd5e1' },
+                { data: (effectiveDictadosSeries || []).map(d => d.dictados), label: 'Dictados', color: '#10B981' }
+              ]}
+              margin={{ top: 15, right: 15, bottom: isMobile ? 55 : 40, left: isMobile ? 35 : 40 }}
+              slotProps={{
+                legend: {
+                  direction: 'horizontal',
+                  position: { vertical: 'bottom', horizontal: 'center' },
+                  labelStyle: { fontSize: isMobile ? '9px' : '10px', fill: '#1e293b' }
+                },
+                tooltip: { trigger: 'axis' }
+              }}
+            />
+          </DashboardChartCard>
 
-          {/* Card 4: Tasa de ejecución (%) */}
-          <div id="tasa-ejecucion" className="chart-card">
-            <div className="chart-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Percent size={16} style={{ color: '#1E2875' }} />
-                <h2 className="chart-title" style={{ margin: 0 }}>Tasa de ejecución (%)</h2>
-              </div>
-            </div>
-            
-            <div className="chart-wrapper">
-              {effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0 ? (
-                <LineChart
-                  xAxis={[{ 
-                    scaleType: 'point', 
-                    data: effectiveEjecucionSeries.map(d => d.cohorte), 
-                    label: isMobile ? undefined : 'Año',
-                    tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 }
-                  }]}
-                  series={[{
-                    data: effectiveEjecucionSeries.map(d => d.tasa),
-                    color: '#1E2875',
-                    label: 'Tasa Ejecución %',
-                    valueFormatter: (value) => `${value}%`,
-                    showMark: true,
-                  }]}
-                  margin={{ top: 15, right: 15, bottom: isMobile ? 55 : 40, left: isMobile ? 35 : 45 }}
-                  slotProps={{
-                    tooltip: { trigger: 'axis' }
-                  }}
-                />
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
-              )}
-            </div>
-          </div>
+          {/* Card 3: Tasa de ejecución (%) */}
+          <DashboardChartCard
+            id="tasa-ejecucion"
+            icon={<Percent size={16} />}
+            iconColor="#1E2875"
+            title="Tasa de ejecución (%)"
+            hasData={Boolean(effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0)}
+          >
+            <LineChart
+              xAxis={[{ 
+                scaleType: 'point', 
+                data: (effectiveEjecucionSeries || []).map(d => d.cohorte), 
+                label: isMobile ? undefined : 'Año',
+                tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 }
+              }]}
+              series={[{
+                data: (effectiveEjecucionSeries || []).map(d => d.tasa),
+                color: '#1E2875',
+                label: 'Tasa Ejecución %',
+                valueFormatter: (value) => `${value}%`,
+                showMark: true,
+              }]}
+              margin={{ top: 15, right: 15, bottom: isMobile ? 55 : 40, left: isMobile ? 35 : 45 }}
+              slotProps={{
+                tooltip: { trigger: 'axis' }
+              }}
+            />
+          </DashboardChartCard>
 
-          {/* Card 7: Ingresos Generados */}
-          <div id="ingresos-generados" className="chart-card" style={{ gridColumn: '1 / -1', minHeight: '390px', height: 'auto' }}>
-            <div className="chart-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <DollarSign size={16} style={{ color: '#10B981' }} />
-                <h2 className="chart-title" style={{ margin: 0 }}>
-                  Ingresos por {ingresosViewMode === 'area' ? 'área' : (ingresosViewMode === 'tipo' ? 'tipo de programa' : 'modalidad')} ($M CLP)
-                </h2>
+          {/* Card 4: Ingresos Generados */}
+          <DashboardChartCard
+            id="ingresos-generados"
+            fullWidth
+            minHeight="390px"
+            icon={<DollarSign size={16} />}
+            iconColor="#10B981"
+            title={`Ingresos por ${ingresosViewMode === 'area' ? 'área' : (ingresosViewMode === 'tipo' ? 'tipo de programa' : 'modalidad')} ($M CLP)`}
+            actions={
+              <div className="card-toggle-group">
+                <button className={`btn-toggle ${ingresosViewMode === 'area' ? 'active' : ''}`} onClick={() => setIngresosViewMode('area')}>Área</button>
+                <button className={`btn-toggle ${ingresosViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setIngresosViewMode('tipo')}>Tipo</button>
+                <button className={`btn-toggle ${ingresosViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setIngresosViewMode('modalidad')}>Modalidad</button>
               </div>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div className="card-toggle-group">
-                  <button className={`btn-toggle ${ingresosViewMode === 'area' ? 'active' : ''}`} onClick={() => setIngresosViewMode('area')}>Área</button>
-                  <button className={`btn-toggle ${ingresosViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setIngresosViewMode('tipo')}>Tipo</button>
-                  <button className={`btn-toggle ${ingresosViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setIngresosViewMode('modalidad')}>Modalidad</button>
-                </div>
-              </div>
-            </div>
-
-            <div className="chart-wrapper">
-              {ingresosChartData.labels.length > 0 ? (
-                <BarChart
-                  xAxis={[{
-                    scaleType: 'band',
-                    data: ingresosChartData.labels,
-                    label: isMobile ? undefined : (ingresosViewMode === 'area' ? 'Área' : (ingresosViewMode === 'tipo' ? 'Tipo' : 'Modalidad')),
-                    tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
-                    valueFormatter: (value, context) => {
-                      if (isMobile && context?.location === 'tick' && value && String(value).length > 6) {
-                        return String(value).substring(0, 4) + '...';
-                      }
-                      return value;
-                    }
-                  }]}
-                  series={ingresosChartData.series}
-                  margin={{ top: 15, right: 15, bottom: isMobile ? 70 : 80, left: isMobile ? 40 : 50 }}
-                  slotProps={{ 
-                    legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: isMobile ? '9px' : '10px' } },
-                    tooltip: { trigger: 'axis' }
-                  }}
-                />
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
-              )}
-            </div>
-          </div>
+            }
+            hasData={ingresosChartData.labels.length > 0}
+          >
+            <BarChart
+              xAxis={[{
+                scaleType: 'band',
+                data: ingresosChartData.labels,
+                label: isMobile ? undefined : (ingresosViewMode === 'area' ? 'Área' : (ingresosViewMode === 'tipo' ? 'Tipo' : 'Modalidad')),
+                tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
+                valueFormatter: (value, context) => {
+                  if (isMobile && context?.location === 'tick' && value && String(value).length > 6) {
+                    return String(value).substring(0, 4) + '...';
+                  }
+                  return value;
+                }
+              }]}
+              series={ingresosChartData.series}
+              margin={{ top: 15, right: 15, bottom: isMobile ? 70 : 80, left: isMobile ? 40 : 50 }}
+              slotProps={{ 
+                legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: isMobile ? '9px' : '10px' } },
+                tooltip: { trigger: 'axis' }
+              }}
+            />
+          </DashboardChartCard>
 
           {/* Card 5: Matrícula por programa (Radar Chart) */}
-          <div id="matricula-por-programa" className="chart-card" style={{ gridColumn: '1 / -1', minHeight: '480px', height: 'auto' }}>
-            <div className="chart-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h2 className="chart-title" style={{ margin: 0 }}>Matrícula por programa</h2>
-                </div>
-                
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
-                  <div className="card-toggle-group">
-                    <button className={`btn-toggle ${matriculaViewMode === 'total' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('total')}>Total</button>
-                    <button className={`btn-toggle ${matriculaViewMode === 'area' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('area')}>Área</button>
-                    <button className={`btn-toggle ${matriculaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('modalidad')}>Modalidad</button>
-                    <button className={`btn-toggle ${matriculaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('tipo')}>Tipo Programa</button>
-                  </div>
+          <DashboardChartCard
+            id="matricula-por-programa"
+            fullWidth
+            minHeight="480px"
+            title="Matrícula por programa"
+            headerContent={
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
+                <div className="card-toggle-group">
+                  <button className={`btn-toggle ${matriculaViewMode === 'total' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('total')}>Total</button>
+                  <button className={`btn-toggle ${matriculaViewMode === 'area' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('area')}>Área</button>
+                  <button className={`btn-toggle ${matriculaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('modalidad')}>Modalidad</button>
+                  <button className={`btn-toggle ${matriculaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('tipo')}>Tipo Programa</button>
                 </div>
               </div>
-            </div>
-
-            <div className="chart-wrapper" style={{ height: isMobile ? '340px' : '390px' }}>
-              {matriculaChartData.labels.length > 0 ? (
-                <BarChart
-                  height={isMobile ? 330 : 370}
-                  xAxis={[{
-                    scaleType: 'band',
-                    data: matriculaChartData.labels,
-                    label: isMobile ? undefined : (matriculaViewMode === 'total' ? 'Año' : (matriculaViewMode === 'area' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo'))),
-                    tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
-                    valueFormatter: (value, context) => {
-                      if (isMobile && context?.location === 'tick' && value && String(value).length > 6) {
-                        return String(value).substring(0, 4) + '...';
-                      }
-                      return value;
-                    }
-                  }]}
-                  series={matriculaChartData.series}
-                  margin={{ top: 15, right: 15, bottom: isMobile ? 70 : 80, left: isMobile ? 40 : 50 }}
-                  slotProps={{ 
-                    legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: isMobile ? '9px' : '10px' } },
-                    tooltip: { trigger: 'axis' }
-                  }}
-                />
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>Sin datos disponibles</div>
-              )}
-            </div>
-          </div>
+            }
+            wrapperStyle={{ height: isMobile ? '340px' : '390px' }}
+            hasData={matriculaChartData.labels.length > 0}
+          >
+            <BarChart
+              height={isMobile ? 330 : 370}
+              xAxis={[{
+                scaleType: 'band',
+                data: matriculaChartData.labels,
+                label: isMobile ? undefined : (matriculaViewMode === 'total' ? 'Año' : (matriculaViewMode === 'area' ? 'Área' : (matriculaViewMode === 'modalidad' ? 'Modalidad' : 'Tipo'))),
+                tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 },
+                valueFormatter: (value, context) => {
+                  if (isMobile && context?.location === 'tick' && value && String(value).length > 6) {
+                    return String(value).substring(0, 4) + '...';
+                  }
+                  return value;
+                }
+              }]}
+              series={matriculaChartData.series}
+              margin={{ top: 15, right: 15, bottom: isMobile ? 70 : 80, left: isMobile ? 40 : 50 }}
+              slotProps={{ 
+                legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: isMobile ? '9px' : '10px' } },
+                tooltip: { trigger: 'axis' }
+              }}
+            />
+          </DashboardChartCard>
 
           {/* Card 6: Tasa de aprobación por programa */}
-          <div id="tasa-aprobacion" className="chart-card" style={{ gridColumn: '1 / -1', minHeight: '380px', height: 'auto' }}>
-            <div className="chart-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Award size={16} style={{ color: '#a855f7' }} />
-                <h2 className="chart-title" style={{ margin: 0 }}>Tasa de aprobación</h2>
+          <DashboardChartCard
+            id="tasa-aprobacion"
+            fullWidth
+            minHeight="380px"
+            icon={<Award size={16} />}
+            iconColor="#a855f7"
+            title="Tasa de aprobación"
+            wrapperStyle={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', padding: '8px' }}
+            hasData={aprobacionProgramasData.length > 0}
+            noDataMessage="No hay datos coincidentes"
+          >
+            {aprobacionProgramasData.map(row => (
+              <div key={row.area} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569', marginBottom: '12px', textAlign: 'center' }}>
+                  {row.area}
+                </span>
+                <div style={{ width: 120, height: 120 }}>
+                  <Gauge
+                    value={row.tasa}
+                    startAngle={-110}
+                    endAngle={110}
+                    innerRadius="75%"
+                    outerRadius="100%"
+                    text={`${row.tasa}%`}
+                    sx={{
+                      [`& .${gaugeClasses.valueText}`]: {
+                        fontSize: '18px',
+                        fontWeight: '800',
+                        fill: '#1e293b'
+                      },
+                      [`& .${gaugeClasses.valueArc}`]: {
+                        fill: '#a855f7',
+                      },
+                      [`& .${gaugeClasses.referenceArc}`]: {
+                        fill: '#e2e8f0',
+                      }
+                    }}
+                  />
+                </div>
+                <span style={{ fontSize: '10px', fontWeight: 600, color: '#64748b', marginTop: '4px', textAlign: 'center' }}>
+                  Histórico: {row.promedioHistorico}%
+                </span>
               </div>
-            </div>
+            ))}
+          </DashboardChartCard>
 
-            <div className="chart-wrapper" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', padding: '8px' }}>
-              {aprobacionProgramasData.length > 0 ? (
-                aprobacionProgramasData.map(row => (
-                  <div key={row.area} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569', marginBottom: '12px', textAlign: 'center' }}>
-                      {row.area}
-                    </span>
-                    <div style={{ width: 120, height: 120 }}>
-                      <Gauge
-                        value={row.tasa}
-                        startAngle={-110}
-                        endAngle={110}
-                        innerRadius="75%"
-                        outerRadius="100%"
-                        text={`${row.tasa}%`}
-                        sx={{
-                          [`& .${gaugeClasses.valueText}`]: {
-                            fontSize: '18px',
-                            fontWeight: '800',
-                            fill: '#1e293b'
-                          },
-                          [`& .${gaugeClasses.valueArc}`]: {
-                            fill: '#a855f7',
-                          },
-                          [`& .${gaugeClasses.referenceArc}`]: {
-                            fill: '#e2e8f0',
-                          }
-                        }}
-                      />
+          {/* Card 7: Perfil del participante */}
+          <DashboardChartCard
+            fullWidth
+            icon={<UserCheck size={16} />}
+            iconColor="#F59E0B"
+            title="Perfil del participante"
+            headerContent={
+              <div className="card-toggle-group" style={{ display: 'flex', flexWrap: 'wrap', maxWidth: '380px', marginTop: '4px' }}>
+                <button className={`btn-toggle ${perfilViewMode === 'region' ? 'active' : ''}`} onClick={() => setPerfilViewMode('region')}>Región</button>
+                <button className={`btn-toggle ${perfilViewMode === 'sector' ? 'active' : ''}`} onClick={() => setPerfilViewMode('sector')}>Sector</button>
+                <button className={`btn-toggle ${perfilViewMode === 'escolaridad' ? 'active' : ''}`} onClick={() => setPerfilViewMode('escolaridad')}>Escolaridad</button>
+                <button className={`btn-toggle ${perfilViewMode === 'edad' ? 'active' : ''}`} onClick={() => setPerfilViewMode('edad')}>Edad</button>
+                <button className={`btn-toggle ${perfilViewMode === 'genero' ? 'active' : ''}`} onClick={() => setPerfilViewMode('genero')}>Género</button>
+                <button className={`btn-toggle ${perfilViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setPerfilViewMode('tipo')}>Tipo</button>
+              </div>
+            }
+            wrapperStyle={{ marginTop: '8px' }}
+            hasData={Boolean(perfilParticipantesData && perfilParticipantesData.length > 0)}
+          >
+            <PieChart
+              series={[
+                {
+                  data: perfilParticipantesData,
+                  innerRadius: 20,
+                  outerRadius: isMobile ? 70 : 85,
+                  paddingAngle: 3,
+                  cornerRadius: 4,
+                },
+              ]}
+              height={isMobile ? 260 : 220}
+              margin={{ top: 10, bottom: isMobile ? 50 : 10, left: 10, right: 10 }}
+              slotProps={{
+                legend: {
+                  direction: isMobile ? 'row' : 'column',
+                  position: { vertical: isMobile ? 'bottom' : 'middle', horizontal: isMobile ? 'middle' : 'right' },
+                  labelStyle: { fontSize: isMobile ? '9px' : '10px', fill: '#1e293b' }
+                }
+              }}
+            />
+          </DashboardChartCard>
+
+          {/* Card 8: Pictograma: Participantes Únicos */}
+          <DashboardChartCard
+            minHeight="380px"
+            icon={<Users size={16} />}
+            iconColor="#8b5cf6"
+            title="Pictograma: Participantes Únicos"
+            wrapperStyle={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}
+            hasData={uniqueParticipantsAgeDist.length > 0}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1, gap: '20px', padding: '12px 0', width: '100%' }}>
+              {uniqueParticipantsAgeDist.map(d => {
+                const total = uniqueParticipantsTotal || 1;
+                const pct = (d.count / total) * 100;
+                const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
+                return (
+                  <div key={d.range} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                        {d.range} años
+                      </span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#8b5cf6' }}>
+                        {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
+                      </span>
                     </div>
-                    <span style={{ fontSize: '10px', fontWeight: 600, color: '#64748b', marginTop: '4px', textAlign: 'center' }}>
-                      Histórico: {row.promedioHistorico}%
-                    </span>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <svg
+                          key={i}
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{ color: i < filledIconsCount ? '#8b5cf6' : '#cbd5e1', transition: 'color 0.3s ease' }}
+                        >
+                          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                      ))}
+                    </div>
                   </div>
-                ))
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px', gridColumn: '1 / -1', textAlign: 'center' }}>No hay datos coincidentes</div>
-              )}
+                );
+              })}
             </div>
-          </div>
+            <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4', width: '100%' }}>
+              Cada figura representa un 10% del total de participantes únicos ({uniqueParticipantsTotal})
+            </div>
+          </DashboardChartCard>
 
-          {/* Card 8: Perfil del participante */}
-          <div className="chart-card" style={{ gridColumn: '1 / -1' }}>
-            <div className="chart-header">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <UserCheck size={16} style={{ color: '#F59E0B' }} />
-                  <h2 className="chart-title" style={{ margin: 0 }}>Perfil del participante</h2>
-                </div>
-                <div className="card-toggle-group" style={{ display: 'flex', flexWrap: 'wrap', maxWidth: '380px', marginTop: '4px' }}>
-                  <button className={`btn-toggle ${perfilViewMode === 'region' ? 'active' : ''}`} onClick={() => setPerfilViewMode('region')}>Región</button>
-                  <button className={`btn-toggle ${perfilViewMode === 'sector' ? 'active' : ''}`} onClick={() => setPerfilViewMode('sector')}>Sector</button>
-                  <button className={`btn-toggle ${perfilViewMode === 'escolaridad' ? 'active' : ''}`} onClick={() => setPerfilViewMode('escolaridad')}>Escolaridad</button>
-                  <button className={`btn-toggle ${perfilViewMode === 'edad' ? 'active' : ''}`} onClick={() => setPerfilViewMode('edad')}>Edad</button>
-                  <button className={`btn-toggle ${perfilViewMode === 'genero' ? 'active' : ''}`} onClick={() => setPerfilViewMode('genero')}>Género</button>
-                  <button className={`btn-toggle ${perfilViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setPerfilViewMode('tipo')}>Tipo</button>
-                </div>
-              </div>
-            </div>
-
-            <div className="chart-wrapper" style={{ marginTop: '8px' }}>
-              {perfilParticipantesData ? (
-                <PieChart
-                  series={[
-                    {
-                      data: perfilParticipantesData,
-                      innerRadius: 20,
-                      outerRadius: isMobile ? 70 : 85,
-                      paddingAngle: 3,
-                      cornerRadius: 4,
-                    },
-                  ]}
-                  height={isMobile ? 260 : 220}
-                  margin={{ top: 10, bottom: isMobile ? 50 : 10, left: 10, right: 10 }}
-                  slotProps={{
-                    legend: {
-                      direction: isMobile ? 'row' : 'column',
-                      position: { vertical: isMobile ? 'bottom' : 'middle', horizontal: isMobile ? 'middle' : 'right' },
-                      labelStyle: { fontSize: isMobile ? '9px' : '10px', fill: '#1e293b' }
-                    }
-                  }}
-                />
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
-              )}
-            </div>
-          </div>
-
-          {/* Pictograma: Participantes Únicos */}
-          <div className="chart-card" style={{ minHeight: '380px', height: 'auto' }}>
-            <div className="chart-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Users size={16} style={{ color: '#8b5cf6' }} />
-                <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Participantes Únicos</h2>
-              </div>
-            </div>
-            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
-              {uniqueParticipantsAgeDist.length > 0 ? (
-                <>
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1, gap: '20px', padding: '12px 0' }}>
-                    {uniqueParticipantsAgeDist.map(d => {
-                      const total = uniqueParticipantsTotal || 1;
-                      const pct = (d.count / total) * 100;
-                      const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
-                      return (
-                        <div key={d.range} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
-                              {d.range} años
-                            </span>
-                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#8b5cf6' }}>
-                              {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                            {Array.from({ length: 10 }).map((_, i) => (
-                              <svg
-                                key={i}
-                                width="18"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                style={{ color: i < filledIconsCount ? '#8b5cf6' : '#cbd5e1', transition: 'color 0.3s ease' }}
-                              >
-                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                              </svg>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
+          {/* Card 9: Pictograma: Frecuencia de Matrículas */}
+          <DashboardChartCard
+            minHeight="380px"
+            icon={<RefreshCw size={16} />}
+            iconColor="#ec4899"
+            title="Pictograma: Frecuencia de Matrículas"
+            wrapperStyle={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}
+            hasData={recurrenceFreqDist.length > 0}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', flexGrow: 1, gap: '24px', padding: '20px 0', width: '100%' }}>
+              {recurrenceFreqDist.map(d => {
+                const total = recurrenceFreqDist.reduce((sum, x) => sum + x.count, 0) || 1;
+                const pct = (d.count / total) * 100;
+                const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
+                return (
+                  <div key={d.category} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                        Año {d.category}
+                      </span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#ec4899' }}>
+                        {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <svg
+                          key={i}
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{ color: i < filledIconsCount ? '#ec4899' : '#cbd5e1', transition: 'color 0.3s ease' }}
+                        >
+                          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                          <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
+                        </svg>
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
-                    Cada figura representa un 10% del total de participantes únicos ({uniqueParticipantsTotal})
-                  </div>
-                </>
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
-              )}
+                );
+              })}
             </div>
-          </div>
-
-          {/* Pictograma: Frecuencia de Matrículas */}
-          <div className="chart-card" style={{ minHeight: '380px', height: 'auto' }}>
-            <div className="chart-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <RefreshCw size={16} style={{ color: '#ec4899' }} />
-                <h2 className="chart-title" style={{ margin: 0 }}>Pictograma: Frecuencia de Matrículas</h2>
-              </div>
+            <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4', width: '100%' }}>
+              Cada figura representa un 10% del total de personas con recurrencia formativa
             </div>
-            <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}>
-              {recurrenceFreqDist.length > 0 ? (
-                <>
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', flexGrow: 1, gap: '24px', padding: '20px 0' }}>
-                    {recurrenceFreqDist.map(d => {
-                      const total = recurrenceFreqDist.reduce((sum, x) => sum + x.count, 0) || 1;
-                      const pct = (d.count / total) * 100;
-                      const filledIconsCount = d.count > 0 ? Math.max(1, Math.round(pct / 10)) : 0;
-                      return (
-                        <div key={d.category} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
-                              Año {d.category}
-                            </span>
-                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#ec4899' }}>
-                              {d.count} {d.count === 1 ? 'persona' : 'personas'} ({pct.toFixed(1)}%)
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                            {Array.from({ length: 10 }).map((_, i) => (
-                              <svg
-                                key={i}
-                                width="18"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                style={{ color: i < filledIconsCount ? '#ec4899' : '#cbd5e1', transition: 'color 0.3s ease' }}
-                              >
-                                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                                <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
-                              </svg>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4' }}>
-                    Cada figura representa un 10% del total de personas con recurrencia formativa
-                  </div>
-                </>
-              ) : (
-                <div style={{ color: '#64748b', fontSize: '13px', padding: '20px' }}>Sin datos disponibles</div>
-              )}
-            </div>
-          </div>
+          </DashboardChartCard>
 
         </div>
 
       </Box>
 
       {/* SECCIÓN DE FILTROS PERSISTENTES (DERECHA EN ESCRITORIO) */}
-      <Box component="aside" sx={{ ...styles.filtersSidebar, display: { xs: 'none', md: 'flex' } }}>
-        {/* Cabecera Filtros */}
-        <Box sx={styles.filtersHeader}>
-          <FilterIcon sx={{ color: '#1E2875', fontSize: 20 }} />
-          <Typography sx={styles.filtersTitle}>Filtros</Typography>
-        </Box>
-
-        <Divider sx={{ my: 2, borderColor: '#E5E7EB' }} />
-
-        {/* Contenido Scrollable de Filtros */}
-        <Box sx={styles.filtersScrollContent}>
-          {filtersContent}
-        </Box>
-      </Box>
+      <DashboardPersistentFilterSidebar
+        variant="aside"
+        title="Filtros"
+        hasData={hasData}
+        onReset={handleResetFilters}
+      >
+        {filtersContent}
+      </DashboardPersistentFilterSidebar>
 
       </Box>
     </ThemeProvider>

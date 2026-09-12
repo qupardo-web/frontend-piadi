@@ -58,43 +58,37 @@ export const KpiCard = ({
         '&:hover': isInteractive
           ? {
               boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-              transform: 'translateY(-1px)',
+              borderColor: '#CBD5E1',
+              transform: 'translateY(-2px)',
             }
           : {
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
             },
       }}
     >
-      {/* Cabecera: Label, Valor e Icono */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-          <Typography
-            variant="caption"
-            sx={{
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#475569',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
-            {label}
-          </Typography>
-          <Typography
-            variant="h4"
-            sx={{
-              fontSize: '26px',
-              fontWeight: 800,
-              color: '#1E2875',
-              mt: 0.5,
-              fontFamily: "'Inter', sans-serif",
-              lineHeight: 1.1,
-            }}
-          >
-            {loading ? '...' : (hasData ? (value ?? '-') : '-')}
-          </Typography>
-        </Box>
+      {/* 1. Header: Label + Icon */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 1,
+        }}
+      >
+        <Typography
+          variant="caption"
+          sx={{
+            fontWeight: 700,
+            fontSize: '12px',
+            color: '#64748B',
+            textTransform: 'uppercase',
+            letterSpacing: '0.6px',
+            fontFamily: "'Inter', sans-serif",
+            lineHeight: 1.2,
+          }}
+        >
+          {label}
+        </Typography>
 
         {icon && (
           <Box
@@ -103,11 +97,8 @@ export const KpiCard = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              flexShrink: 0,
               '& svg': {
-                fontSize: '24px',
-                width: 24,
-                height: 24,
+                fontSize: '20px',
               },
             }}
           >
@@ -116,58 +107,96 @@ export const KpiCard = ({
         )}
       </Box>
 
-      {/* Pie: Comparativa, Evolución o Mensaje de Sin Datos */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, flexWrap: 'wrap', gap: 0.75 }}>
-        {!hasData ? (
+      {/* 2. Body: Value or Empty/Loading state */}
+      <Box sx={{ my: 'auto', py: 0.5 }}>
+        {loading ? (
           <Typography
-            variant="caption"
+            variant="h4"
             sx={{
-              fontSize: '12px',
-              color: '#9E9E9E',
+              fontWeight: 700,
+              fontSize: '28px',
+              color: '#94A3B8',
               fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            ...
+          </Typography>
+        ) : !hasData ? (
+          <Typography
+            variant="body2"
+            sx={{
+              color: '#94A3B8',
+              fontSize: '13px',
               fontWeight: 500,
+              fontFamily: "'Inter', sans-serif",
+              py: 0.5,
             }}
           >
             {noDataText}
           </Typography>
         ) : (
-          <>
-            {compareText && (
-              <Typography
-                variant="caption"
-                sx={{
-                  fontSize: '12px',
-                  color: '#475569',
-                  fontFamily: "'Inter', sans-serif",
-                  fontWeight: 500,
-                }}
-              >
-                {compareText}
-              </Typography>
-            )}
-
-            {evolution != null && evolution !== '' && (
-              <Box
-                component="span"
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  px: 0.8,
-                  py: 0.2,
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  fontFamily: "'Inter', sans-serif",
-                  bgcolor: isPositive ? '#DCFCE7' : '#FEE2E2',
-                  color: isPositive ? '#15803D' : '#B91C1C',
-                }}
-              >
-                {isPositive ? '↑' : '↓'} {evolution}
-              </Box>
-            )}
-          </>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              fontSize: '30px',
+              color: '#1E2875',
+              fontFamily: "'Inter', sans-serif",
+              lineHeight: 1.1,
+              letterSpacing: '-0.5px',
+            }}
+          >
+            {value}
+          </Typography>
         )}
       </Box>
+
+      {/* 3. Footer: Compare text and Evolution */}
+      {hasData && (compareText || evolution) && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mt: 1,
+            pt: 0.5,
+            gap: 1,
+            flexWrap: 'wrap',
+          }}
+        >
+          {compareText && (
+            <Typography
+              variant="caption"
+              sx={{
+                color: '#64748B',
+                fontSize: '12px',
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 500,
+              }}
+            >
+              {compareText}
+            </Typography>
+          )}
+
+          {evolution && (
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 700,
+                fontSize: '12px',
+                color: isPositive ? '#10B981' : '#EF4444',
+                fontFamily: "'Inter', sans-serif",
+                bgcolor: isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                px: 0.8,
+                py: 0.2,
+                borderRadius: '4px',
+              }}
+            >
+              {evolution}
+            </Typography>
+          )}
+        </Box>
+      )}
     </Card>
   );
 };

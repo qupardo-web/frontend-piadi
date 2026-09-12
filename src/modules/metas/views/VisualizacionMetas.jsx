@@ -1,17 +1,12 @@
 import React from 'react';
 import { useVisualizacionMetas } from './VisualizacionMetas.hooks';
 import { styles } from './VisualizacionMetas.styles';
-import logoEcas from '../../../assets/logo_ECAS_white.svg';
+import { Header, Sidebar } from '../../../components';
 import {
   Box,
   Typography,
   Button,
-  Avatar,
   IconButton,
-  Divider,
-  Drawer,
-  AppBar,
-  Toolbar,
   Card,
   Dialog,
   DialogTitle,
@@ -19,16 +14,11 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
-  Home as HomeIcon,
-  Dashboard as DashboardIcon,
-  UploadFile as CargaIcon,
-  Shield as AuditoriaIcon,
-  ExitToApp as LogoutIcon,
-  Menu as MenuIcon,
   Close as CloseIcon,
-  MoreVert as MoreVertIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   CalendarToday as CalendarIcon,
@@ -51,12 +41,7 @@ export const VisualizacionMetas = () => {
   const {
     navigate,
     user,
-    logout,
     canCreateMeta,
-    activeMenu,
-    setActiveMenu,
-    mobileOpen,
-    setMobileOpen,
     openHelpDialog,
     setOpenHelpDialog,
     filtersVisible,
@@ -85,7 +70,6 @@ export const VisualizacionMetas = () => {
     totalMetas,
     totalMetasOriginal,
     pageSize,
-    handleDrawerToggle,
     fmtFecha,
     diasHasta,
     faqData,
@@ -99,120 +83,6 @@ export const VisualizacionMetas = () => {
     handleConfirmDelete,
   } = useVisualizacionMetas();
 
-  // Sidebar navigation menu options
-  const navItems = [
-    { text: 'Inicio', icon: <HomeIcon />, path: '/' },
-    { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
-    { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
-    { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
-  ].filter((item) => {
-    if (item.text === 'Auditoría') {
-      return (
-        user?.role === 'Rector' || 
-        user?.role === 'Administrador' || 
-        user?.role === 'Director de Administración' ||
-        user?.role === 'Analista de Calidad' ||
-        user?.role === 'Vicerrectoria de Calidad'
-      );
-    }
-    return true;
-  });
-
-  const sidebarContent = (
-    <Box sx={styles.drawerContent}>
-      <Box>
-        {/* Brand/Logo Container */}
-        <Box sx={styles.logoContainer}>
-          <Box 
-            component="img" 
-            src={logoEcas} 
-            alt="Logo ECAS" 
-            sx={{ width: 32, height: 32, objectFit: 'contain' }} 
-          />
-          <Box>
-            <Typography variant="subtitle1" sx={styles.logoTitle}>
-              PIADI
-            </Typography>
-            <Typography variant="caption" sx={styles.logoSubtitle}>
-              ECAS
-            </Typography>
-          </Box>
-          <IconButton 
-            onClick={handleDrawerToggle}
-            sx={{ display: { xs: 'inline-flex', md: 'none' }, ml: 'auto', color: 'rgba(255,255,255,0.8)' }}
-            aria-label="Cerrar menú"
-          >
-            <CloseIcon />
-          </IconButton>
-        </Box>
-
-        <Divider sx={styles.divider} />
-
-        {/* Menu Navigation */}
-        <Box sx={styles.menuContainer}>
-          {navItems.map((item) => {
-            const isSelected = activeMenu === item.text || item.text === 'Metas';
-            return (
-              <Box
-                key={item.text}
-                onClick={() => {
-                  setActiveMenu(item.text);
-                  setMobileOpen(false);
-                  navigate(item.path);
-                }}
-                sx={styles.menuItem(isSelected)}
-              >
-                <Box className="nav-icon" sx={{ display: 'flex', color: isSelected ? '#ffffff' : 'rgba(255,255,255,0.5)' }}>
-                  {item.icon}
-                </Box>
-                <Typography 
-                  variant="body2" 
-                  className="nav-text"
-                  sx={{ 
-                    fontWeight: isSelected ? 600 : 400, 
-                    color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)'
-                  }}
-                >
-                  {item.text}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
-      </Box>
-
-      {/* Sidebar Footer */}
-      <Box sx={styles.bottomSection}>
-        <Box onClick={logout} sx={styles.logoutButton}>
-          <LogoutIcon />
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            Cerrar Sesión
-          </Typography>
-        </Box>
-
-        <Box sx={styles.userCard}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
-            <Avatar sx={styles.userAvatar}>
-              {user?.username ? user.username.split(/[. @]/).filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'JD'}
-            </Avatar>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#ffffff', lineHeight: 1.2 }}>
-                {user?.username || 'John Doe'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
-                Ver perfil
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-            <MoreVertIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </Box>
-    </Box>
-  );
-
   // Sorting Helper Labels
   const sortLabels = {
     prioridad: 'Prioridad',
@@ -223,73 +93,23 @@ export const VisualizacionMetas = () => {
 
   return (
     <Box sx={styles.mainLayout}>
-      {/* Mobile Top AppBar */}
-      <AppBar position="fixed" sx={styles.mobileAppBar}>
-        <Toolbar sx={styles.mobileToolbar}>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerToggle}
-            sx={{ p: 0, width: 40, height: 40 }}
-          >
-            <MenuIcon sx={{ fontSize: 32 }} />
-          </IconButton>
-          <Typography variant="h6" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#ffffff' }}>
-            PIADI
-          </Typography>
-        </Toolbar>
-      </AppBar>
-
-      {/* Desktop Sidebar */}
-      <Box component="nav" sx={styles.sidebar}>
-        {sidebarContent}
-      </Box>
-
-      {/* Mobile Sidebar Drawer */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 260, border: 'none' },
-        }}
-      >
-        {sidebarContent}
-      </Drawer>
+      {/* SIDEBAR TRANSVERSAL (Escritorio + Drawer + AppBar Móvil) */}
+      <Sidebar />
 
       {/* Content Area */}
       <Box component="main" sx={styles.contentArea}>
         {/* Cabecera de la Página */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mb: 4 }}>
-          {/* Breadcrumbs */}
-          <Box sx={styles.breadcrumb}>
-            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' }, fontSize: '16px' }} onClick={() => navigate('/')}>
-              Inicio
-            </Typography>
-            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
-            <Typography variant="body1" sx={styles.breadcrumbCurrent}>
-              Metas
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
-            <Box sx={styles.pageHeader}>
-              <Box sx={styles.headerIcon}>
-                <TargetIcon />
-              </Box>
-              <Box>
-                <Typography variant="h5" sx={styles.pageTitle}>
-                  Visualización de Metas
-                </Typography>
-                <Typography variant="body2" sx={styles.pageSubtitle}>
-                  Gestiona y da seguimiento a las metas institucionales por área
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
+        <Header
+          title="Visualización de Metas"
+          subtitle="Gestiona y da seguimiento a las metas institucionales por área"
+          icon={<TargetIcon />}
+          iconColor="#FFFFFF"
+          breadcrumbs={[
+            { label: 'Inicio', path: '/' },
+            { label: 'Metas', path: null },
+          ]}
+          sx={{ mb: 4 }}
+        />
 
         {/* KPIs globales (Solo Rectoría) */}
         {user?.role === 'Rector' && (
@@ -450,20 +270,102 @@ export const VisualizacionMetas = () => {
                 <Typography component="label" sx={styles.filterLabel} htmlFor="filtro-dept">
                   Departamento
                 </Typography>
-                <Box 
-                  component="select" 
+                <Select
                   id="filtro-dept"
                   value={filtroDepartamento}
                   onChange={(e) => setFiltroDepartamento(e.target.value)}
-                  sx={styles.filterInput}
+                  size="small"
+                  displayEmpty
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 280,
+                        backgroundColor: '#ffffff',
+                      },
+                      sx: {
+                        bgcolor: '#ffffff !important',
+                        backgroundColor: '#ffffff !important',
+                        borderRadius: '8px',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                        border: '1.5px solid #000000',
+                        mt: 0.5,
+                        '& .MuiMenuItem-root': {
+                          fontSize: '13.5px',
+                          color: '#000000 !important',
+                          fontWeight: 500,
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-word',
+                          py: 1,
+                          '&:hover': {
+                            bgcolor: '#f3f4f6 !important',
+                            color: '#000000 !important',
+                          },
+                          '&.Mui-selected': {
+                            bgcolor: '#e5e7eb !important',
+                            color: '#000000 !important',
+                            fontWeight: 700,
+                            '&:hover': {
+                              bgcolor: '#d1d5db !important',
+                            },
+                          },
+                        },
+                      },
+                    },
+                    MenuListProps: {
+                      sx: { py: 0.5, bgcolor: '#ffffff !important', backgroundColor: '#ffffff !important' },
+                    },
+                    anchorOrigin: {
+                      vertical: 'bottom',
+                      horizontal: 'left',
+                    },
+                    transformOrigin: {
+                      vertical: 'top',
+                      horizontal: 'left',
+                    },
+                    slotProps: {
+                      paper: {
+                        sx: {
+                          width: (theme) => 'var(--select-width, inherit)',
+                        }
+                      }
+                    }
+                  }}
+                  sx={{
+                    bgcolor: '#ffffff',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    color: '#000000',
+                    height: '38px',
+                    border: '1px solid #000000',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                    '&:hover': {
+                      borderColor: '#000000',
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.2)',
+                    },
+                    '& .MuiSelect-select': {
+                      py: '8px',
+                      px: '12px',
+                      color: '#000000 !important',
+                      fontWeight: 500,
+                    },
+                    '& .MuiSvgIcon-root': {
+                      color: '#000000 !important',
+                    },
+                  }}
                 >
-                  <option value="todas">Todas</option>
+                  <MenuItem value="todas" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                    Todas
+                  </MenuItem>
                   {departmentsList.map((dept) => (
-                    <option key={dept.key} value={dept.key}>
+                    <MenuItem key={dept.key} value={dept.key} sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
                       {dept.name}
-                    </option>
+                    </MenuItem>
                   ))}
-                </Box>
+                </Select>
               </Box>
 
               {/* Estado Select */}
@@ -471,18 +373,106 @@ export const VisualizacionMetas = () => {
                 <Typography component="label" sx={styles.filterLabel} htmlFor="filtro-estado">
                   Estado
                 </Typography>
-                <Box 
-                  component="select" 
+                <Select
                   id="filtro-estado"
                   value={filtroEstado}
                   onChange={(e) => setFiltroEstado(e.target.value)}
-                  sx={styles.filterInput}
+                  size="small"
+                  displayEmpty
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 280,
+                        backgroundColor: '#ffffff',
+                      },
+                      sx: {
+                        bgcolor: '#ffffff !important',
+                        backgroundColor: '#ffffff !important',
+                        borderRadius: '8px',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                        border: '1.5px solid #000000',
+                        mt: 0.5,
+                        '& .MuiMenuItem-root': {
+                          fontSize: '13.5px',
+                          color: '#000000 !important',
+                          fontWeight: 500,
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-word',
+                          py: 1,
+                          '&:hover': {
+                            bgcolor: '#f3f4f6 !important',
+                            color: '#000000 !important',
+                          },
+                          '&.Mui-selected': {
+                            bgcolor: '#e5e7eb !important',
+                            color: '#000000 !important',
+                            fontWeight: 700,
+                            '&:hover': {
+                              bgcolor: '#d1d5db !important',
+                            },
+                          },
+                        },
+                      },
+                    },
+                    MenuListProps: {
+                      sx: { py: 0.5, bgcolor: '#ffffff !important', backgroundColor: '#ffffff !important' },
+                    },
+                    anchorOrigin: {
+                      vertical: 'bottom',
+                      horizontal: 'left',
+                    },
+                    transformOrigin: {
+                      vertical: 'top',
+                      horizontal: 'left',
+                    },
+                    slotProps: {
+                      paper: {
+                        sx: {
+                          width: (theme) => 'var(--select-width, inherit)',
+                        }
+                      }
+                    }
+                  }}
+                  sx={{
+                    bgcolor: '#ffffff',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    color: '#000000',
+                    height: '38px',
+                    border: '1px solid #000000',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                    '&:hover': {
+                      borderColor: '#000000',
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.2)',
+                    },
+                    '& .MuiSelect-select': {
+                      py: '8px',
+                      px: '12px',
+                      color: '#000000 !important',
+                      fontWeight: 500,
+                    },
+                    '& .MuiSvgIcon-root': {
+                      color: '#000000 !important',
+                    },
+                  }}
                 >
-                  <option value="todos">Todos</option>
-                  <option value="en-curso">En progreso</option>
-                  <option value="completada">Completada</option>
-                  <option value="alerta">Requiere atención</option>
-                </Box>
+                  <MenuItem value="todos" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                    Todos
+                  </MenuItem>
+                  <MenuItem value="en-curso" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                    En progreso
+                  </MenuItem>
+                  <MenuItem value="completada" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                    Completada
+                  </MenuItem>
+                  <MenuItem value="alerta" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                    Requiere atención
+                  </MenuItem>
+                </Select>
               </Box>
 
               {/* Fecha Inicio Input */}

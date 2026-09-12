@@ -183,19 +183,6 @@ export const useDashboardInnovacion = () => {
       getIndicatorSeries('proyectos_con_financiamiento_externo', params)
     ])
       .then(([summaryRes, activosRes, finalizadosRes, areasRes, otonoRes, primaveraRes, seccionesRes, docentesRes, finRes]) => {
-        console.groupCollapsed('🔍 [DEBUG INNOVACIÓN - Respuestas de la API]');
-        console.log('📡 Parámetros enviados:', params);
-        console.log('📊 1. Proyectos Activos (puntos):', activosRes.status === 'fulfilled' ? activosRes.value?.data?.points : activosRes.reason);
-        console.log('📊 2. Proyectos Finalizados (puntos):', finalizadosRes.status === 'fulfilled' ? finalizadosRes.value?.data?.points : finalizadosRes.reason);
-        console.log('📊 3. Áreas Temáticas (desglose):', areasRes.status === 'fulfilled' ? areasRes.value?.data?.items : areasRes.reason);
-        console.log('📊 4. Secciones Otoño (puntos):', otonoRes.status === 'fulfilled' ? otonoRes.value?.data?.points : otonoRes.reason);
-        console.log('📊 4.1 Secciones Primavera (puntos):', primaveraRes.status === 'fulfilled' ? primaveraRes.value?.data?.points : primaveraRes.reason);
-        console.log('📊 4.2 Secciones Semestre (desglose):', seccionesRes.status === 'fulfilled' ? seccionesRes.value?.data?.items : seccionesRes.reason);
-        console.log('📊 5. Docentes Involucrados (puntos):', docentesRes.status === 'fulfilled' ? docentesRes.value?.data?.points : docentesRes.reason);
-        console.log('💰 6. Proyectos con Financiamiento Externo (puntos):', finRes.status === 'fulfilled' ? finRes.value?.data?.points : finRes.reason);
-        console.log('📦 Respuesta Completa de Financiamiento:', finRes.status === 'fulfilled' ? finRes.value : finRes.reason);
-        console.groupEnd();
-
         if (summaryRes.status === 'fulfilled' && summaryRes.value?.data) {
           setApiSummary(summaryRes.value.data);
         } else {
@@ -256,33 +243,6 @@ export const useDashboardInnovacion = () => {
       .finally(() => {
         setApiLoading(false);
       });
-
-    // Funciones auxiliares disponibles globalmente en la consola (F12) para pruebas interactivas
-    window.debugFinanciamiento = async (customParams = {}) => {
-      const qParams = { ...params, ...customParams };
-      console.log('🔄 Ejecutando prueba de proyectos_con_financiamiento_externo con params:', qParams);
-      try {
-        const res = await getIndicatorSeries('proyectos_con_financiamiento_externo', qParams);
-        console.log('✅ Resultado de /api/indicators/proyectos_con_financiamiento_externo/series:', res);
-        return res;
-      } catch (err) {
-        console.error('❌ Error en prueba directa:', err);
-      }
-    };
-
-    window.debugInnovacion = async () => {
-      console.log('🔍 Ejecutando diagnóstico completo de Innovación con params:', params);
-      const results = await Promise.allSettled([
-        getDashboardSummary(params),
-        getIndicatorSeries('proyectos_activos', params),
-        getIndicatorSeries('proyectos_finalizados', params),
-        getIndicatorBreakdown('total_proyectos', { ...params, groupBy: 'areaTematica' }),
-        getIndicatorSeries('proyectos_con_financiamiento_externo', params),
-        getIndicatorSeries('docentes_involucrados', params)
-      ]);
-      console.log('📋 Diagnóstico Completo Innovación:', results);
-      return results;
-    };
   }, [yearRange, selectedChips]);
 
   // Listas dinámicas obtenidas de la base de datos (apiFilters)

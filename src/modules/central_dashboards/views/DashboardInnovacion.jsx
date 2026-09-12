@@ -1,17 +1,10 @@
-// =========================================================================
-// VISTA PRESENTADORA: DashboardInnovacion.jsx
-// =========================================================================
-
 import React from 'react';
 import {
   Box,
   Typography,
   Divider,
   Drawer,
-  AppBar,
-  Toolbar,
   IconButton,
-  Avatar,
   Slider,
   Accordion,
   AccordionSummary,
@@ -26,14 +19,8 @@ import {
   FormControlLabel,
 } from '@mui/material';
 import {
-  Home as HomeIcon,
-  Dashboard as DashboardIcon,
-  UploadFile as CargaIcon,
-  Shield as AuditoriaIcon,
-  ExitToApp as LogoutIcon,
   Lightbulb as LightbulbIcon,
   Help as HelpIcon,
-  Menu as MenuIcon,
   Close as CloseIcon,
   ChevronRight as ChevronRightIcon,
   ExpandMore as ExpandMoreIcon,
@@ -46,7 +33,7 @@ import {
   CalendarToday as CalendarIcon,
   Group as GroupIcon,
   Adjust as TargetIcon,
-  MoreVert as MoreVertIcon,
+  Shield as AuditoriaIcon,
 } from '@mui/icons-material';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -56,8 +43,7 @@ import { PieChart } from '@mui/x-charts/PieChart';
 
 import { useDashboardInnovacion, YEARS, CAT_COLORS } from './DashboardInnovacion.hooks';
 import { styles } from './DashboardInnovacion.styles';
-import { DashboardHeader, KpiCard, DashboardSection } from '../components';
-import logoEcas from '../../../assets/logo_ECAS_white.svg';
+import { Header, Sidebar, KpiCard, DashboardSection, DashboardFilterSidebar } from '../../../components';
 
 const dashboardLightTheme = createTheme({
   palette: {
@@ -194,133 +180,269 @@ export const DashboardInnovacion = () => {
     return 2000;
   };
 
-  // Contenido de la barra lateral institucional
-  const sidebarContent = (
-    <Box sx={styles.drawerContent}>
-      <Box>
-        {/* Logo y Cabecera del Sidebar */}
-        <Box sx={styles.logoContainer}>
-          <Box
-            component="img"
-            src={logoEcas}
-            alt="Logo ECAS"
-            sx={{ width: 32, height: 32, objectFit: 'contain' }}
-          />
-          <Box>
-            <Typography variant="subtitle1" sx={styles.logoTitle}>
-              PIADI
-            </Typography>
-            <Typography variant="caption" sx={styles.logoSubtitle}>
-              ECAS
-            </Typography>
-          </Box>
-        </Box>
 
-        <Divider sx={styles.divider} />
 
-        {/* Menú de Navegación */}
-        <Box sx={styles.menuContainer}>
-          {[
-            { text: 'Inicio', icon: <HomeIcon />, path: '/' },
-            { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
-            { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
-            { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
-            { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
-          ].filter((item) => {
-            if (item.text === 'Auditoría') {
-              return (
-                user?.role === 'Rector' || 
-                user?.role === 'Administrador' || 
-                user?.role === 'Director de Administración' ||
-                user?.role === 'Analista de Calidad' ||
-                user?.role === 'Vicerrectoria de Calidad'
-              );
-            }
-            return true;
-          }).map((item) => {
-            const isSelected = activeMenu === item.text;
-            return (
-              <Box
-                key={item.text}
-                onClick={() => {
-                  handleDrawerToggle(); // Cierra el drawer móvil si se hace click
-                  if (item.path !== '#') {
-                    navigate(item.path);
-                  }
-                }}
-                sx={styles.menuItem(isSelected)}
-              >
-                {item.icon}
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    fontWeight: isSelected ? 600 : 500, 
-                    color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)'
-                  }}
-                >
-                  {item.text}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
-      </Box>
-
-      {/* Sección inferior del Sidebar */}
-      <Box sx={styles.bottomSection}>
-        {/* Botón Cerrar Sesión */}
-        <Box onClick={logout} sx={styles.logoutButton}>
-          <LogoutIcon />
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            Cerrar Sesión
-          </Typography>
-        </Box>
-
-        {/* Tarjeta de Usuario */}
-        <Box sx={styles.userCard}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
-            <Avatar sx={styles.userAvatar}>
-              {user?.username ? user.username.split(/[. @]/).filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'JD'}
-            </Avatar>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#ffffff', lineHeight: 1.2 }}>
-                {user?.username || 'John Doe'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
-                Ver perfil
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-            <MoreVertIcon fontSize="small" />
+  return (
+    <ThemeProvider theme={dashboardLightTheme}>
+      <Box sx={styles.mainLayout}>
+      {/* SIDEBAR TRANSVERSAL (Escritorio + Drawer + AppBar Móvil con botón de filtros) */}
+      <Sidebar
+        mobileRightAction={
+          <IconButton
+            color="inherit"
+            onClick={() => setMobileFiltersOpen(true)}
+            sx={{ p: 0.5, color: '#ffffff' }}
+          >
+            <FilterIcon />
           </IconButton>
+        }
+      />
+
+      {/* ÁREA DE CONTENIDO PRINCIPAL */}
+      <Box component="main" sx={styles.contentArea}>
+        {/* Cabecera del Panel Principal */}
+        <Header
+          title="Dashboard de Innovación"
+          subtitle="Visualización de estadísticas y métricas del área de Innovación e investigación"
+          icon={<LightbulbIcon />}
+          iconColor="#3EC9FF"
+          loading={apiLoading}
+        />
+
+        {/* 3 Tarjetas KPI Superiores */}
+        <Box sx={styles.kpiRow}>
+          <KpiCard
+            label="Proyectos de innovación en curso"
+            value={kpis.activos.val}
+            icon={<LightbulbIcon />}
+            accentColor="#3EC9FF"
+            hasData={hasData}
+            loading={apiLoading}
+            compareText={kpis.activos.compareText}
+            evolution={kpis.activos.evo}
+            isPositive={kpis.activos.isPositive}
+            onClick={() => handleOpenIndicator('proyectos-activos')}
+          />
+
+          <KpiCard
+            label="Proyectos finalizados"
+            value={kpis.finalizados.val}
+            icon={<CheckCircleOutline />}
+            accentColor="#10B981"
+            hasData={hasData}
+            loading={apiLoading}
+            compareText={kpis.finalizados.compareText}
+            evolution={kpis.finalizados.evo}
+            isPositive={kpis.finalizados.isPositive}
+            onClick={() => handleOpenIndicator('proyectos-finalizados')}
+          />
+
+          <KpiCard
+            label="Docentes/funcionarios involucrados"
+            value={kpis.docentes.val}
+            icon={<GroupIcon />}
+            accentColor="#7C6FF0"
+            hasData={hasData}
+            loading={apiLoading}
+            compareText={kpis.docentes.compareText}
+            evolution={kpis.docentes.evo}
+            isPositive={kpis.docentes.isPositive}
+            onClick={() => handleOpenIndicator('docentes')}
+          />
         </Box>
+
+        {/* 1. Proyectos de innovación activos */}
+        <DashboardSection
+          title="Proyectos de innovación activos"
+          subtitle="Distribución por año"
+          icon={<LightbulbIcon />}
+          iconColor="#3EC9FF"
+          isOpen={!collapsedSections['proy-year']}
+          onToggle={() => handleToggleSection('proy-year')}
+          hasData={hasData && proyActivos.some(v => v > 0)}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <BarChart
+              colors={['#0E86B8']}
+              grid={{ horizontal: true }}
+              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
+              series={[{ data: proyActivos, label: 'Proyectos Activos' }]}
+              height={270}
+              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
+              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+            />
+          </Box>
+        </DashboardSection>
+
+        {/* 2. Proyectos finalizados */}
+        <DashboardSection
+          title="Proyectos finalizados"
+          subtitle="Distribución por año"
+          icon={<CheckCircleOutline />}
+          iconColor="#10B981"
+          isOpen={!collapsedSections['fin-year']}
+          onToggle={() => handleToggleSection('fin-year')}
+          hasData={hasData && proyFinalizados.some(v => v > 0)}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <BarChart
+              colors={['#10B981']}
+              grid={{ horizontal: true }}
+              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
+              series={[{ data: proyFinalizados, label: 'Proyectos Finalizados' }]}
+              height={270}
+              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
+              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+            />
+          </Box>
+        </DashboardSection>
+
+        {/* 3. Áreas temáticas de innovación */}
+        <DashboardSection
+          title="Áreas temáticas de innovación"
+          subtitle="Distribución por área temática"
+          icon={<TargetIcon />}
+          iconColor="#3EC9FF"
+          isOpen={!collapsedSections['proy-area']}
+          onToggle={() => handleToggleSection('proy-area')}
+          hasData={hasData && proyAreas.length > 0}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <PieChart
+              colors={CAT_COLORS}
+              series={[{
+                data: proyAreas.map((d, i) => ({ id: i, value: d.value, label: d.label })),
+                innerRadius: 45,
+                outerRadius: 85,
+              }]}
+              height={270}
+              margin={{ top: 10, bottom: 60, left: 10, right: 10 }}
+              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+            />
+          </Box>
+        </DashboardSection>
+
+        {/* 4. Secciones del curso de innovación */}
+        <DashboardSection
+          title="Secciones del curso de innovación"
+          subtitle="Distribución por año (Otoño vs Primavera)"
+          icon={<CalendarIcon />}
+          iconColor="#3EC9FF"
+          isOpen={!collapsedSections['secciones-hbar']}
+          onToggle={() => handleToggleSection('secciones-hbar')}
+          hasData={hasData && (seccionesOtono.some(v => v > 0) || seccionesPrimavera.some(v => v > 0))}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <BarChart
+              grid={{ horizontal: true }}
+              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
+              series={[
+                { data: seccionesOtono, label: 'Otoño', stack: 'total', color: '#3EC9FF' },
+                { data: seccionesPrimavera, label: 'Primavera', stack: 'total', color: '#1E2875' }
+              ]}
+              yAxis={[{ 
+                min: 0, 
+                max: getAxisMax(totalSeccionesMax), 
+                width: 35, 
+                tickInterval: getAxisTicks(totalSeccionesMax) 
+              }]}
+              height={270}
+              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
+              slotProps={{ 
+                legend: { 
+                  direction: 'horizontal', 
+                  position: { vertical: 'bottom', horizontal: 'center' },
+                  labelStyle: { fontSize: '11px' }
+                } 
+              }}
+            />
+          </Box>
+        </DashboardSection>
+
+        {/* 5. Docentes involucrados */}
+        <DashboardSection
+          title="Docentes involucrados"
+          subtitle="Tendencia por año"
+          icon={<TrendingUpIcon />}
+          iconColor="#7C6FF0"
+          isOpen={!collapsedSections['doc-line']}
+          onToggle={() => handleToggleSection('doc-line')}
+          hasData={hasData && docentes.some(v => v > 0)}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <LineChart
+              grid={{ horizontal: true }}
+              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
+              series={[{ 
+                data: docentes, 
+                label: 'Docentes Involucrados', 
+                color: '#7C6FF0',
+                showMark: true 
+              }]}
+              yAxis={[{ 
+                min: 0, 
+                max: getAxisMax(Math.max(...docentes, 0)), 
+                width: 35, 
+                tickInterval: getAxisTicks(Math.max(...docentes, 0)) 
+              }]}
+              height={270}
+              margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
+              slotProps={{ 
+                legend: { 
+                  direction: 'horizontal', 
+                  position: { vertical: 'bottom', horizontal: 'center' }, 
+                  labelStyle: { fontSize: '11px' } 
+                } 
+              }}
+            />
+          </Box>
+        </DashboardSection>
+
+        {/* 6. Proyectos con financiamiento externo */}
+        <DashboardSection
+          title="Proyectos con financiamiento externo"
+          subtitle="Proyectos FDI por año"
+          icon={<AuditoriaIcon />}
+          iconColor="#3EC9FF"
+          isOpen={!collapsedSections['fin-externo']}
+          onToggle={() => handleToggleSection('fin-externo')}
+          hasData={hasData && finExterno.some(v => v > 0)}
+        >
+          <Box sx={{ minHeight: 260, width: '100%' }}>
+            <BarChart
+              colors={['#0E86B8']}
+              grid={{ horizontal: true }}
+              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
+              series={[{ data: finExterno, label: 'Proyectos FDI' }]}
+              yAxis={[{ 
+                min: 0, 
+                max: getAxisMax(Math.max(...finExterno, 0)), 
+                width: 35, 
+                tickInterval: getAxisTicks(Math.max(...finExterno, 0)),
+                valueFormatter: (val) => Number.isInteger(val) ? String(val) : ''
+              }]}
+              height={270}
+              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
+              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+            />
+          </Box>
+        </DashboardSection>
       </Box>
-    </Box>
-  );
 
-  // Contenido de los filtros
-  const filtersContent = (
-    <Box sx={{ 
-      flexGrow: 1, 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: 'calc(100% - 56px)', 
-      overflow: 'hidden',
-      bgcolor: '#FFFFFF',
-    }}>
-      <Box sx={{ 
-        flexGrow: 1, 
-        overflowY: 'auto', 
-        px: 2.5, 
-        py: 2.5, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: 2.5,
-        bgcolor: '#FFFFFF',
-      }}>
-
-
+      {/* ----------------- SIDEBAR DE FILTROS MODULAR ----------------- */}
+      <DashboardFilterSidebar
+        title="Filtros Innovación"
+        icon={<FilterIcon sx={{ color: '#3EC9FF', fontSize: 18 }} />}
+        iconColor="#3EC9FF"
+        collapsed={filtersCollapsed}
+        onToggleCollapse={() => setFiltersCollapsed(!filtersCollapsed)}
+        mobileOpen={mobileFiltersOpen}
+        onCloseMobile={() => setMobileFiltersOpen(false)}
+        hasData={hasData}
+        noDataMessage="No hay datos disponibles para los filtros."
+        onReset={handleResetFilters}
+        resetLabel="Restablecer filtros"
+      >
         {/* Slider de Años */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Typography variant="subtitle2" sx={{ fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.5px' }}>
@@ -569,403 +691,7 @@ export const DashboardInnovacion = () => {
             </AccordionDetails>
           </Accordion>
         )}
-      </Box>
-
-      {/* Mensaje sin datos */}
-      {!apiLoading && !hasData && (
-        <Box sx={styles.filterNoDataBox}>
-          <Typography sx={{ fontSize: '13px', color: '#92400E', textAlign: 'center', fontWeight: 500 }}>
-            No hay datos disponibles para los filtros.
-          </Typography>
-        </Box>
-      )}
-
-      {/* Footer Filtros */}
-      <Box sx={styles.filtersFooter}>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<ResetIcon />}
-          onClick={handleResetFilters}
-          sx={styles.resetFiltersButton}
-        >
-          Restablecer filtros
-        </Button>
-      </Box>
-    </Box>
-  );
-
-  return (
-    <ThemeProvider theme={dashboardLightTheme}>
-      <Box sx={styles.mainLayout}>
-      {/* APP BAR MÓVIL */}
-      <AppBar position="fixed" sx={styles.mobileAppBar}>
-        <Toolbar sx={styles.mobileToolbar}>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerToggle}
-            sx={{ p: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <MenuIcon sx={{ fontSize: 36 }} />
-          </IconButton>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
-            <Box 
-              component="img" 
-              src={logoEcas} 
-              alt="Logo ECAS" 
-              sx={{ width: 24, height: 24, objectFit: 'contain' }} 
-            />
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#ffffff', letterSpacing: 0.5 }}>
-              PIADI ECAS
-            </Typography>
-          </Box>
-          <IconButton
-            color="inherit"
-            onClick={() => setMobileFiltersOpen(true)}
-            sx={{ ml: 'auto' }}
-          >
-            <FilterIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-
-      {/* SIDEBAR LATERAL (ESCRITORIO) */}
-      <Box component="nav" sx={styles.sidebar}>
-        {sidebarContent}
-      </Box>
-
-      {/* SIDEBAR DESPLEGABLE (MÓVIL) */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 260, border: 'none' },
-        }}
-      >
-        {sidebarContent}
-      </Drawer>
-
-      {/* ÁREA DE CONTENIDO PRINCIPAL */}
-      <Box component="main" sx={styles.contentArea}>
-        {/* Cabecera del Panel Principal */}
-        <DashboardHeader
-          title="Dashboard de Innovación"
-          subtitle="Visualización de estadísticas y métricas del área de Innovación e investigación"
-          icon={<LightbulbIcon />}
-          iconColor="#3EC9FF"
-          loading={apiLoading}
-        />
-
-        {/* 3 Tarjetas KPI Superiores */}
-        <Box sx={styles.kpiRow}>
-          <KpiCard
-            label="Proyectos de innovación en curso"
-            value={kpis.activos.val}
-            icon={<LightbulbIcon />}
-            accentColor="#3EC9FF"
-            hasData={hasData}
-            loading={apiLoading}
-            compareText={kpis.activos.compareText}
-            evolution={kpis.activos.evo}
-            isPositive={kpis.activos.isPositive}
-            onClick={() => handleOpenIndicator('proyectos-activos')}
-          />
-
-          <KpiCard
-            label="Proyectos finalizados"
-            value={kpis.finalizados.val}
-            icon={<CheckCircleOutline />}
-            accentColor="#10B981"
-            hasData={hasData}
-            loading={apiLoading}
-            compareText={kpis.finalizados.compareText}
-            evolution={kpis.finalizados.evo}
-            isPositive={kpis.finalizados.isPositive}
-            onClick={() => handleOpenIndicator('proyectos-finalizados')}
-          />
-
-          <KpiCard
-            label="Docentes/funcionarios involucrados"
-            value={kpis.docentes.val}
-            icon={<GroupIcon />}
-            accentColor="#7C6FF0"
-            hasData={hasData}
-            loading={apiLoading}
-            compareText={kpis.docentes.compareText}
-            evolution={kpis.docentes.evo}
-            isPositive={kpis.docentes.isPositive}
-            onClick={() => handleOpenIndicator('docentes')}
-          />
-        </Box>
-
-        {/* 1. Proyectos de innovación activos */}
-        <DashboardSection
-          title="Proyectos de innovación activos"
-          subtitle="Distribución por año"
-          icon={<LightbulbIcon />}
-          iconColor="#3EC9FF"
-          isOpen={!collapsedSections['proy-year']}
-          onToggle={() => handleToggleSection('proy-year')}
-          hasData={hasData && proyActivos.some(v => v > 0)}
-        >
-          <Box sx={{ minHeight: 260, width: '100%' }}>
-            <BarChart
-              colors={['#0E86B8']}
-              grid={{ horizontal: true }}
-              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
-              series={[{ data: proyActivos, label: 'Proyectos Activos' }]}
-              height={270}
-              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
-              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
-            />
-          </Box>
-        </DashboardSection>
-
-        {/* 2. Proyectos finalizados */}
-        <DashboardSection
-          title="Proyectos finalizados"
-          subtitle="Distribución por año"
-          icon={<CheckCircleOutline />}
-          iconColor="#10B981"
-          isOpen={!collapsedSections['fin-year']}
-          onToggle={() => handleToggleSection('fin-year')}
-          hasData={hasData && proyFinalizados.some(v => v > 0)}
-        >
-          <Box sx={{ minHeight: 260, width: '100%' }}>
-            <BarChart
-              colors={['#10B981']}
-              grid={{ horizontal: true }}
-              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
-              series={[{ data: proyFinalizados, label: 'Proyectos Finalizados' }]}
-              height={270}
-              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
-              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
-            />
-          </Box>
-        </DashboardSection>
-
-        {/* 3. Áreas temáticas de innovación */}
-        <DashboardSection
-          title="Áreas temáticas de innovación"
-          subtitle="Distribución por área temática"
-          icon={<TargetIcon />}
-          iconColor="#3EC9FF"
-          isOpen={!collapsedSections['proy-area']}
-          onToggle={() => handleToggleSection('proy-area')}
-          hasData={hasData && proyAreas.length > 0}
-        >
-          <Box sx={{ minHeight: 260, width: '100%' }}>
-            <PieChart
-              colors={CAT_COLORS}
-              series={[{
-                data: proyAreas.map((d, i) => ({ id: i, value: d.value, label: d.label })),
-                innerRadius: 45,
-                outerRadius: 85,
-              }]}
-              height={270}
-              margin={{ top: 10, bottom: 60, left: 10, right: 10 }}
-              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
-            />
-          </Box>
-        </DashboardSection>
-
-        {/* 4. Secciones del curso de innovación */}
-        <DashboardSection
-          title="Secciones del curso de innovación"
-          subtitle="Distribución por año (Otoño vs Primavera)"
-          icon={<CalendarIcon />}
-          iconColor="#3EC9FF"
-          isOpen={!collapsedSections['secciones-hbar']}
-          onToggle={() => handleToggleSection('secciones-hbar')}
-          hasData={hasData && (seccionesOtono.some(v => v > 0) || seccionesPrimavera.some(v => v > 0))}
-        >
-          <Box sx={{ minHeight: 260, width: '100%' }}>
-            <BarChart
-              grid={{ horizontal: true }}
-              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
-              series={[
-                { data: seccionesOtono, label: 'Otoño', stack: 'total', color: '#3EC9FF' },
-                { data: seccionesPrimavera, label: 'Primavera', stack: 'total', color: '#1E2875' }
-              ]}
-              yAxis={[{ 
-                min: 0, 
-                max: getAxisMax(totalSeccionesMax), 
-                width: 35, 
-                tickInterval: getAxisTicks(totalSeccionesMax) 
-              }]}
-              height={270}
-              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
-              slotProps={{ 
-                legend: { 
-                  direction: 'horizontal', 
-                  position: { vertical: 'bottom', horizontal: 'center' },
-                  labelStyle: { fontSize: '11px' }
-                } 
-              }}
-            />
-          </Box>
-        </DashboardSection>
-
-        {/* 5. Docentes involucrados */}
-        <DashboardSection
-          title="Docentes involucrados"
-          subtitle="Tendencia por año"
-          icon={<TrendingUpIcon />}
-          iconColor="#7C6FF0"
-          isOpen={!collapsedSections['doc-line']}
-          onToggle={() => handleToggleSection('doc-line')}
-          hasData={hasData && docentes.some(v => v > 0)}
-        >
-          <Box sx={{ minHeight: 260, width: '100%' }}>
-            <LineChart
-              grid={{ horizontal: true }}
-              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
-              series={[{ 
-                data: docentes, 
-                label: 'Docentes Involucrados', 
-                color: '#7C6FF0',
-                showMark: true 
-              }]}
-              yAxis={[{ 
-                min: 0, 
-                max: getAxisMax(Math.max(...docentes, 0)), 
-                width: 35, 
-                tickInterval: getAxisTicks(Math.max(...docentes, 0)) 
-              }]}
-              height={270}
-              margin={{ top: 30, right: 10, bottom: 65, left: 40 }}
-              slotProps={{ 
-                legend: { 
-                  direction: 'horizontal', 
-                  position: { vertical: 'bottom', horizontal: 'center' }, 
-                  labelStyle: { fontSize: '11px' } 
-                } 
-              }}
-            />
-          </Box>
-        </DashboardSection>
-
-        {/* 6. Proyectos con financiamiento externo */}
-        <DashboardSection
-          title="Proyectos con financiamiento externo"
-          subtitle="Proyectos FDI por año"
-          icon={<AuditoriaIcon />}
-          iconColor="#3EC9FF"
-          isOpen={!collapsedSections['fin-externo']}
-          onToggle={() => handleToggleSection('fin-externo')}
-          hasData={hasData && finExterno.some(v => v > 0)}
-        >
-          <Box sx={{ minHeight: 260, width: '100%' }}>
-            <BarChart
-              colors={['#0E86B8']}
-              grid={{ horizontal: true }}
-              xAxis={[{ scaleType: 'band', data: visibleYears.map(String) }]}
-              series={[{ data: finExterno, label: 'Proyectos FDI' }]}
-              yAxis={[{ 
-                min: 0, 
-                max: getAxisMax(Math.max(...finExterno, 0)), 
-                width: 35, 
-                tickInterval: getAxisTicks(Math.max(...finExterno, 0)),
-                valueFormatter: (val) => Number.isInteger(val) ? String(val) : ''
-              }]}
-              height={270}
-              margin={{ top: 30, right: 20, bottom: 40, left: 40 }}
-              slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
-            />
-          </Box>
-        </DashboardSection>
-      </Box>
-
-      {/* SIDEBAR LATERAL DERECHO (Filtros responsive) */}
-      <Drawer
-        anchor="right"
-        variant="temporary"
-        open={mobileFiltersOpen}
-        onClose={() => setMobileFiltersOpen(false)}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 280, border: 'none' },
-        }}
-      >
-        {filtersContent}
-      </Drawer>
-
-      {/* Sidebar colapsable para Desktop integrado con el diseño */}
-      <Box
-        component="aside"
-        sx={styles.filtersSidebar(filtersCollapsed)}
-      >
-        {/* Si está colapsado: Botón estilizado 'Filtros' con embudo institucional */}
-        {filtersCollapsed ? (
-          <Box
-            onClick={() => setFiltersCollapsed(false)}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              px: 2,
-              py: 1.1,
-              bgcolor: '#FFFFFF',
-              border: '1.5px solid #E2E8F0',
-              borderRadius: '10px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              cursor: 'pointer',
-              boxSizing: 'border-box',
-              transition: 'all 200ms ease-in-out',
-              '&:hover': {
-                bgcolor: '#F4FCFF',
-                borderColor: '#0E86B8',
-                boxShadow: '0 4px 12px rgba(14, 134, 184, 0.2)',
-              },
-            }}
-          >
-            <FilterIcon sx={{ color: '#0E86B8', fontSize: 18 }} />
-            <Typography sx={{ fontWeight: 600, fontSize: '13px', color: '#1E2875', fontFamily: "'Inter', sans-serif" }}>
-              Filtros
-            </Typography>
-          </Box>
-        ) : (
-          /* Cabecera cuando está expandido */
-          <>
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between',
-              p: '16px 14px',
-              bgcolor: '#F8FAFC',
-              borderBottom: '1px solid #E2E8F0',
-              height: '56px',
-              width: '100%',
-              boxSizing: 'border-box'
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <FilterIcon sx={{ color: '#0E86B8', fontSize: 18 }} />
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875', fontSize: '14px' }}>
-                  Filtros Innovación
-                </Typography>
-              </Box>
-              <IconButton 
-                onClick={() => setFiltersCollapsed(true)}
-                size="small"
-                sx={{ 
-                  color: '#1E2875',
-                  width: '32px',
-                  height: '32px',
-                  bgcolor: 'rgba(30, 40, 117, 0.05)',
-                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.1)' }
-                }}
-              >
-                <ChevronRightIcon />
-              </IconButton>
-            </Box>
-            {filtersContent}
-          </>
-        )}
-      </Box>
+      </DashboardFilterSidebar>
 
       {/* DRAWER MODAL: DETALLE DEL INDICADOR */}
       <Box sx={styles.drawerOverlay(drawerOpen)} onClick={handleCloseDrawer} />

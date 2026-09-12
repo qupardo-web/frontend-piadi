@@ -487,6 +487,8 @@ export const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-end',
+    alignSelf: { xs: 'flex-end', sm: 'flex-start' },
+    width: { xs: '100%', sm: 'auto' },
     gap: 1,
   },
 
@@ -508,7 +510,7 @@ export const styles = {
     display: 'flex',
     flexWrap: 'wrap',
     gap: 0.8,
-    justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+    justifyContent: 'flex-end',
     mb: 1,
   },
 

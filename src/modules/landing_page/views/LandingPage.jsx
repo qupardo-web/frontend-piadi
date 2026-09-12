@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLandingPage } from './LandingPage.hooks';
 import { styles } from './LandingPage.styles';
-import logoEcas from '../../../assets/logo_ECAS_white.svg';
+import { Header, Sidebar } from '../../../components';
 import {
   Box,
   Typography,
@@ -10,12 +10,7 @@ import {
   CardContent,
   Tab,
   Tabs,
-  Avatar,
   IconButton,
-  Divider,
-  Drawer,
-  AppBar,
-  Toolbar,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -26,31 +21,21 @@ import {
 } from '@mui/material';
 import {
   Home as HomeIcon,
-  Dashboard as DashboardIcon,
-  UploadFile as CargaIcon,
-  Shield as AuditoriaIcon,
-  ExitToApp as LogoutIcon,
   ArrowUpward as ArrowUpIcon,
   Help as HelpIcon,
-  Menu as MenuIcon,
   ExpandMore as ExpandMoreIcon,
   Close as CloseIcon,
-  MoreVert as MoreVertIcon,
-  Adjust as TargetIcon,
   CalendarToday as CalendarIcon,
   Info as InfoIcon,
+  Adjust as TargetIcon,
 } from '@mui/icons-material';
 
 export const LandingPage = () => {
   const {
     navigate,
     user,
-    logout,
     activeTab,
     setActiveTab,
-    activeMenu,
-    setActiveMenu,
-    mobileOpen,
     openHelpDialog,
     setOpenHelpDialog,
     departments,
@@ -60,7 +45,6 @@ export const LandingPage = () => {
     customTextColor,
     faqData,
     handleTabChange,
-    handleDrawerToggle,
   } = useLandingPage();
 
   const [saludo] = useState(() => {
@@ -109,187 +93,23 @@ export const LandingPage = () => {
     navigate(`${dashboardPath}${hash}`);
   };
 
-  // =========================================================================
-  // SUB-COMPONENTE: CONTENIDO DEL SIDEBAR (REUTILIZABLE)
-  // =========================================================================
-  const sidebarContent = (
-    <Box sx={styles.drawerContent}>
-      <Box>
-        {/* Logo y Cabecera del Sidebar */}
-        <Box sx={styles.logoContainer}>
-          <Box 
-            component="img" 
-            src={logoEcas} 
-            alt="Logo ECAS" 
-            sx={{ width: 32, height: 32, objectFit: 'contain' }} 
-          />
-          <Box>
-            <Typography variant="subtitle1" sx={styles.logoTitle}>
-              PIADI
-            </Typography>
-            <Typography variant="caption" sx={styles.logoSubtitle}>
-              ECAS
-            </Typography>
-          </Box>
-        </Box>
-
-        <Divider sx={styles.divider} />
-
-        {/* Menú de Navegación */}
-        <Box sx={styles.menuContainer}>
-          {[
-            { text: 'Inicio', icon: <HomeIcon />, path: '/' },
-            { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
-            { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
-            { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
-            { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
-          ].filter((item) => {
-            if (item.text === 'Auditoría') {
-              return (
-                user?.role === 'Rector' || 
-                user?.role === 'Administrador' || 
-                user?.role === 'Director de Administración' ||
-                user?.role === 'Analista de Calidad' ||
-                user?.role === 'Vicerrectoria de Calidad'
-              );
-            }
-            return true;
-          }).map((item) => {
-            const isSelected = activeMenu === item.text;
-            return (
-              <Box
-                key={item.text}
-                onClick={() => {
-                  setActiveMenu(item.text);
-                  handleDrawerToggle(); // Cierra el drawer móvil si se hace click
-                  if (item.path !== '#') {
-                    navigate(item.path);
-                  }
-                }}
-                sx={styles.menuItem(isSelected)}
-              >
-                {item.icon}
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    fontWeight: isSelected ? 600 : 500, 
-                    noWrap: true,
-                    color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)'
-                  }}
-                >
-                  {item.text}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
-      </Box>
-
-      {/* Sección inferior del Sidebar */}
-      <Box sx={styles.bottomSection}>
-        {/* Botón Cerrar Sesión */}
-        <Box onClick={logout} sx={styles.logoutButton}>
-          <LogoutIcon />
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            Cerrar Sesión
-          </Typography>
-        </Box>
-
-        {/* Tarjeta de Usuario */}
-        <Box sx={styles.userCard}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
-            <Avatar sx={styles.userAvatar}>
-              {user?.username ? user.username.split(/[. @]/).filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'JD'}
-            </Avatar>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#ffffff', lineHeight: 1.2 }}>
-                {user?.username || 'John Doe'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
-                Ver perfil
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-            <MoreVertIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </Box>
-    </Box>
-  );
-
   return (
     <Box sx={styles.mainLayout}>
-      
-      {/* =========================================================================
-          BARRA DE NAVEGACIÓN SUPERIOR PARA MÓVILES (APPBAR)
-          ========================================================================= */}
-      <AppBar position="fixed" sx={styles.mobileAppBar}>
-        <Toolbar sx={styles.mobileToolbar}>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerToggle}
-            sx={{ p: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <MenuIcon sx={{ fontSize: 36 }} />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-
-      {/* =========================================================================
-          SECCIÓN 1A: SIDEBAR PERSISTENTE (ESCRITORIO)
-          ========================================================================= */}
-      <Box sx={styles.sidebar}>
-        {sidebarContent}
-      </Box>
-
-      {/* =========================================================================
-          SECCIÓN 1B: SIDEBAR TEMPORAL / DESPLEGABLE (MÓVILES Y TABLETS)
-          ========================================================================= */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Optimiza el rendimiento de apertura en móviles.
-        }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 260, border: 'none' },
-        }}
-      >
-        {sidebarContent}
-      </Drawer>
+      {/* SIDEBAR TRANSVERSAL (Escritorio + Drawer + AppBar Móvil) */}
+      <Sidebar />
 
       {/* =========================================================================
           SECCIÓN 2: ÁREA DE CONTENIDO PRINCIPAL (DERECHA / ABAJO)
           ========================================================================= */}
       <Box sx={styles.contentArea}>
         {/* Cabecera y Bienvenida */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          {saludo && (
-            <Typography variant="body1" sx={{ color: '#6B7280', fontWeight: 500, fontSize: '16px' }}>
-              {saludo}
-            </Typography>
-          )}
-          
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
-            <Box sx={styles.panelHeader}>
-              <Box sx={styles.panelIconContainer}>
-                <HomeIcon />
-              </Box>
-              <Box>
-                <Typography variant="h5" sx={styles.panelTitle}>
-                  Panel de Inicio
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                  Aquí encontrarás un resumen de tus metas y actividades institucionales.
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
+        <Header
+          topContent={saludo}
+          title="Panel de Inicio"
+          subtitle="Aquí encontrarás un resumen de tus metas y actividades institucionales."
+          icon={<HomeIcon />}
+          iconColor="#FFFFFF"
+        />
 
         {/* Pestañas de Navegación Secundarias */}
         <Box sx={{ ...styles.tabsContainer, display: 'flex', alignItems: 'center', gap: 1 }}>

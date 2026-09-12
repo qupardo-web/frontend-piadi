@@ -533,7 +533,10 @@ export const styles = {
   tableContainer: {
     border: '1px solid #e5e7eb',
     borderRadius: 2,
-    overflow: 'hidden',
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    WebkitOverflowScrolling: 'touch',
+    width: '100%',
   },
 
   th: {
