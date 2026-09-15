@@ -148,21 +148,24 @@ export const useLandingPage = () => {
 
     const currentDeptKpis = kpiFilterConfig[currentDepartment?.departmentId] || [];
 
+    const deptHasAnyData = (currentDepartment?.cards ?? []).some(c => c.hasData || (c.value !== null && c.value !== undefined));
+
     const mappedKpis = currentDeptKpis.map((kpiConfig, index) => {
       const cardActiveYear = (currentDepartment?.cards ?? []).find(c => c.indicatorKey === kpiConfig.key);
       const cardPrevYear = (prevDepartment?.cards ?? []).find(c => c.indicatorKey === kpiConfig.key);
 
-      const valActiveYear = cardActiveYear?.value;
+      const valActiveYear = cardActiveYear?.value ?? (deptHasAnyData ? 0 : null);
       const valPrevYear = cardPrevYear?.value;
+      const hasCardData = cardActiveYear?.hasData || (deptHasAnyData && cardActiveYear !== undefined);
 
       let trend = '';
       let trendDesc = '';
 
-      if (cardActiveYear?.hasData) {
-        if (cardPrevYear?.hasData && valPrevYear && valPrevYear !== 0) {
+      if (hasCardData && valActiveYear !== null) {
+        if (cardPrevYear && (cardPrevYear.hasData || (valPrevYear !== null && valPrevYear !== undefined)) && valPrevYear && valPrevYear !== 0) {
           const diff = ((valActiveYear - valPrevYear) / valPrevYear) * 100;
           trend = `${diff >= 0 ? '+' : ''}${Math.round(diff)}%`;
-          const prevValFmt = cardPrevYear.formattedValue ?? cardPrevYear.value;
+          const prevValFmt = cardPrevYear.formattedValue ?? cardPrevYear.value ?? 0;
           const prevYearLabel = activeYear - 1;
           trendDesc = `vs año anterior (${prevYearLabel}): ${prevValFmt}`;
         } else {
@@ -176,11 +179,16 @@ export const useLandingPage = () => {
         }
       }
 
+      let displayValue = 'No hay datos cargados';
+      if (cardActiveYear?.hasData && cardActiveYear.value !== null && cardActiveYear.value !== undefined) {
+        displayValue = cardActiveYear.formattedValue ?? cardActiveYear.value;
+      } else if (deptHasAnyData && cardActiveYear !== undefined) {
+        displayValue = cardActiveYear.formattedValue ?? (cardActiveYear.value !== null && cardActiveYear.value !== undefined ? cardActiveYear.value : '0');
+      }
+
       return {
         title: kpiConfig.label,
-        value: cardActiveYear?.hasData
-          ? (cardActiveYear.formattedValue ?? cardActiveYear.value)
-          : 'No hay datos cargados',
+        value: displayValue,
         trend: trend,
         trendDesc: trendDesc,
         isBlue: index % 3 === 0,
@@ -196,7 +204,7 @@ export const useLandingPage = () => {
       departmentName: currentDepartment?.name || 'departamento seleccionado',
       kpis: mappedKpis,
       metas: filteredMetas,
-      hasData: (currentDepartment?.cards ?? []).some(c => c.hasData),
+      hasData: deptHasAnyData,
     };
   }, [currentDepartment, prevYearDepartments, activeYear, allMetas]);
   

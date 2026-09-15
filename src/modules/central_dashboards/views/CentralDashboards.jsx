@@ -1,19 +1,14 @@
 import React from 'react';
 import { useCentralDashboards } from './CentralDashboards.hooks';
 import { styles } from './CentralDashboards.styles';
-import logoEcas from '../../../assets/logo_ECAS_white.svg';
+import { Header, Sidebar } from '../../../components';
 import {
   Box,
   Typography,
   Grid,
   Card,
   Button,
-  Avatar,
   IconButton,
-  Divider,
-  Drawer,
-  AppBar,
-  Toolbar,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -23,15 +18,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
-  Home as HomeIcon,
   Dashboard as DashboardIcon,
-  UploadFile as CargaIcon,
-  Shield as AuditoriaIcon,
-  ExitToApp as LogoutIcon,
-  MoreVert as MoreVertIcon,
   Help as HelpIcon,
-  Menu as MenuIcon,
-  ChevronRight as ChevronRightIcon,
   Close as CloseIcon,
   ExpandMore as ExpandMoreIcon,
   PersonAdd as PersonAddIcon,
@@ -40,7 +28,6 @@ import {
   Lightbulb as LightbulbIcon,
   School as SchoolIcon,
   Favorite as FavoriteIcon,
-  Adjust as TargetIcon,
 } from '@mui/icons-material';
 
 const getDepartmentMeta = (key) => {
@@ -64,192 +51,34 @@ const getDepartmentMeta = (key) => {
 
 export const CentralDashboards = () => {
   const {
-    navigate,
-    user,
-    logout,
-    mobileOpen,
     openHelpDialog,
     setOpenHelpDialog,
     departments,
     loading,
     error,
     faqData,
-    activeMenu,
-    handleDrawerToggle,
     handleOpenDashboard,
   } = useCentralDashboards();
 
-  const sidebarContent = (
-    <Box sx={styles.drawerContent}>
-      <Box>
-        {/* Logo y Cabecera del Sidebar */}
-        <Box sx={styles.logoContainer}>
-          <Box 
-            component="img" 
-            src={logoEcas} 
-            alt="Logo ECAS" 
-            sx={{ width: 32, height: 32, objectFit: 'contain' }} 
-          />
-          <Box>
-            <Typography variant="subtitle1" sx={styles.logoTitle}>
-              PIADI
-            </Typography>
-            <Typography variant="caption" sx={styles.logoSubtitle}>
-              ECAS
-            </Typography>
-          </Box>
-        </Box>
-
-        <Divider sx={styles.divider} />
-
-        {/* Menú de Navegación */}
-        <Box sx={styles.menuContainer}>
-          {[
-            { text: 'Inicio', icon: <HomeIcon />, path: '/' },
-            { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
-            { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
-            { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
-            { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
-          ].filter((item) => {
-            if (item.text === 'Auditoría') {
-              return (
-                user?.role === 'Rector' || 
-                user?.role === 'Administrador' || 
-                user?.role === 'Director de Administración' ||
-                user?.role === 'Analista de Calidad' ||
-                user?.role === 'Vicerrectoria de Calidad'
-              );
-            }
-            return true;
-          }).map((item) => {
-            const isSelected = activeMenu === item.text;
-            return (
-              <Box
-                key={item.text}
-                onClick={() => {
-                  handleDrawerToggle();
-                  if (item.path !== '#') {
-                    navigate(item.path);
-                  }
-                }}
-                sx={styles.menuItem(isSelected)}
-              >
-                {item.icon}
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    fontWeight: isSelected ? 600 : 500, 
-                    noWrap: true,
-                    color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)'
-                  }}
-                >
-                  {item.text}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
-      </Box>
-
-      {/* Sección inferior del Sidebar */}
-      <Box sx={styles.bottomSection}>
-        <Box onClick={logout} sx={styles.logoutButton}>
-          <LogoutIcon />
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            Cerrar Sesión
-          </Typography>
-        </Box>
-
-        <Box sx={styles.userCard}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
-            <Avatar sx={styles.userAvatar}>
-              {user?.username ? user.username.split(/[. @]/).filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('') : 'JD'}
-            </Avatar>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#ffffff', lineHeight: 1.2 }}>
-                {user?.username || 'John Doe'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
-                Ver perfil
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-            <MoreVertIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </Box>
-    </Box>
-  );
-
   return (
     <Box sx={styles.mainLayout}>
-      
-      {/* BARRA DE NAVEGACIÓN SUPERIOR MÓVIL (APPBAR) */}
-      <AppBar position="fixed" sx={styles.mobileAppBar}>
-        <Toolbar sx={styles.mobileToolbar}>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerToggle}
-            sx={{ p: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <MenuIcon sx={{ fontSize: 36 }} />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-
-      {/* SIDEBAR LATERAL (ESCRITORIO) */}
-      <Box component="nav" sx={styles.sidebar}>
-        {sidebarContent}
-      </Box>
-
-      {/* SIDEBAR DESPLEGABLE (MÓVIL) */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 260, border: 'none' },
-        }}
-      >
-        {sidebarContent}
-      </Drawer>
+      {/* SIDEBAR TRANSVERSAL (Escritorio + Drawer + AppBar Móvil) */}
+      <Sidebar />
 
       {/* ÁREA DE CONTENIDO PRINCIPAL */}
       <Box component="main" sx={styles.contentArea}>
         
         {/* Cabecera del Panel Principal */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          {/* Breadcrumbs */}
-          <Box sx={styles.breadcrumbsContainer}>
-            <Typography variant="body1" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/')}>
-              Inicio
-            </Typography>
-            <ChevronRightIcon sx={{ fontSize: '16px', opacity: 0.7 }} />
-            <Typography variant="body1" sx={{ color: '#1E2875', fontWeight: 600 }}>
-              Dashboards
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, width: '100%' }}>
-            <Box sx={styles.panelHeader}>
-              <Box sx={styles.panelIconContainer}>
-                <DashboardIcon />
-              </Box>
-              <Box>
-                <Typography variant="h5" sx={styles.panelTitle}>
-                  Central de Dashboards
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                  Accede a los dashboards de las diferentes direcciones y áreas de la institución
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
+        <Header
+          title="Central de Dashboards"
+          subtitle="Accede a los dashboards de las diferentes direcciones y áreas de la institución"
+          icon={<DashboardIcon />}
+          iconColor="#FFFFFF"
+          breadcrumbs={[
+            { label: 'Inicio', path: '/' },
+            { label: 'Dashboards', path: null },
+          ]}
+        />
 
         {/* Grilla de Dashboards (3 Columnas en Desktop) */}
         <Grid container spacing={3}>
