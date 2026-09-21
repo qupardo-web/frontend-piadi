@@ -1041,8 +1041,8 @@ export const DashboardEducacionContinua = () => {
               margin={{ top: 10, bottom: isMobile ? 50 : 10, left: 10, right: 10 }}
               slotProps={{
                 legend: {
-                  direction: isMobile ? 'row' : 'column',
-                  position: { vertical: isMobile ? 'bottom' : 'middle', horizontal: isMobile ? 'middle' : 'right' },
+                  direction: isMobile ? 'horizontal' : 'vertical',
+                  position: { vertical: isMobile ? 'bottom' : 'middle', horizontal: isMobile ? 'center' : 'end' },
                   labelStyle: { fontSize: isMobile ? '9px' : '10px', fill: '#1e293b' }
                 }
               }}

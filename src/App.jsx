@@ -38,7 +38,7 @@ import { LoginPage, useAuth } from './modules/auth';
 import { LandingPage } from './modules/landing_page';
 import { CargaDatos, RepositorioArchivos } from './modules/carga_datos';
 import { Auditoria } from './modules/auditoria';
-import { CentralDashboards, DashboardEducacionContinua, DashboardVcM, DashboardInnovacion } from './modules/central_dashboards';
+import { CentralDashboards, DashboardEducacionContinua, DashboardVcM, DashboardInnovacion, DashboardAdmision } from './modules/central_dashboards';
 import { VisualizacionMetas, MetaForm, MetaEditForm } from './modules/metas';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
@@ -498,6 +498,19 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DashboardInnovacion />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 
+               RUTA: /dashboard-admision
+               Muestra el dashboard específico de Admisión y Registro Académico.
+            */}
+            <Route 
+              path="/dashboard-admision" 
+              element={
+                <ProtectedRoute>
+                  <DashboardAdmision />
                 </ProtectedRoute>
               } 
             />

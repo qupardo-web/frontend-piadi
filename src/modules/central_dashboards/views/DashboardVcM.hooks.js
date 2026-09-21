@@ -249,8 +249,6 @@ export const useDashboardVcM = () => {
       artTipo,
       artCol
     ]) => {
-      console.log('VcM Backend API Response Debug:', { summary, conveniosActivos, totalConvenios, participaciones });
-
       if (summary?.success && summary.data) {
         const deptData = summary.data?.departments?.find(d => d.departmentId === 'vinculacion_medio');
         const cards = deptData?.cards ?? [];
