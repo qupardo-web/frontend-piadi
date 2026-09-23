@@ -24,8 +24,8 @@ export const useCentralDashboards = () => {
         const result = await response.json();
         if (result.success && Array.isArray(result.data)) {
           const filtered = result.data.filter(d => 
-            d.departmentId === 'educacion_continua' || d.departmentId === 'vinculacion_medio' || d.departmentId === 'innovacion' ||
-            d.key === 'educacion_continua' || d.key === 'vinculacion_medio' || d.key === 'innovacion'
+            d.departmentId === 'educacion_continua' || d.departmentId === 'vinculacion_medio' || d.departmentId === 'innovacion' || d.departmentId === 'admision' ||
+            d.key === 'educacion_continua' || d.key === 'vinculacion_medio' || d.key === 'innovacion' || d.key === 'admision'
           );
           setDepartments(filtered);
         } else {
@@ -82,6 +82,8 @@ export const useCentralDashboards = () => {
       navigate('/dashboard-vcm');
     } else if (id === 'innovacion') {
       navigate('/dashboard-innovacion');
+    } else if (id === 'admision') {
+      navigate('/dashboard-admision');
     } else {
       navigate('/dashboard-crud');
     }

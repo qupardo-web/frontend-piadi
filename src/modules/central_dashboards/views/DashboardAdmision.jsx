@@ -214,7 +214,7 @@ export const DashboardAdmision = () => {
             title="Dashboard de Admisión"
             subtitle="Matrícula, admisión y caracterización de estudiantes de pregrado"
             icon={<AdmisionIcon />}
-            iconColor="#1E2875"
+            iconColor="#FFFFFF"
             loading={apiLoading}
           />
 

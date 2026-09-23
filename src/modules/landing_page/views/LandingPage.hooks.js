@@ -8,6 +8,7 @@ export const DEPARTMENT_COLORS = {
   educacion_continua: '#46D19F',
   vinculacion_medio: '#E27800',
   innovacion: '#0E86B8',
+  admision: '#1E2875',
 };
 
 export const useLandingPage = () => {
@@ -25,7 +26,8 @@ export const useLandingPage = () => {
   const [deptYearsMap, setDeptYearsMap] = useState({
     educacion_continua: [],
     vinculacion_medio: [],
-    innovacion: []
+    innovacion: [],
+    admision: []
   });
   const [allMetas, setAllMetas] = useState([]);
 
@@ -34,16 +36,19 @@ export const useLandingPage = () => {
     Promise.all([
       getDepartmentFilters('educacion_continua').catch(() => null),
       getDepartmentFilters('vinculacion_medio').catch(() => null),
-      getDepartmentFilters('innovacion').catch(() => null)
+      getDepartmentFilters('innovacion').catch(() => null),
+      getDepartmentFilters('admision').catch(() => null)
     ])
-      .then(([resEc, resVcm, resInno]) => {
+      .then(([resEc, resVcm, resInno, resAdm]) => {
         const ecYears = resEc?.success ? (resEc.data?.filters?.years ?? []) : [];
         const vcmYears = resVcm?.success ? (resVcm.data?.filters?.years ?? []) : [];
         const innoYears = resInno?.success ? (resInno.data?.filters?.years ?? []) : [];
+        const admYears = resAdm?.success ? (resAdm.data?.filters?.years ?? []) : [];
         setDeptYearsMap({
           educacion_continua: ecYears.map(Number),
           vinculacion_medio: vcmYears.map(Number),
-          innovacion: innoYears.map(Number)
+          innovacion: innoYears.map(Number),
+          admision: admYears.map(Number)
         });
       })
       .catch(() => {});
@@ -96,17 +101,16 @@ export const useLandingPage = () => {
       getDashboardSummary({ year: activeYear - 1 }).catch(() => null)
     ])
       .then(([resActive, resPrev]) => {
+        const allowedDepts = ['educacion_continua', 'vinculacion_medio', 'innovacion', 'admision'];
         if (resActive?.success && resActive.data) {
           const filteredActive = (resActive.data.departments ?? []).filter(d => 
-            d.departmentId === 'educacion_continua' || d.departmentId === 'vinculacion_medio' || d.departmentId === 'innovacion' ||
-            d.key === 'educacion_continua' || d.key === 'vinculacion_medio' || d.key === 'innovacion'
+            allowedDepts.includes(d.departmentId) || allowedDepts.includes(d.key)
           );
           setDepartments(filteredActive);
         }
         if (resPrev?.success && resPrev.data) {
           const filteredPrev = (resPrev.data.departments ?? []).filter(d => 
-            d.departmentId === 'educacion_continua' || d.departmentId === 'vinculacion_medio' || d.departmentId === 'innovacion' ||
-            d.key === 'educacion_continua' || d.key === 'vinculacion_medio' || d.key === 'innovacion'
+            allowedDepts.includes(d.departmentId) || allowedDepts.includes(d.key)
           );
           setPrevYearDepartments(filteredPrev);
         }
@@ -143,6 +147,11 @@ export const useLandingPage = () => {
         { key: 'proyectos_activos', label: 'Proyectos de innovación en curso', targetHash: 'proyectos-activos' },
         { key: 'proyectos_finalizados', label: 'Proyectos finalizados', targetHash: 'proyectos-finalizados' },
         { key: 'docentes_involucrados', label: 'Docentes/funcionarios involucrados', targetHash: 'docentes' }
+      ],
+      admision: [
+        { key: 'matricula_total', label: 'Matrícula total', targetHash: 'matricula-total' },
+        { key: 'nuevos_vs_antiguos', label: 'Nuevos vs antiguos', targetHash: 'nuevos-antiguos' },
+        { key: 'via_acceso', label: 'Vía de acceso principal', targetHash: 'via-acceso' }
       ]
     };
 
