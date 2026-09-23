@@ -92,10 +92,14 @@ export const CentralDashboards = () => {
             </Grid>
           ) : (
             departments.map((dept) => {
-              const meta = getDepartmentMeta(dept.key);
+              const deptKey = dept.key || dept.departmentId;
+              const meta = getDepartmentMeta(deptKey);
               return (
-                <Grid item xs={12} sm={6} md={4} key={dept.id}>
-                  <Card sx={styles.dashboardCard}>
+                <Grid item xs={12} sm={6} md={4} key={dept.id || deptKey}>
+                  <Card 
+                    sx={{ ...styles.dashboardCard, cursor: 'pointer' }}
+                    onClick={() => handleOpenDashboard(deptKey)}
+                  >
                     {/* Cabecera de Color con Icono */}
                     <Box sx={styles.cardHeaderColor(meta.color)}>
                       {meta.icon}
@@ -114,7 +118,10 @@ export const CentralDashboards = () => {
                         <Button 
                           variant="contained" 
                           sx={styles.cardButton(meta.color)}
-                          onClick={() => handleOpenDashboard(dept.key)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDashboard(deptKey);
+                          }}
                         >
                           Abrir &nbsp;➔
                         </Button>

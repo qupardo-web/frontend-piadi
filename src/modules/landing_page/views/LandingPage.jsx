@@ -88,6 +88,8 @@ export const LandingPage = () => {
       dashboardPath = '/dashboard-vcm';
     } else if (currentData.departmentId === 'innovacion') {
       dashboardPath = '/dashboard-innovacion';
+    } else if (currentData.departmentId === 'admision') {
+      dashboardPath = '/dashboard-admision';
     }
     const hash = targetHash ? `#${targetHash}` : '';
     navigate(`${dashboardPath}${hash}`);
