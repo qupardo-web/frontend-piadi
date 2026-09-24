@@ -13,6 +13,7 @@ import {
   Home as HomeIcon,
   Dashboard as DashboardIcon,
   TrackChanges as TargetIcon,
+  Description as ReportesIcon,
   UploadFile as CargaIcon,
   Shield as AuditoriaIcon,
   ExitToApp as LogoutIcon,
@@ -40,6 +41,7 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
       if (path === '/') return 'Inicio';
       if (path.startsWith('/dashboard')) return 'Dashboards';
       if (path.startsWith('/metas')) return 'Metas';
+      if (path.startsWith('/reportes')) return 'Reportes';
       if (path.startsWith('/carga-datos') || path.startsWith('/repositorio')) return 'Carga de datos';
       if (path.startsWith('/auditoria')) return 'Auditoría';
       return '';
@@ -49,6 +51,7 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
     { text: 'Inicio', icon: <HomeIcon />, path: '/' },
     { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
+    { text: 'Reportes', icon: <ReportesIcon />, path: '/reportes' },
     { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
     { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
   ].filter((item) => {

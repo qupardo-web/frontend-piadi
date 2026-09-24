@@ -40,6 +40,7 @@ import { CargaDatos, RepositorioArchivos } from './modules/carga_datos';
 import { Auditoria } from './modules/auditoria';
 import { CentralDashboards, DashboardEducacionContinua, DashboardVcM, DashboardInnovacion, DashboardAdmision } from './modules/central_dashboards';
 import { VisualizacionMetas, MetaForm, MetaEditForm } from './modules/metas';
+import { Reportes } from './modules/reportes';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 
@@ -583,6 +584,19 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MetaEditForm />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 
+              RUTA: /reportes
+              Ruta protegida para la vista del Módulo de Reportes.
+            */}
+            <Route 
+              path="/reportes" 
+              element={
+                <ProtectedRoute>
+                  <Reportes />
                 </ProtectedRoute>
               } 
             />
