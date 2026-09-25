@@ -28,6 +28,7 @@ import {
   Tooltip,
   Collapse,
   Divider,
+  Chip,
 } from '@mui/material';
 import {
   UploadFile as CargaIcon,
@@ -44,6 +45,22 @@ import {
   ExpandMore as ExpandMoreIcon,
   Download as DownloadIcon,
 } from '@mui/icons-material';
+
+const TABLE_LABELS = {
+  Alumno: 'Estudiantes Registrados',
+  Asignatura: 'Asignaturas Registradas',
+  MatriculaPorAsignatura: 'Matrículas de Pregrado',
+  CaracterizacionEstudiante: 'Caracterizaciones Estudiantiles',
+  Programa: 'Programas de Educación Continua',
+  ResultadosPrograma: 'Resultados de Programas',
+  AlumnoExterno: 'Participantes Externos',
+  MatriculaPrograma: 'Matrículas de Programas',
+  ConvenioVcm: 'Convenios Vigentes',
+  ActividadVcm: 'Actividades Realizadas',
+  ArticulacionVcm: 'Articulaciones Docentes',
+  ProyectoInnovacion: 'Proyectos de Innovación',
+  DocenteInnovacion: 'Docentes Vinculados'
+};
 
 export const CargaDatos = () => {
   const {
@@ -67,6 +84,8 @@ export const CargaDatos = () => {
     successSummary,
     filteredTemplates,
     faqData,
+    admisionSheets,
+    toggleAdmisionSheet,
     handleTemplateSelect,
     handleFileChange,
     handleDragOver,
@@ -386,6 +405,60 @@ export const CargaDatos = () => {
                 El archivo <strong>{selectedFile?.name}</strong> fue verificado y cargado sin errores en el sistema.
               </Typography>
 
+              {/* Feedback de Carga Completa o Parcial */}
+              {(() => {
+                if (!successSummary) return null;
+                const hasMatricula = Boolean(successSummary.MatriculaPorAsignatura || successSummary.Alumno || successSummary.Asignatura);
+                const hasCaracterizacion = Boolean(successSummary.CaracterizacionEstudiante);
+
+                if (hasMatricula && !hasCaracterizacion) {
+                  return (
+                    <Box sx={styles.partialSuccessBanner}>
+                      <InfoIcon sx={{ color: '#059669', fontSize: 24, flexShrink: 0 }} />
+                      <Box>
+                        <Typography sx={{ fontWeight: 700, fontSize: '13px', color: '#065F46', mb: 0.2 }}>
+                          Carga Parcial Procesada con Éxito
+                        </Typography>
+                        <Typography sx={{ fontSize: '12px', color: '#047857', lineHeight: 1.4 }}>
+                          Se procesaron los datos de la hoja <strong>Estudiantes Pregrados</strong> (Matrícula). La hoja de Caracterización fue omitida.
+                        </Typography>
+                      </Box>
+                    </Box>
+                  );
+                }
+                if (!hasMatricula && hasCaracterizacion) {
+                  return (
+                    <Box sx={styles.partialSuccessBanner}>
+                      <InfoIcon sx={{ color: '#059669', fontSize: 24, flexShrink: 0 }} />
+                      <Box>
+                        <Typography sx={{ fontWeight: 700, fontSize: '13px', color: '#065F46', mb: 0.2 }}>
+                          Carga Parcial Procesada con Éxito
+                        </Typography>
+                        <Typography sx={{ fontSize: '12px', color: '#047857', lineHeight: 1.4 }}>
+                          Se procesaron los datos de la hoja <strong>Caracterización Estudiante</strong>. La hoja de Matrícula fue omitida.
+                        </Typography>
+                      </Box>
+                    </Box>
+                  );
+                }
+                if (hasMatricula && hasCaracterizacion) {
+                  return (
+                    <Box sx={styles.partialSuccessBanner}>
+                      <CheckCircleIcon sx={{ color: '#059669', fontSize: 24, flexShrink: 0 }} />
+                      <Box>
+                        <Typography sx={{ fontWeight: 700, fontSize: '13px', color: '#065F46', mb: 0.2 }}>
+                          Carga Completa de Admisión
+                        </Typography>
+                        <Typography sx={{ fontSize: '12px', color: '#047857', lineHeight: 1.4 }}>
+                          Se verificaron y procesaron exitosamente los datos de ambas hojas (<strong>Estudiantes Pregrados</strong> y <strong>Caracterización Estudiante</strong>).
+                        </Typography>
+                      </Box>
+                    </Box>
+                  );
+                }
+                return null;
+              })()}
+
               {successSummary && (
                 <Box sx={{ width: '100%', maxWidth: '500px', bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', p: 3, textAlign: 'left', mb: 1 }}>
                   <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#334155', mb: 2, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: "'Inter', sans-serif" }}>
@@ -395,7 +468,7 @@ export const CargaDatos = () => {
                     {Object.entries(successSummary).map(([tabla, cantidad]) => (
                       <React.Fragment key={tabla}>
                         <Typography sx={{ fontSize: '14px', color: '#475569', fontWeight: 500, fontFamily: "'Inter', sans-serif" }}>
-                          {tabla}
+                          {TABLE_LABELS[tabla] || tabla}
                         </Typography>
                         <Typography sx={{ fontSize: '14px', color: '#10B981', fontWeight: 700, textAlign: 'right', fontFamily: "'Inter', sans-serif" }}>
                           +{cantidad} filas
@@ -494,19 +567,60 @@ export const CargaDatos = () => {
                   <Collapse in={showMetadataHelp}>
                     <Box sx={{ p: 2, pt: 0 }}>
                       <Divider sx={{ mb: 2 }} />
+
                       <Grid container spacing={1.5}>
-                        {selectedTemplateMetadata.hojas.map((hoja, hIdx) => (
-                          <Grid item xs={12} sm={6} key={hIdx}>
-                            <Box sx={{ bgcolor: '#ffffff', p: 1.5, borderRadius: '6px', border: '1px solid #E2E8F0', height: '100%' }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1DC2A0', mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '12px' }}>
-                                📁 Hoja: {hoja.nombre}
-                              </Typography>
-                              <Typography variant="body2" sx={{ color: '#475569', fontSize: '11.5px', lineHeight: 1.45 }}>
-                                <strong>Columnas obligatorias:</strong> {hoja.columnas.join(', ')}
-                              </Typography>
-                            </Box>
-                          </Grid>
-                        ))}
+                        {selectedTemplateMetadata.hojas.map((hoja, hIdx) => {
+                          const isEnabled = hoja.enabled;
+
+                          return (
+                            <Grid item xs={12} sm={6} key={hIdx}>
+                              <Box sx={{ 
+                                bgcolor: '#ffffff', 
+                                p: 1.5, 
+                                borderRadius: '6px', 
+                                border: '1px solid #E2E8F0', 
+                                height: '100%',
+                                opacity: isEnabled ? 1 : 0.6,
+                                transition: 'all 0.2s ease-in-out'
+                              }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, gap: 1 }}>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: isEnabled ? '#1DC2A0' : '#94A3B8', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '12px' }}>
+                                    📁 Hoja: {hoja.nombre}
+                                    {hoja.isOptional && (
+                                      <Box component="span" sx={styles.sheetBadgeOptional}>
+                                        Opcional
+                                      </Box>
+                                    )}
+                                  </Typography>
+
+                                  {hoja.isAdmision && (
+                                    <Button
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleAdmisionSheet(hoja.key);
+                                      }}
+                                      startIcon={isEnabled ? <CheckCircleIcon sx={{ fontSize: 13 }} /> : <CloseIcon sx={{ fontSize: 13 }} />}
+                                      sx={styles.sheetToggleBtn(isEnabled)}
+                                    >
+                                      {isEnabled ? 'Incluida' : 'Omitida'}
+                                    </Button>
+                                  )}
+                                </Box>
+
+                                {isEnabled ? (
+                                  <Typography variant="body2" sx={{ color: '#475569', fontSize: '11.5px', lineHeight: 1.45 }}>
+                                    <strong>Columnas obligatorias:</strong> {hoja.columnas.join(', ')}
+                                  </Typography>
+                                ) : (
+                                  <Typography variant="body2" sx={{ color: '#94A3B8', fontSize: '11.5px', fontStyle: 'italic', lineHeight: 1.45 }}>
+                                    ✕ Esta hoja será omitida y no es requerida en tu archivo Excel.
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Grid>
+                          );
+                        })}
                       </Grid>
                     </Box>
                   </Collapse>
