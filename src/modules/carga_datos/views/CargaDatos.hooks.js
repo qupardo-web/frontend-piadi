@@ -28,6 +28,12 @@ export const isVcmTemplate = (template) => (
   normalizeName(template?.name) === normalizeName(VCM_TEMPLATE_NAME)
 );
 
+export const isAdmisionTemplate = (template) => {
+  const name = normalizeName(template?.name);
+  const roleName = normalizeName(template?.role?.name);
+  return name.includes('admisión') || name.includes('admision') || roleName === 'admisión' || roleName === 'admision';
+};
+
 export const canViewTemplate = (template, userRole) => {
   if (isVcmTemplate(template)) {
     return [VCM_ROLE, 'Rector'].includes(userRole);
@@ -63,8 +69,8 @@ export const useCargaDatos = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragActive, setIsDragActive] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1); // Página inicial 1 por defecto
-  const [openHelpDialog, setOpenHelpDialog] = useState(false); // Estado para abrir el Centro de Ayuda
+  const [currentPage, setCurrentPage] = useState(1);
+  const [openHelpDialog, setOpenHelpDialog] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
@@ -73,24 +79,42 @@ export const useCargaDatos = () => {
   const [successSummary, setSuccessSummary] = useState(null);
   const [templateRequirements, setTemplateRequirements] = useState({});
 
+  // Estado para la selección de hojas opcionales de Admisión
+  const [admisionSheets, setAdmisionSheets] = useState({
+    matricula: true,
+    caracterizacion: true
+  });
+
+  // Detectar variantes de Admisión en la lista de plantillas cargadas
+  const admisionTemplates = templates.filter(t => isAdmisionTemplate(t));
+  const admisionCombinada = admisionTemplates.find(t => t.variante === 'combinada' || t.name.toLowerCase().includes('completa')) || admisionTemplates[0];
+  const admisionMatricula = admisionTemplates.find(t => t.variante === 'matricula' || t.name.toLowerCase().includes('matrícula') || t.name.toLowerCase().includes('matricula'));
+  const admisionCaracterizacion = admisionTemplates.find(t => t.variante === 'caracterizacion' || t.name.toLowerCase().includes('caracterización') || t.name.toLowerCase().includes('caracterizacion'));
+
   // Carga dinámica de requisitos (hojas y campos) de la plantilla seleccionada desde el backend
   useEffect(() => {
     if (!selectedTemplate) return;
-    if (templateRequirements[selectedTemplate]) return;
+    
+    // Determinar ID para buscar requisitos (si es Admisión, siempre cargar requisitos completos de la combinada)
+    const currentObj = templates.find(t => t.id === selectedTemplate);
+    const isAdm = isAdmisionTemplate(currentObj);
+    const targetReqId = isAdm ? (admisionCombinada?.id || selectedTemplate) : selectedTemplate;
 
-    getPlantillaById(selectedTemplate)
+    if (templateRequirements[targetReqId]) return;
+
+    getPlantillaById(targetReqId)
       .then(data => {
         if (data && Array.isArray(data.hojas)) {
           setTemplateRequirements(prev => ({
             ...prev,
-            [selectedTemplate]: data
+            [targetReqId]: data
           }));
         }
       })
       .catch(err => {
-        console.warn(`No se pudo cargar requisitos para plantilla ${selectedTemplate}:`, err);
+        console.warn(`No se pudo cargar requisitos para plantilla ${targetReqId}:`, err);
       });
-  }, [selectedTemplate, templateRequirements]);
+  }, [selectedTemplate, templateRequirements, admisionCombinada, templates]);
 
   // Carga de plantillas dinámicas desde el backend
   useEffect(() => {
@@ -111,40 +135,29 @@ export const useCargaDatos = () => {
       // Fallbacks estáticos si el backend está desconectado
       const fallbackTemplates = [
         {
-          id: 1,
-          name: 'Matrícula y Estudiantes',
-          description: 'Matrícula total, nuevos vs antiguos, distribución por sexo, edad y carrera',
-          role: { name: 'Admisión' }
-        },
-        {
-          id: 2,
-          name: 'Caracterización Estudiante',
-          description: 'Nivel socioeconómico, situación familiar, procedencia geográfica, tipo de colegio',
-          role: { name: 'Admisión' }
+          id: 4,
+          name: 'Admisión',
+          description: 'Plantilla para carga completa de estudiantes, matrículas y caracterización de admisión',
+          role: { name: 'Admisión' },
+          variante: 'combinada'
         },
         {
           id: 3,
-          name: 'Rendimiento Académico',
-          description: 'Tasas de aprobación/reprobación, asignaturas críticas, prácticas, titulación',
-          role: { name: 'Desarrollo Curricular' }
+          name: 'Innovación',
+          description: 'Plantilla para carga de proyectos, financiamiento y secciones de innovación',
+          role: { name: 'Innovación' }
         },
         {
-          id: 4,
+          id: 1,
           name: 'Educación Continua',
-          description: 'Cursos programados y dictados, matrícula, tasa de aprobación, ingresos',
+          description: 'Plantilla para carga de programas de educación continua',
           role: { name: 'Educación Continua' }
         },
         {
-          id: 5,
-          name: 'Vinculación con el Medio',
-          description: 'Convenios vigentes y nuevos, actividades VcM, participantes',
-          role: { name: 'Vinculación con el Medio' }
-        },
-        {
-          id: 6,
-          name: 'Innovación',
-          description: 'Proyectos en curso y finalizados, financiamiento externo, docentes involucrados',
-          role: { name: 'Innovación' }
+          id: 2,
+          name: 'Vinculación Con El Medio',
+          description: 'Plantilla para carga de convenios, actividades y articulaciones de VCM',
+          role: { name: 'Vinculación Con El Medio' }
         }
       ];
       setTemplates(fallbackTemplates);
@@ -153,7 +166,7 @@ export const useCargaDatos = () => {
     fetchTemplates();
   }, []);
 
-  // Carga el historial real de cargas desde auditoría (re-ejecuta cuando templates carga)
+  // Carga el historial real de cargas desde auditoría
   useEffect(() => {
     const token = sessionStorage.getItem('auth_token');
     if (!token) return;
@@ -184,7 +197,58 @@ export const useCargaDatos = () => {
       .catch(() => {});
   }, [templates]);
 
-  const filteredTemplates = templates.filter((template) => canViewTemplate(template, user?.role));
+  // Agrupar plantillas para mostrar 1 tarjeta estándar por departamento (Admisión unificada)
+  const uniqueDepartmentTemplates = [];
+  let admisionAdded = false;
+
+  for (const t of templates) {
+    if (isAdmisionTemplate(t)) {
+      if (!admisionAdded) {
+        admisionAdded = true;
+        uniqueDepartmentTemplates.push({
+          ...(admisionCombinada || t),
+          id: admisionCombinada?.id || t.id,
+          name: 'Admisión',
+          description: 'Plantilla para carga de matrícula de pregrado y caracterización socioeconómica estudiantil',
+          role: { name: 'Admisión' }
+        });
+      }
+    } else {
+      uniqueDepartmentTemplates.push(t);
+    }
+  }
+
+  const filteredTemplates = uniqueDepartmentTemplates.filter((template) => canViewTemplate(template, user?.role));
+
+  // Función para alternar la inclusión de una hoja en Admisión
+  const toggleAdmisionSheet = (sheetKey) => {
+    setAdmisionSheets(prev => {
+      const nextState = { ...prev, [sheetKey]: !prev[sheetKey] };
+      // No permitir desmarcar ambas hojas (al menos una debe quedar activa)
+      if (!nextState.matricula && !nextState.caracterizacion) {
+        return prev;
+      }
+      return nextState;
+    });
+  };
+
+  // Determinar el ID efectivo de la plantilla a cargar/descargar según las hojas elegidas
+  const getEffectiveTemplateId = () => {
+    if (!selectedTemplate) return null;
+    const currentObj = templates.find(t => t.id === selectedTemplate);
+    if (isAdmisionTemplate(currentObj)) {
+      if (admisionSheets.matricula && admisionSheets.caracterizacion) {
+        return admisionCombinada?.id || selectedTemplate;
+      }
+      if (admisionSheets.matricula && !admisionSheets.caracterizacion) {
+        return admisionMatricula?.id || admisionCombinada?.id || selectedTemplate;
+      }
+      if (!admisionSheets.matricula && admisionSheets.caracterizacion) {
+        return admisionCaracterizacion?.id || admisionCombinada?.id || selectedTemplate;
+      }
+    }
+    return selectedTemplate;
+  };
 
   // Datos de las Preguntas Frecuentes (FAQ) del Centro de Ayuda
   const faqData = [
@@ -222,6 +286,10 @@ export const useCargaDatos = () => {
 
   const handleTemplateSelect = (templateId) => {
     setSelectedTemplate(templateId);
+    setSelectedFile(null);
+    setUploadError('');
+    setUploadErrorDetails([]);
+    setAdmisionSheets({ matricula: true, caracterizacion: true });
   };
 
   const handleFileChange = (e) => {
@@ -240,10 +308,14 @@ export const useCargaDatos = () => {
   };
 
   const handleDownloadTemplate = async (e, templateId) => {
-    e.stopPropagation(); // Evita que se seleccione la tarjeta
+    if (e && e.stopPropagation) e.stopPropagation();
     try {
+      const targetId = (selectedTemplate && (templateId === selectedTemplate || templateId === admisionCombinada?.id))
+        ? getEffectiveTemplateId()
+        : templateId;
+
       const token = sessionStorage.getItem('auth_token');
-      const response = await fetch(`${API_URL}/api/plantillas/${templateId}/descargar`, {
+      const response = await fetch(`${API_URL}/api/plantillas/${targetId}/descargar`, {
         method: 'GET',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       });
@@ -252,7 +324,6 @@ export const useCargaDatos = () => {
         throw new Error('No se pudo descargar la plantilla desde el servidor');
       }
 
-      // Obtener el nombre del archivo de la cabecera Content-Disposition
       let filename = 'plantilla.xlsx';
       const disposition = response.headers.get('content-disposition');
       if (disposition && disposition.indexOf('attachment') !== -1) {
@@ -300,6 +371,7 @@ export const useCargaDatos = () => {
     setUploading(false);
     setUploadSuccess(false);
     setSuccessSummary(null);
+    setAdmisionSheets({ matricula: true, caracterizacion: true });
   };
 
   const handleUploadSubmit = async () => {
@@ -310,12 +382,13 @@ export const useCargaDatos = () => {
       setUploadSuccess(false);
       setSuccessSummary(null);
 
+      const effectiveId = getEffectiveTemplateId();
       const formData = new FormData();
       formData.append('archivo', selectedFile);
 
       try {
         const token = sessionStorage.getItem('auth_token');
-        const response = await fetch(`${API_URL}/api/plantillas/${selectedTemplate}/cargar`, {
+        const response = await fetch(`${API_URL}/api/plantillas/${effectiveId}/cargar`, {
           method: 'POST',
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
           body: formData
@@ -329,15 +402,15 @@ export const useCargaDatos = () => {
         }
 
         if (response.ok) {
-          const templateObj = templates.find(t => t.id === selectedTemplate);
+          const templateObj = uniqueDepartmentTemplates.find(t => t.id === selectedTemplate) || templates.find(t => t.id === selectedTemplate);
           const newUpload = {
             fecha: new Date().toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ''),
-            usuario: user?.username || 'Jane Doe',
-            plantilla: templateObj?.name || 'Matrícula y Estudiantes',
+            usuario: user?.username || user?.name || 'Usuario',
+            plantilla: templateObj?.name || 'Admisión',
             archivo: selectedFile.name,
           };
           setUploads([newUpload, ...uploads]);
-          setCurrentPage(1); // Restablecer a la página 1 para que el usuario visualice su carga
+          setCurrentPage(1);
           
           setSuccessSummary(data.resumen || null);
           setUploadSuccess(true);
@@ -380,13 +453,32 @@ export const useCargaDatos = () => {
   const getSelectedTemplateMetadata = () => {
     if (!selectedTemplate) return null;
 
-    const req = templateRequirements[selectedTemplate];
+    const currentObj = templates.find(t => t.id === selectedTemplate);
+    const isAdm = isAdmisionTemplate(currentObj);
+    const targetReqId = isAdm ? (admisionCombinada?.id || selectedTemplate) : selectedTemplate;
+
+    const req = templateRequirements[targetReqId];
     if (req && Array.isArray(req.hojas) && req.hojas.length > 0) {
-      return {
-        hojas: req.hojas.map(h => ({
+      const hojas = req.hojas.map(h => {
+        const nombreLower = h.nombre.toLowerCase();
+        const isMatricula = nombreLower.includes('pregrado') || nombreLower.includes('matrícula') || nombreLower.includes('matricula');
+        const sheetKey = isMatricula ? 'matricula' : 'caracterizacion';
+        return {
           nombre: h.nombre,
-          columnas: Array.isArray(h.campos) ? h.campos.map(c => c.columna) : (h.columnas || [])
-        }))
+          key: sheetKey,
+          isAdmision: isAdm,
+          isOptional: isAdm,
+          enabled: isAdm ? admisionSheets[sheetKey] : true,
+          columnas: Array.isArray(h.campos) ? h.campos.map(c => c.columna) : (h.columnas || []),
+          descripcion: isMatricula 
+            ? 'Registro académico, asignaturas, secciones y datos del estudiante' 
+            : 'Perfil socioeconómico, procedencia escolar y asignación de beneficios'
+        };
+      });
+
+      return {
+        isAdmision: isAdm,
+        hojas
       };
     }
 
@@ -418,6 +510,8 @@ export const useCargaDatos = () => {
     filteredTemplates,
     faqData,
     activeMenu,
+    admisionSheets,
+    toggleAdmisionSheet,
     handleDrawerToggle,
     handleTemplateSelect,
     handleFileChange,
