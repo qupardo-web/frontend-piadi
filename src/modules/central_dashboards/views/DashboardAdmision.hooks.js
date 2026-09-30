@@ -67,7 +67,7 @@ export const INDICATORS = {
     title: 'Matrícula total por período',
     desc: 'Matrícula total de la carrera Contador Auditor al cierre de cada período, desagregada por semestre. Se calcula sumando los estudiantes matriculados en Semestre 1 y Semestre 2 de cada año.',
     metric: { label: 'Matrícula total', value: null },
-    colLabels: ['Año', 'Matrícula'],
+    colLabels: ['Año', 'Estudiantes'],
     state: 'data'
   },
   'nuevos-antiguos': {
@@ -220,6 +220,7 @@ export const useDashboardAdmision = () => {
   const [currentIndicatorKey, setCurrentIndicatorKey] = useState('matricula-total');
   const [drawerPeriod, setDrawerPeriod] = useState('2026');
   const [drawerGroupBy, setDrawerGroupBy] = useState(null);
+  const [drawerSemesterFilter, setDrawerSemesterFilter] = useState('all');
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerError, setDrawerError] = useState(null);
   const [apiIndicatorDetail, setApiIndicatorDetail] = useState(null);
@@ -394,19 +395,6 @@ export const useDashboardAdmision = () => {
         setApiCarBecasBreakdown(carBecas?.data || null);
         setApiCarSexoBreakdown(carSexo?.data || null);
         setApiCarEdadBreakdown(carEdad?.data || null);
-
-        // Registro en consola para depuración de Distribución por Edad y Sexo
-        console.group('%c[DashboardAdmision] Depuración: Distribución por Sexo', 'background: #10B981; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold;');
-        console.log('📌 Parámetros enviados a la API (baseBreakdownParams):', baseBreakdownParams);
-        console.log('📥 Respuesta cruda de la API (carSexo):', carSexo);
-        console.log('📊 Items de carSexo?.data?.items:', carSexo?.data?.items);
-        console.groupEnd();
-
-        console.group('%c[DashboardAdmision] Depuración: Distribución por Edad', 'background: #1E2875; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold;');
-        console.log('📌 Parámetros enviados a la API (baseBreakdownParams):', baseBreakdownParams);
-        console.log('📥 Respuesta cruda de la API (carEdad):', carEdad);
-        console.log('📊 Items de carEdad?.data?.items:', carEdad?.data?.items);
-        console.groupEnd();
       })
       .catch((err) => {
         console.error('Error cargando métricas de Admisión:', err);
@@ -571,6 +559,38 @@ export const useDashboardAdmision = () => {
     }).filter(d => (d.s1 + d.s2) > 0 || (yearRange[0] === yearRange[1] && d.year === yearRange[0]));
   }, [hasRealData, apiMatTotalSeries, visibleYears, yearRange]);
 
+  // Matrícula total consolidada de todos los años disponibles (desglosada por s1 y s2)
+  const allYearsMatTotal = useMemo(() => {
+    if (!apiMatTotalSeries) return [];
+    const s1Series = apiMatTotalSeries.series?.find(s => String(s.label) === '1' || s.label?.toLowerCase().includes('primer') || s.label?.toLowerCase().includes('1'));
+    const s2Series = apiMatTotalSeries.series?.find(s => String(s.label) === '2' || s.label?.toLowerCase().includes('segundo') || s.label?.toLowerCase().includes('2'));
+
+    if (apiMatTotalSeries.points && (!apiMatTotalSeries.series || apiMatTotalSeries.series.length === 0)) {
+      return apiMatTotalSeries.points.map(p => ({
+        year: p.year,
+        s1: p.value,
+        s2: 0
+      }));
+    }
+
+    const yearsSet = new Set([
+      ...(s1Series?.points?.map(p => p.year) || []),
+      ...(s2Series?.points?.map(p => p.year) || []),
+      ...availableYears
+    ]);
+
+    const sortedYears = [...yearsSet].sort((a, b) => a - b);
+    return sortedYears.map(y => {
+      const p1 = s1Series?.points?.find(p => p.year === y);
+      const p2 = s2Series?.points?.find(p => p.year === y);
+      return {
+        year: y,
+        s1: p1 ? p1.value : 0,
+        s2: p2 ? p2.value : 0
+      };
+    }).filter(d => (d.s1 + d.s2) > 0);
+  }, [apiMatTotalSeries, availableYears]);
+
   // 2. Matrícula nuevos vs antiguos
   const matNuevosData = useMemo(() => {
     if (!hasRealData || !apiMatNuevosSeries) return [];
@@ -684,12 +704,10 @@ export const useDashboardAdmision = () => {
   // 12. Distribución por sexo
   const carSexoData = useMemo(() => {
     if (!hasRealData || !apiCarSexoBreakdown?.items) return [];
-    const parsed = apiCarSexoBreakdown.items
+    return apiCarSexoBreakdown.items
       .filter(item => item.value > 0)
       .map(item => ({ label: formatSexoLabel(item.label), value: item.value }))
       .sort((a, b) => b.value - a.value);
-    console.log('📊 [carSexoData] Datos procesados para el gráfico de sexo:', parsed);
-    return parsed;
   }, [hasRealData, apiCarSexoBreakdown]);
 
   // 13. Distribución por edad
@@ -697,12 +715,9 @@ export const useDashboardAdmision = () => {
     if (!hasRealData || !apiCarEdadBreakdown?.items) {
       return [];
     }
-    const parsed = apiCarEdadBreakdown.items
+    return apiCarEdadBreakdown.items
       .filter(item => item.value > 0)
       .map(item => ({ label: item.label, value: item.value }));
-
-    console.log('📊 [carEdadData] Datos procesados para el gráfico de edad:', parsed);
-    return parsed;
   }, [hasRealData, apiCarEdadBreakdown]);
 
   // KPIs calculados (con soporte de período acumulado reactivo como en VcM)
@@ -830,6 +845,7 @@ export const useDashboardAdmision = () => {
     setDrawerPeriod(String(mostRecentYear));
     const defaultDim = INDICATOR_SPECIFIC_DIMENSION[key] || null;
     setDrawerGroupBy(defaultDim);
+    setDrawerSemesterFilter('all');
     setDrawerOpen(true);
   }, [availableYears]);
 
@@ -857,37 +873,16 @@ export const useDashboardAdmision = () => {
       params.groupBy = drawerGroupBy;
     }
 
-    console.group(`%c[PIADI-409] Detalle de Indicador: ${currentIndicatorKey} (${backendKey})`, 'background: #1E2875; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold;');
-    console.log('📌 Parámetros enviados (params):', params);
-    console.log('🔑 Indicador UI:', currentIndicatorKey);
-    console.log('🔑 Backend Key:', backendKey);
-    console.log('📅 Año (drawerPeriod):', drawerPeriod);
-    console.log('🏷️ Agrupación (drawerGroupBy):', drawerGroupBy);
-    console.groupEnd();
-
     getIndicatorDetail(backendKey, params)
       .then((res) => {
         const detail = (res && res.data && typeof res.data === 'object' && !Array.isArray(res.data) && (res.data.title || res.data.indicatorKey))
           ? res.data 
           : res;
 
-        console.group(`%c[PIADI-409] Respuesta recibida: ${backendKey}`, 'background: #10B981; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold;');
-        console.log('📥 Respuesta completa de la API (res):', res);
-        console.log('📊 Datos procesados (detail):', detail);
-        console.log('📋 Tabla de datos (table):', detail?.table);
-        console.log('🏷️ Allowed GroupBy:', detail?.allowedGroupBy);
-        console.log('🏷️ Dimension Labels:', detail?.dimensionLabels);
-        console.groupEnd();
-
         setApiIndicatorDetail(detail || null);
         setDrawerError(null);
       })
       .catch((err) => {
-        console.group(`%c[PIADI-409] Error cargando detalle: ${backendKey}`, 'background: #EF4444; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold;');
-        console.error('❌ Error capturado:', err);
-        console.log('📌 Parámetros que causaron el error:', params);
-        console.groupEnd();
-
         setApiIndicatorDetail(null);
         setDrawerError(err?.message || 'Error al obtener la información del indicador desde el servidor');
       })
@@ -1187,7 +1182,11 @@ export const useDashboardAdmision = () => {
     currentIndicatorKey,
     apiIndicatorDetail,
     drawerError,
-    drawerLoading
+    drawerLoading,
+    matTotalData,
+    drawerPeriod,
+    allYearsMatTotal,
+    availableYears
   ]);
 
   // Helper para detectar si las filas del indicador son por año simple
@@ -1198,6 +1197,19 @@ export const useDashboardAdmision = () => {
   // Filas a mostrar en la tabla según el período seleccionado
   const displayRows = useMemo(() => {
     if (!currentIndicator || !currentIndicator.rows) return [];
+    if (currentIndicatorKey === 'matricula-total') {
+      const dataSrc = allYearsMatTotal.length > 0 ? allYearsMatTotal : matTotalData;
+      if (dataSrc.length > 0) {
+        if (drawerSemesterFilter === '1') {
+          return dataSrc.map(d => [String(d.year), d.s1]);
+        }
+        if (drawerSemesterFilter === '2') {
+          return dataSrc.map(d => [String(d.year), d.s2]);
+        }
+        return dataSrc.map(d => [String(d.year), d.s1 + d.s2]);
+      }
+      return currentIndicator.rows;
+    }
     if (apiIndicatorDetail) {
       return currentIndicator.rows;
     }
@@ -1206,7 +1218,7 @@ export const useDashboardAdmision = () => {
     }
     const filtered = currentIndicator.rows.filter(r => String(r[0]) === drawerPeriod);
     return filtered.length > 0 ? filtered : currentIndicator.rows;
-  }, [currentIndicator, drawerPeriod, isSimpleYearRows, apiIndicatorDetail]);
+  }, [currentIndicator, drawerPeriod, isSimpleYearRows, apiIndicatorDetail, currentIndicatorKey, drawerSemesterFilter, allYearsMatTotal, matTotalData]);
 
   // Años disponibles para el selector del Drawer
   const drawerYears = useMemo(() => {
@@ -1349,6 +1361,8 @@ export const useDashboardAdmision = () => {
     handleDrawerPeriodChange,
     drawerGroupBy,
     setDrawerGroupBy,
+    drawerSemesterFilter,
+    setDrawerSemesterFilter,
     drawerYears,
     displayRows,
     drawerPeriodText,

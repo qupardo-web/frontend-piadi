@@ -14,63 +14,6 @@ export const CAT_COLORS = [
   '#3EC9FF', '#1FA8D9', '#2563EB', '#7C6FF0', '#4CD18F', '#F5A623', '#6B7280', '#0E86B8'
 ];
 
-export const INDICATORS = {
-  'proyectos-activos': {
-    title: 'Proyectos de innovación en curso',
-    desc: 'Número de proyectos activos durante el período. Se considera activo si el año de inicio es menor o igual al año de reporte y el año de término es mayor o igual.',
-    metric: { label: 'Proyectos en curso', value: 0 },
-    trend: { delta: 0, baseline: '2025' },
-    meta: { target: 20 },
-    rows: [],
-    state: 'data'
-  },
-  'proyectos-finalizados': {
-    title: 'Proyectos finalizados',
-    desc: 'Proyectos concluidos en el período, con resultados principales y evidencia de cierre.',
-    metric: { label: 'Proyectos finalizados', value: 0 },
-    trend: { delta: 0, baseline: '2025' },
-    meta: { target: 10 },
-    rows: [],
-    state: 'data'
-  },
-  'proyectos-areas': {
-    title: 'Áreas temáticas de innovación',
-    desc: 'Clasificación de proyectos según área temática: pedagógica, tecnológica, gestión institucional, inclusión, articulación TP, empleabilidad, tributaria/contable o sostenibilidad.',
-    metric: { label: 'Proyectos', value: 0 },
-    rows: [],
-    colLabels: ['Área temática', 'Proyectos'],
-    state: 'data'
-  },
-  'secciones': {
-    title: 'Secciones del curso de innovación',
-    desc: 'Número de secciones del curso Emprendimiento e Innovación por semestre.',
-    metric: { label: 'Secciones', value: 0 },
-    trend: { delta: 0, baseline: '2025' },
-    rows: [],
-    colLabels: ['Semestre', 'Secciones'],
-    state: 'data'
-  },
-  'docentes': {
-    title: 'Docentes/funcionarios involucrados',
-    desc: 'Número de personas institucionales que participan en proyectos de innovación durante el año.',
-    metric: { label: 'Personas', value: 0 },
-    trend: { delta: 0, baseline: '2025' },
-    meta: { target: 50 },
-    rows: [],
-    state: 'data'
-  },
-  'financiamiento': {
-    title: 'Proyectos con financiamiento externo',
-    desc: 'Proyectos con fondos concursables u otras fuentes externas.',
-    metric: { label: 'Proyectos FDI', value: 0 },
-    trend: { delta: 0, baseline: '2025' },
-    meta: { target: 8 },
-    rows: [],
-    colLabels: ['Año', 'Proyectos'],
-    state: 'data'
-  }
-};
-
 export const useDashboardInnovacion = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -111,11 +54,6 @@ export const useDashboardInnovacion = () => {
     'fin-externo': false
   });
 
-  // Estado del Drawer de Indicador
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [currentIndicatorKey, setCurrentIndicatorKey] = useState('proyectos-activos');
-  const [drawerPeriodIndex, setDrawerPeriodIndex] = useState(YEARS.length - 1);
-  const [drawerLoading, setDrawerLoading] = useState(false);
   const [periodoAcumulado, setPeriodoAcumulado] = useState(false);
 
   // Estados de API y carga real
@@ -510,30 +448,6 @@ export const useDashboardInnovacion = () => {
     }));
   }, []);
 
-  // Manejo de apertura de Drawer
-  const handleOpenIndicator = useCallback((key) => {
-    setCurrentIndicatorKey(key || 'proyectos-activos');
-    setDrawerPeriodIndex(YEARS.length - 1);
-    setDrawerLoading(true);
-    setDrawerOpen(true);
-
-    setTimeout(() => {
-      setDrawerLoading(false);
-    }, 350);
-  }, []);
-
-  const handleCloseDrawer = useCallback(() => {
-    setDrawerOpen(false);
-  }, []);
-
-  const handleDrawerStep = useCallback((dir) => {
-    setDrawerPeriodIndex(prev => {
-      const next = prev + dir;
-      if (next < 0 || next >= YEARS.length) return prev;
-      return next;
-    });
-  }, []);
-
   const handleDrawerToggle = () => setMobileOpen(prev => !prev);
 
   // FAQ Data
@@ -548,7 +462,7 @@ export const useDashboardInnovacion = () => {
     },
     {
       q: '¿Cómo interactúo con los gráficos?',
-      a: 'Puedes hacer clic en cualquier tarjeta KPI o barra/segmento de los gráficos para abrir el panel de detalle lateral con su tabla histórica y métricas asociadas.'
+      a: 'Puedes utilizar los controles del panel lateral de filtros para segmentar los datos por año, estado del proyecto, área temática o fuente de financiamiento.'
     }
   ];
 
@@ -576,13 +490,6 @@ export const useDashboardInnovacion = () => {
     handleToggleAccordion,
     collapsedSections,
     handleToggleSection,
-    drawerOpen,
-    currentIndicator: INDICATORS[currentIndicatorKey] || INDICATORS['proyectos-activos'],
-    drawerPeriodIndex,
-    drawerLoading,
-    handleOpenIndicator,
-    handleCloseDrawer,
-    handleDrawerStep,
     faqData,
     apiLoading,
     apiFilters,

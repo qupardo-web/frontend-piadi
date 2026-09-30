@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Divider,
-  Drawer,
   IconButton,
   Slider,
   Accordion,
@@ -120,13 +119,6 @@ export const DashboardInnovacion = () => {
     handleToggleAccordion,
     collapsedSections,
     handleToggleSection,
-    drawerOpen,
-    currentIndicator,
-    drawerPeriodIndex,
-    drawerLoading,
-    handleOpenIndicator,
-    handleCloseDrawer,
-    handleDrawerStep,
     faqData,
     apiLoading,
     apiFilters,
@@ -221,7 +213,6 @@ export const DashboardInnovacion = () => {
             compareText={kpis.activos.compareText}
             evolution={kpis.activos.evo}
             isPositive={kpis.activos.isPositive}
-            onClick={() => handleOpenIndicator('proyectos-activos')}
           />
 
           <KpiCard
@@ -234,7 +225,6 @@ export const DashboardInnovacion = () => {
             compareText={kpis.finalizados.compareText}
             evolution={kpis.finalizados.evo}
             isPositive={kpis.finalizados.isPositive}
-            onClick={() => handleOpenIndicator('proyectos-finalizados')}
           />
 
           <KpiCard
@@ -247,7 +237,6 @@ export const DashboardInnovacion = () => {
             compareText={kpis.docentes.compareText}
             evolution={kpis.docentes.evo}
             isPositive={kpis.docentes.isPositive}
-            onClick={() => handleOpenIndicator('docentes')}
           />
         </Box>
 
@@ -692,134 +681,6 @@ export const DashboardInnovacion = () => {
           </Accordion>
         )}
       </DashboardFilterSidebar>
-
-      {/* DRAWER MODAL: DETALLE DEL INDICADOR */}
-      <Box sx={styles.drawerOverlay(drawerOpen)} onClick={handleCloseDrawer} />
-      <Box component="aside" sx={styles.indicatorDrawer(drawerOpen)}>
-        <Box sx={styles.drawerHeader}>
-          <Box sx={styles.drawerTitleRow}>
-            <Typography sx={styles.drawerTitle}>
-              {currentIndicator.title}
-            </Typography>
-            <IconButton size="small" onClick={handleCloseDrawer}>
-              <CloseIcon sx={{ fontSize: '20px' }} />
-            </IconButton>
-          </Box>
-        </Box>
-
-        <Box sx={styles.drawerBody}>
-          {drawerLoading ? (
-            <Box sx={{ py: 6, textAlign: 'center', color: '#9E9E9E' }}>
-              <Typography variant="body2">Cargando detalles del indicador...</Typography>
-            </Box>
-          ) : (
-            <>
-              {currentIndicator.desc && (
-                <Box>
-                  <Typography sx={styles.drawerDescLabel}>Qué mide</Typography>
-                  <Typography sx={styles.drawerDesc}>{currentIndicator.desc}</Typography>
-                </Box>
-              )}
-
-              {currentIndicator.metric && (
-                <Box sx={styles.drawerMetricBox}>
-                  <Typography sx={styles.drawerMetricLabel}>
-                    {currentIndicator.metric.label}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
-                    <Typography sx={styles.drawerMetricValue}>
-                      {Number(currentIndicator.metric.value).toLocaleString('es-CL')}
-                    </Typography>
-                    {currentIndicator.trend && (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: currentIndicator.trend.delta >= 0 ? '#059669' : '#dc2626',
-                          fontWeight: 700,
-                          fontSize: '12px',
-                        }}
-                      >
-                        {currentIndicator.trend.delta >= 0 ? '▲ +' : '▼ -'}
-                        {Math.abs(currentIndicator.trend.delta)} vs {currentIndicator.trend.baseline}
-                      </Typography>
-                    )}
-                  </Box>
-
-                  {currentIndicator.meta && (
-                    <Box sx={styles.drawerMetaBadge(currentIndicator.metric.value >= currentIndicator.meta.target)}>
-                      <CheckCircleOutline sx={{ fontSize: '15px' }} />
-                      {currentIndicator.metric.value >= currentIndicator.meta.target
-                        ? 'Meta cumplida'
-                        : `Meta en curso (${Math.round((currentIndicator.metric.value / currentIndicator.meta.target) * 100)}%)`}
-                    </Box>
-                  )}
-                </Box>
-              )}
-
-              {currentIndicator.rows && (
-                <Box sx={styles.drawerTableWrap}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', fontFamily: 'Inter' }}>
-                    <thead>
-                      <tr style={{ background: '#F5F5F5', borderBottom: '1px solid #E0E0E0' }}>
-                        {(currentIndicator.colLabels || ['Período', 'Valor']).map((col, idx) => (
-                          <th
-                            key={idx}
-                            style={{
-                              padding: '8px 12px',
-                              textAlign: idx === 0 ? 'left' : 'right',
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                              color: '#9E9E9E',
-                            }}
-                          >
-                            {col}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentIndicator.rows.map((row, rIdx) => (
-                        <tr key={rIdx} style={{ borderBottom: '1px solid #E5E7EB' }}>
-                          <td style={{ padding: '8px 12px', color: '#212121', fontWeight: 500 }}>{row[0]}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', color: '#212121', fontWeight: 600 }}>
-                            {typeof row[1] === 'number' ? row[1].toLocaleString('es-CL') : row[1]}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </Box>
-              )}
-            </>
-          )}
-        </Box>
-
-        <Box sx={styles.drawerFooter}>
-          <CalendarIcon sx={{ fontSize: '16px' }} />
-          <span>Período visualizado: Años: 2023 a 2026</span>
-          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <IconButton
-              size="small"
-              disabled={drawerPeriodIndex <= 0}
-              onClick={() => handleDrawerStep(-1)}
-            >
-              ◀
-            </IconButton>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: '#212121', px: 0.5 }}>
-              {YEARS[drawerPeriodIndex]}
-            </Typography>
-            <IconButton
-              size="small"
-              disabled={drawerPeriodIndex >= YEARS.length - 1}
-              onClick={() => handleDrawerStep(1)}
-            >
-              ▶
-            </IconButton>
-          </Box>
-        </Box>
-      </Box>
-
 
       {/* BOTÓN FLOTANTE DE CENTRO DE AYUDA (?) */}
       <IconButton
