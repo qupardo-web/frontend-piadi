@@ -1,7 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
-import { getDashboardSummary, getDepartmentFilters, getMetas } from '../../../services/piadiApi';
+import { 
+  getDashboardSummary, 
+  getDepartmentFilters, 
+  getMetas, 
+  getIndicatorBreakdown 
+} from '../../../services/piadiApi';
 
 // Mapeo de colores específicos por departamento.
 export const DEPARTMENT_COLORS = {
@@ -30,6 +35,10 @@ export const useLandingPage = () => {
     admision: []
   });
   const [allMetas, setAllMetas] = useState([]);
+  const [admisionBreakdowns, setAdmisionBreakdowns] = useState({
+    viaAcceso: null,
+    nuevosAntiguos: null
+  });
 
   // 1. Initial fetch: Load departments, filters and metas on mount
   useEffect(() => {
@@ -98,9 +107,12 @@ export const useLandingPage = () => {
     if (!activeYear) return;
     Promise.all([
       getDashboardSummary({ year: activeYear }).catch(() => null),
-      getDashboardSummary({ year: activeYear - 1 }).catch(() => null)
+      getDashboardSummary({ year: activeYear - 1 }).catch(() => null),
+      getIndicatorBreakdown('via_acceso', { department: 'admision', year: String(activeYear), groupBy: 'viaAcceso' }).catch(() => null),
+      getIndicatorBreakdown('nuevos_vs_antiguos', { department: 'admision', year: String(activeYear), groupBy: 'nuevoAntiguo' }).catch(() => null),
+      getIndicatorBreakdown('nuevos_vs_antiguos', { department: 'admision', year: String(activeYear - 1), groupBy: 'nuevoAntiguo' }).catch(() => null)
     ])
-      .then(([resActive, resPrev]) => {
+      .then(([resActive, resPrev, resVia, resNuevos, resPrevNuevos]) => {
         const allowedDepts = ['educacion_continua', 'vinculacion_medio', 'innovacion', 'admision'];
         if (resActive?.success && resActive.data) {
           const filteredActive = (resActive.data.departments ?? []).filter(d => 
@@ -114,6 +126,11 @@ export const useLandingPage = () => {
           );
           setPrevYearDepartments(filteredPrev);
         }
+        setAdmisionBreakdowns({
+          viaAcceso: resVia?.data || null,
+          nuevosAntiguos: resNuevos?.data || null,
+          prevNuevosAntiguos: resPrevNuevos?.data || null
+        });
       })
       .catch(() => {});
   }, [activeYear]);
@@ -151,7 +168,7 @@ export const useLandingPage = () => {
       admision: [
         { key: 'matricula_total', label: 'Matrícula total', targetHash: 'matricula-total' },
         { key: 'nuevos_vs_antiguos', label: 'Nuevos vs antiguos', targetHash: 'nuevos-antiguos' },
-        { key: 'via_acceso', label: 'Vía de acceso principal', targetHash: 'via-acceso' }
+        { key: 'via_acceso', label: 'Vía de acceso principal', targetHash: 'via-acceso-kpi' }
       ]
     };
 
@@ -195,6 +212,48 @@ export const useLandingPage = () => {
         displayValue = cardActiveYear.formattedValue ?? (cardActiveYear.value !== null && cardActiveYear.value !== undefined ? cardActiveYear.value : '0');
       }
 
+      // Personalizaciones específicas para tarjetas de Admisión
+      if (currentDepartment?.departmentId === 'admision') {
+        if (kpiConfig.key === 'via_acceso') {
+          const viaItems = admisionBreakdowns.viaAcceso?.items || [];
+          if (viaItems.length > 0) {
+            const sorted = [...viaItems].sort((a, b) => b.value - a.value);
+            const topItem = sorted[0];
+            const totalVia = sorted.reduce((acc, v) => acc + (Number(v.value) || 0), 0);
+            const pct = totalVia > 0 ? ((topItem.value / totalVia) * 100).toFixed(1) : '0';
+            displayValue = topItem.label;
+            trend = `+${pct}%`;
+            trendDesc = `${topItem.value.toLocaleString('es-CL')} de ${totalVia.toLocaleString('es-CL')} estudiantes (${pct}%)`;
+          } else if (hasCardData && valActiveYear !== null) {
+            displayValue = 'PAES';
+            trend = '';
+            trendDesc = `${typeof valActiveYear === 'number' ? valActiveYear.toLocaleString('es-CL') : valActiveYear} estudiantes`;
+          }
+        } else if (kpiConfig.key === 'nuevos_vs_antiguos') {
+          const nuevosItems = admisionBreakdowns.nuevosAntiguos?.items || [];
+          const prevNuevosItems = admisionBreakdowns.prevNuevosAntiguos?.items || [];
+          if (nuevosItems.length > 0) {
+            const nuevosItem = nuevosItems.find(i => String(i.label).toLowerCase().includes('nuevo')) || nuevosItems[0];
+            const totalEst = nuevosItems.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            const pct = totalEst > 0 ? ((nuevosItem.value / totalEst) * 100).toFixed(1) : '0';
+            displayValue = `${pct}%`;
+
+            const prevNuevosItem = prevNuevosItems.find(i => String(i.label).toLowerCase().includes('nuevo')) || prevNuevosItems[0];
+            const currentNuevosVal = Number(nuevosItem?.value) || 0;
+            const prevNuevosVal = Number(prevNuevosItem?.value) || 0;
+
+            if (prevNuevosVal > 0 && currentNuevosVal > 0) {
+              const diff = (((currentNuevosVal - prevNuevosVal) / prevNuevosVal) * 100).toFixed(1);
+              trend = Number(diff) >= 0 ? `+${diff}%` : `${diff}%`;
+            } else {
+              trend = '';
+            }
+
+            trendDesc = `nuevos (${nuevosItem.value.toLocaleString('es-CL')}) sobre matrícula total (${totalEst.toLocaleString('es-CL')})`;
+          }
+        }
+      }
+
       return {
         title: kpiConfig.label,
         value: displayValue,
@@ -215,7 +274,7 @@ export const useLandingPage = () => {
       metas: filteredMetas,
       hasData: deptHasAnyData,
     };
-  }, [currentDepartment, prevYearDepartments, activeYear, allMetas]);
+  }, [currentDepartment, prevYearDepartments, activeYear, allMetas, admisionBreakdowns]);
   
   // Obtiene el color de fondo personalizado para este departamento
   const deptColor = DEPARTMENT_COLORS[currentData.departmentId] || '#1E2875';

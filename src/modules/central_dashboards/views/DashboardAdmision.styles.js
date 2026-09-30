@@ -297,11 +297,12 @@ export const styles = {
 
   drawerMetricValue: {
     fontFamily: "'Inter', sans-serif",
-    fontSize: '28px',
+    fontSize: '24px',
     fontWeight: 700,
     color: '#1E2875',
     letterSpacing: '-0.02em',
-    lineHeight: 1.15,
+    lineHeight: 1.2,
+    wordBreak: 'break-word',
   },
 
   drawerMetaBadge: (isPositive) => ({

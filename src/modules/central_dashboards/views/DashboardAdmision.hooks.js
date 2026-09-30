@@ -5,10 +5,54 @@ import {
   getDepartmentFilters, 
   getDashboardSummary, 
   getIndicatorSeries, 
-  getIndicatorBreakdown 
+  getIndicatorBreakdown,
+  getIndicatorDetail
 } from '../../../services/piadiApi';
 
+export const UI_TO_BACKEND_KEY = {
+  'matricula-total': 'matricula_total',
+  'nuevos-antiguos': 'nuevos_vs_antiguos',
+  'via-acceso-kpi': 'via_acceso',
+  'via-acceso': 'via_acceso',
+  'matricula-asignatura': 'matricula_por_asignatura',
+  'matricula-seccion': 'matricula_por_seccion',
+  'estado-academico': 'matricula_por_estado_academico',
+  'nivel-socioeconomico': 'nivel_socioeconomico',
+  'situacion-familiar': 'situacion_familiar',
+  'procedencia-geografica': 'procedencia_geografica',
+  'tipo-colegio': 'tipo_colegio',
+  'beneficios-becas': 'beneficios_becas',
+  'distribucion-sexo': 'distribucion_sexo',
+  'distribucion-edad': 'rango_etario',
+};
+
+export const INDICATOR_SPECIFIC_DIMENSION = {
+  'matricula-total': null,
+  'nuevos-antiguos': 'nuevoAntiguo',
+  'via-acceso-kpi': 'viaAcceso',
+  'via-acceso': 'viaAcceso',
+  'matricula-asignatura': 'asignatura',
+  'matricula-seccion': 'seccion',
+  'estado-academico': 'estadoAcademico',
+  'nivel-socioeconomico': 'nivelSocioeconomico',
+  'situacion-familiar': 'situacionFamiliar',
+  'procedencia-geografica': 'region',
+  'tipo-colegio': 'tipoColegio',
+  'beneficios-becas': 'beneficios',
+  'distribucion-sexo': 'sexo',
+  'distribucion-edad': 'rangoEtario',
+};
+
 export const YEARS = [2023, 2024, 2025, 2026];
+
+export const formatSexoLabel = (raw) => {
+  if (!raw) return 'OTROS';
+  const str = String(raw).trim().toUpperCase();
+  if (str === 'M' || str === 'MASCULINO') return 'MASCULINO';
+  if (str === 'F' || str === 'FEMENINO') return 'FEMENINO';
+  if (str === 'O' || str === 'OTRO' || str === 'OTROS') return 'OTROS';
+  return str;
+};
 
 export const CAT_COLORS = [
   '#171796', '#5151CC', '#8181DE', '#8A4BD6', '#C24BC9', '#3E8FD9', '#2FB8A6', '#E0A63B'
@@ -22,115 +66,98 @@ export const INDICATORS = {
   'matricula-total': {
     title: 'Matrícula total por período',
     desc: 'Matrícula total de la carrera Contador Auditor al cierre de cada período, desagregada por semestre. Se calcula sumando los estudiantes matriculados en Semestre 1 y Semestre 2 de cada año.',
-    metric: { label: 'Matrícula total 2026', value: 980 },
-    trend: { delta: 70, baseline: '2025', isPositive: true },
-    rows: [['2023', 800], ['2024', 850], ['2025', 910], ['2026', 980]],
-    colLabels: ['Período', 'Matrícula'],
+    metric: { label: 'Matrícula total', value: null },
+    colLabels: ['Año', 'Matrícula'],
     state: 'data'
   },
   'nuevos-antiguos': {
     title: 'Matrícula nuevos vs antiguos',
     desc: 'Comparación entre estudiantes que ingresan por primera vez (nuevos) y estudiantes que continúan (antiguos) en cada período.',
-    metric: { label: 'Estudiantes nuevos 2026', value: 340 },
-    trend: { delta: 20, baseline: '2025', isPositive: true },
-    rows: [['2023', 280], ['2024', 300], ['2025', 320], ['2026', 340]],
-    colLabels: ['Período', 'Nuevos'],
+    metric: { label: 'Estudiantes nuevos', value: null },
+    colLabels: ['Tipo de estudiante', 'Estudiantes'],
     state: 'data'
   },
   'via-acceso-kpi': {
     title: 'Vía de acceso principal',
     desc: 'Mecanismo por el cual el estudiante ingresó a la carrera. PAES corresponde a la vía de ingreso regular mayoritaria.',
-    metric: { label: 'Ingreso regular PAES', value: 610 },
-    trend: { delta: 35, baseline: '2025', isPositive: true },
-    rows: [['PAES', 610], ['Admisión especial', 180], ['Traspaso', 120], ['Continuidad', 70]],
+    metric: { label: 'Ingreso regular PAES', value: null },
     colLabels: ['Vía de acceso', 'Estudiantes'],
     state: 'data'
   },
   'matricula-asignatura': {
     title: 'Matrícula por asignatura',
     desc: 'Número de estudiantes inscritos en cada asignatura del plan de estudios. Ordenado de mayor a menor matrícula.',
-    metric: { label: 'Asignaturas con matrícula', value: 7 },
-    rows: [['Contabilidad I', 180], ['Contabilidad II', 160], ['Auditoría', 150], ['Tributación', 130], ['Costos', 120], ['Derecho Tributario', 100], ['Finanzas', 90]],
+    metric: { label: 'Asignaturas con matrícula', value: null },
     colLabels: ['Asignatura', 'Estudiantes'],
     state: 'data'
   },
   'matricula-seccion': {
     title: 'Matrícula por sección',
     desc: 'Distribución de estudiantes por sección de la carrera. Permite dimensionar el tamaño de cada grupo-curso.',
-    metric: { label: 'Secciones activas', value: 6 },
-    rows: [['Sección A', 45], ['Sección B', 42], ['Sección C', 40], ['Sección D', 38], ['Sección E', 35], ['Sección F', 30]],
+    metric: { label: 'Secciones activas', value: null },
     colLabels: ['Sección', 'Estudiantes'],
     state: 'data'
   },
   'estado-academico': {
     title: 'Matrícula por estado académico',
     desc: 'Clasificación de los estudiantes según su situación académica vigente al cierre del período.',
-    metric: { label: 'Estudiantes regulares', value: 820 },
-    rows: [['Regular', 820], ['En riesgo', 110], ['Suspendido', 30], ['Egresado', 20]],
+    metric: { label: 'Estudiantes regulares', value: null },
     colLabels: ['Estado', 'Estudiantes'],
     state: 'data'
   },
   'nivel-socioeconomico': {
     title: 'Nivel socioeconómico (quintiles)',
     desc: 'Distribución de estudiantes según quintil de ingreso del hogar, estimado a partir de la ficha socioeconómica de admisión.',
-    metric: { label: 'Estudiantes caracterizados', value: 980 },
-    rows: [['Quintil I', 120], ['Quintil II', 180], ['Quintil III', 260], ['Quintil IV', 240], ['Quintil V', 180]],
+    metric: { label: 'Estudiantes caracterizados', value: null },
     colLabels: ['Quintil', 'Estudiantes'],
     state: 'data'
   },
   'situacion-familiar': {
     title: 'Situación familiar',
     desc: 'Composición del hogar declarada por el estudiante al momento de la matrícula.',
-    metric: { label: 'Estudiantes', value: 980 },
-    rows: [['Ambos padres', 380], ['Solo madre', 320], ['Solo padre', 140], ['Otro familiar', 90], ['Independiente', 50]],
+    metric: { label: 'Estudiantes', value: null },
     colLabels: ['Situación', 'Estudiantes'],
     state: 'data'
   },
   'procedencia-geografica': {
     title: 'Procedencia geográfica',
     desc: 'Región de origen de los estudiantes matriculados. Se muestra el ranking de regiones con mayor matrícula.',
-    metric: { label: 'Regiones representadas', value: 6 },
-    rows: [['Metropolitana', 420], ['Valparaíso', 180], ['Biobío', 150], ['Maule', 90], ['Coquimbo', 70], ["O'Higgins", 70]],
+    metric: { label: 'Regiones representadas', value: null },
     colLabels: ['Región', 'Estudiantes'],
     state: 'data'
   },
   'tipo-colegio': {
     title: 'Tipo de colegio',
     desc: 'Dependencia administrativa del establecimiento de educación media de origen.',
-    metric: { label: 'Estudiantes', value: 980 },
-    rows: [['Municipal', 380], ['Subvencionado', 420], ['Particular', 180]],
+    metric: { label: 'Estudiantes', value: null },
     colLabels: ['Tipo de colegio', 'Estudiantes'],
     state: 'data'
   },
   'via-acceso': {
     title: 'Vía de acceso',
     desc: 'Mecanismo por el cual el estudiante ingresó a la carrera. PAES corresponde a la admisión regular.',
-    metric: { label: 'Ingreso vía PAES', value: 610 },
-    rows: [['PAES', 610], ['Admisión especial', 180], ['Traspaso', 120], ['Continuidad', 70]],
+    metric: { label: 'Ingreso vía PAES', value: null },
     colLabels: ['Vía de acceso', 'Estudiantes'],
     state: 'data'
   },
   'beneficios-becas': {
     title: 'Beneficios y becas',
     desc: 'Tipo de beneficio estudiantil asignado al momento de la matrícula (gratuidad, beca interna o sin beneficio).',
-    metric: { label: 'Estudiantes con beneficio', value: 530 },
-    rows: [['Gratuidad', 380], ['Beca interna', 150], ['Sin beneficio', 450]],
+    metric: { label: 'Estudiantes con beneficio', value: null },
     colLabels: ['Beneficio', 'Estudiantes'],
     state: 'data'
   },
   'distribucion-sexo': {
     title: 'Distribución por sexo',
     desc: 'Composición de la matrícula según sexo registrado.',
-    metric: { label: 'Matrícula femenina', value: 560 },
-    rows: [['Femenino', 560], ['Masculino', 420]],
+    metric: { label: 'Matrícula femenina', value: null },
     colLabels: ['Sexo', 'Estudiantes'],
     state: 'data'
   },
   'distribucion-edad': {
     title: 'Distribución por edad',
     desc: 'Distribución de estudiantes por rango de edad al momento de la matrícula.',
-    metric: { label: 'Estudiantes', value: 980 },
-    rows: [['17–18', 180], ['19–20', 320], ['21–22', 260], ['23–25', 140], ['26+', 80]],
+    metric: { label: 'Estudiantes', value: null },
     colLabels: ['Rango de edad', 'Estudiantes'],
     state: 'data'
   }
@@ -188,62 +215,206 @@ export const useDashboardAdmision = () => {
     'car-edad': false
   });
 
-  // Drawer de Detalle del indicador
+  // Drawer de Detalle del indicador (PIADI-409)
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentIndicatorKey, setCurrentIndicatorKey] = useState('matricula-total');
-  const [drawerPeriod, setDrawerPeriod] = useState('all');
+  const [drawerPeriod, setDrawerPeriod] = useState('2026');
+  const [drawerGroupBy, setDrawerGroupBy] = useState(null);
   const [drawerLoading, setDrawerLoading] = useState(false);
+  const [drawerError, setDrawerError] = useState(null);
+  const [apiIndicatorDetail, setApiIndicatorDetail] = useState(null);
 
-  // Estados de API
+  // Estados de API para Admisión
   const [apiLoading, setApiLoading] = useState(false);
   const [apiFilters, setApiFilters] = useState(null);
-  const [apiDataAvailable, setApiDataAvailable] = useState(false);
+  const [apiSummary, setApiSummary] = useState(null);
+  const [apiPrevSummary, setApiPrevSummary] = useState(null);
 
-  // Carga inicial de filtros
+  // Series y breakdowns
+  const [apiMatTotalSeries, setApiMatTotalSeries] = useState(null);
+  const [apiMatNuevosSeries, setApiMatNuevosSeries] = useState(null);
+  const [apiMatAsignaturaBreakdown, setApiMatAsignaturaBreakdown] = useState(null);
+  const [apiMatSeccionBreakdown, setApiMatSeccionBreakdown] = useState(null);
+  const [apiMatEstadoBreakdown, setApiMatEstadoBreakdown] = useState(null);
+  const [apiCarNseBreakdown, setApiCarNseBreakdown] = useState(null);
+  const [apiCarFamiliarBreakdown, setApiCarFamiliarBreakdown] = useState(null);
+  const [apiCarRegionBreakdown, setApiCarRegionBreakdown] = useState(null);
+  const [apiCarColegioBreakdown, setApiCarColegioBreakdown] = useState(null);
+  const [apiCarViaBreakdown, setApiCarViaBreakdown] = useState(null);
+  const [apiCarBecasBreakdown, setApiCarBecasBreakdown] = useState(null);
+  const [apiCarSexoBreakdown, setApiCarSexoBreakdown] = useState(null);
+  const [apiCarEdadBreakdown, setApiCarEdadBreakdown] = useState(null);
+
+  // Carga inicial de filtros desde la API
   useEffect(() => {
     getDepartmentFilters('admision')
-      .then(res => {
+      .then((res) => {
         if (res?.data?.filters) {
           setApiFilters(res.data.filters);
           const years = res.data.filters.years ?? [];
           if (years.length > 0) {
-            setYearRange([Math.min(...years), Math.max(...years)]);
+            const min = Math.min(...years);
+            const max = Math.max(...years);
+            setYearRange([min, max]);
+            setDrawerPeriod(String(max));
           }
         }
       })
-      .catch(() => {
-        // Fallback sin error ruidoso
+      .catch((err) => {
+        console.error('Error cargando filtros del departamento Admisión:', err);
       });
   }, []);
 
-  // Fetch de datos del dashboard desde la API con fallback simulado
-  useEffect(() => {
-    setApiLoading(true);
-    const params = {
-      department: 'admision',
-      fromYear: String(yearRange[0]),
-      toYear: String(yearRange[1]),
-    };
-    if (yearRange[0] === yearRange[1]) {
-      params.year = String(yearRange[0]);
-      delete params.fromYear;
-      delete params.toYear;
+  // Parámetros calculados para las peticiones API
+  const apiParams = useMemo(() => {
+    const params = { department: 'admision' };
+    const desde = yearRange[0];
+    const hasta = yearRange[1];
+    
+    if (desde === hasta) {
+      params.year = String(desde);
+    } else {
+      params.fromYear = String(desde);
+      params.toYear = String(hasta);
     }
 
-    getDashboardSummary(params)
-      .then(res => {
-        if (res?.data) {
-          setApiDataAvailable(true);
-        }
+    if (selectedChips.semestre.length > 0) {
+      params.periodo = selectedChips.semestre.join(',');
+    }
+    if (selectedChips.estado.length > 0) {
+      params.estadoAcademico = selectedChips.estado.join(',');
+    }
+    if (selectedChips.colegio.length > 0) {
+      params.tipoColegio = selectedChips.colegio.join(',');
+    }
+    if (selectedChips.via.length > 0) {
+      params.viaAcceso = selectedChips.via.join(',');
+    }
+    if (selectedChips.sexo.length > 0) {
+      params.sexo = selectedChips.sexo.join(',');
+    }
+    if (selectedChips.nse.length > 0) {
+      params.nivelSocioeconomico = selectedChips.nse.join(',');
+    }
+
+    return params;
+  }, [yearRange, selectedChips]);
+
+  // Carga de datos reales desde la API
+  useEffect(() => {
+    setApiLoading(true);
+
+    const desde = yearRange[0];
+    const hasta = yearRange[1];
+    const years = apiFilters?.years ?? [2023, 2024, 2025, 2026];
+    const minAvailableYear = years.length > 0 ? Math.min(...years) : 2023;
+
+    const seriesParams = { ...apiParams };
+    delete seriesParams.year;
+    seriesParams.fromYear = String(desde);
+    seriesParams.toYear = String(hasta);
+
+    const prevYear = desde > minAvailableYear ? desde - 1 : null;
+    const prevParams = prevYear ? { ...apiParams, year: String(prevYear), fromYear: undefined, toYear: undefined } : null;
+
+    const baseBreakdownParams = { ...apiParams };
+    delete baseBreakdownParams.fromYear;
+    delete baseBreakdownParams.toYear;
+
+    const fetchBreakdown = (key, groupBy) => {
+      if (desde === hasta) {
+        return getIndicatorBreakdown(key, { ...baseBreakdownParams, year: String(desde), groupBy }).catch(() => null);
+      }
+      const yearsInRange = (apiFilters?.years ?? [2023, 2024, 2025, 2026]).filter(y => y >= desde && y <= hasta);
+      return Promise.all(
+        yearsInRange.map(y => getIndicatorBreakdown(key, { ...baseBreakdownParams, year: String(y), groupBy }).catch(() => null))
+      ).then(responses => {
+        const map = {};
+        responses.forEach(res => {
+          const items = res?.data?.items || res?.items || [];
+          items.forEach(item => {
+            const label = item.label || item.categoria || '';
+            const val = Number(item.value) || 0;
+            if (label && val > 0) {
+              map[label] = (map[label] || 0) + val;
+            }
+          });
+        });
+        const items = Object.entries(map).map(([label, value]) => ({ label, value }));
+        return { data: { items }, success: true };
+      });
+    };
+
+    Promise.all([
+      getDashboardSummary(apiParams).catch(() => null),
+      prevParams ? getDashboardSummary(prevParams).catch(() => null) : Promise.resolve(null),
+      getIndicatorSeries('matricula_total', { ...seriesParams, groupBy: 'periodo' }).catch(() => null),
+      getIndicatorSeries('nuevos_vs_antiguos', { ...seriesParams, groupBy: 'nuevoAntiguo' }).catch(() => null),
+      fetchBreakdown('matricula_por_asignatura', 'asignatura'),
+      fetchBreakdown('matricula_por_seccion', 'seccion'),
+      fetchBreakdown('matricula_por_estado_academico', 'estadoAcademico'),
+      fetchBreakdown('nivel_socioeconomico', 'nivelSocioeconomico'),
+      fetchBreakdown('situacion_familiar', 'situacionFamiliar'),
+      fetchBreakdown('procedencia_geografica', 'region'),
+      fetchBreakdown('tipo_colegio', 'tipoColegio'),
+      fetchBreakdown('via_acceso', 'viaAcceso'),
+      fetchBreakdown('beneficios_becas', 'beneficios'),
+      fetchBreakdown('distribucion_sexo', 'sexo'),
+      fetchBreakdown('rango_etario', 'rangoEtario'),
+    ])
+      .then(([
+        summary,
+        prevSummary,
+        matTotalSeries,
+        matNuevosSeries,
+        matAsignatura,
+        matSeccion,
+        matEstado,
+        carNse,
+        carFamiliar,
+        carRegion,
+        carColegio,
+        carVia,
+        carBecas,
+        carSexo,
+        carEdad
+      ]) => {
+        setApiSummary(summary?.data || null);
+        setApiPrevSummary(prevSummary?.data || null);
+        setApiMatTotalSeries(matTotalSeries?.data || null);
+        setApiMatNuevosSeries(matNuevosSeries?.data || null);
+        setApiMatAsignaturaBreakdown(matAsignatura?.data || null);
+        setApiMatSeccionBreakdown(matSeccion?.data || null);
+        setApiMatEstadoBreakdown(matEstado?.data || null);
+        setApiCarNseBreakdown(carNse?.data || null);
+        setApiCarFamiliarBreakdown(carFamiliar?.data || null);
+        setApiCarRegionBreakdown(carRegion?.data || null);
+        setApiCarColegioBreakdown(carColegio?.data || null);
+        setApiCarViaBreakdown(carVia?.data || null);
+        setApiCarBecasBreakdown(carBecas?.data || null);
+        setApiCarSexoBreakdown(carSexo?.data || null);
+        setApiCarEdadBreakdown(carEdad?.data || null);
+
+        // Registro en consola para depuración de Distribución por Edad y Sexo
+        console.group('%c[DashboardAdmision] Depuración: Distribución por Sexo', 'background: #10B981; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold;');
+        console.log('📌 Parámetros enviados a la API (baseBreakdownParams):', baseBreakdownParams);
+        console.log('📥 Respuesta cruda de la API (carSexo):', carSexo);
+        console.log('📊 Items de carSexo?.data?.items:', carSexo?.data?.items);
+        console.groupEnd();
+
+        console.group('%c[DashboardAdmision] Depuración: Distribución por Edad', 'background: #1E2875; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold;');
+        console.log('📌 Parámetros enviados a la API (baseBreakdownParams):', baseBreakdownParams);
+        console.log('📥 Respuesta cruda de la API (carEdad):', carEdad);
+        console.log('📊 Items de carEdad?.data?.items:', carEdad?.data?.items);
+        console.groupEnd();
       })
-      .catch(() => {
-        // Backend no tiene aún el endpoint de admision configurado, usamos dataset reactivo
-        setApiDataAvailable(false);
+      .catch((err) => {
+        console.error('Error cargando métricas de Admisión:', err);
       })
       .finally(() => {
         setApiLoading(false);
       });
-  }, [yearRange, selectedChips]);
+  }, [apiParams, apiFilters, yearRange]);
 
   // Manejadores de interacción
   const handleDrawerToggle = useCallback(() => {
@@ -279,34 +450,67 @@ export const useDashboardAdmision = () => {
       nse: []
     });
     setPeriodoAcumulado(false);
-    setYearRange([2023, 2026]);
-  }, []);
+    const years = apiFilters?.years ?? YEARS;
+    if (years.length > 0) {
+      setYearRange([Math.min(...years), Math.max(...years)]);
+    } else {
+      setYearRange([2023, 2026]);
+    }
+  }, [apiFilters]);
 
-  // Helper para detectar si las filas del indicador son por año simple
-  const isSimpleYearRows = useCallback((ind) => {
-    return ind?.rows && ind.rows.length > 0 && ind.rows.every(r => /^\d{4}$/.test(String(r[0])));
-  }, []);
+  // Determinar si existen datos reales cargados en la base de datos
+  const hasRealData = useMemo(() => {
+    const hasSummaryData = Boolean(
+      apiSummary?.departments?.some(d => 
+        d.departmentId === 'admision' && d.cards?.some(c => c.hasData && c.value > 0)
+      )
+    );
+    const hasSeries = Boolean(
+      (apiMatTotalSeries?.series?.some(s => s.points?.some(p => p.value > 0))) ||
+      (apiMatTotalSeries?.points?.some(p => p.value > 0)) ||
+      (apiMatNuevosSeries?.series?.some(s => s.points?.some(p => p.value > 0)))
+    );
+    const hasBreakdowns = Boolean(
+      (apiMatAsignaturaBreakdown?.items?.some(i => i.value > 0)) ||
+      (apiMatSeccionBreakdown?.items?.some(i => i.value > 0)) ||
+      (apiMatEstadoBreakdown?.items?.some(i => i.value > 0)) ||
+      (apiCarNseBreakdown?.items?.some(i => i.value > 0)) ||
+      (apiCarFamiliarBreakdown?.items?.some(i => i.value > 0)) ||
+      (apiCarRegionBreakdown?.items?.some(i => i.value > 0)) ||
+      (apiCarColegioBreakdown?.items?.some(i => i.value > 0)) ||
+      (apiCarViaBreakdown?.items?.some(i => i.value > 0)) ||
+      (apiCarBecasBreakdown?.items?.some(i => i.value > 0)) ||
+      (apiCarSexoBreakdown?.items?.some(i => i.value > 0)) ||
+      (apiCarEdadBreakdown?.items?.some(i => i.value > 0))
+    );
+    const hasAdmissionFilters = Boolean(
+      (apiFilters?.years && apiFilters.years.length > 0) ||
+      (apiFilters?.asignaturas && apiFilters.asignaturas.length > 0) ||
+      (apiFilters?.estadosAcademicos && apiFilters.estadosAcademicos.length > 0) ||
+      (apiFilters?.viasAcceso && apiFilters.viasAcceso.length > 0)
+    );
+    return Boolean(hasSummaryData || hasSeries || hasBreakdowns || hasAdmissionFilters);
+  }, [
+    apiSummary,
+    apiMatTotalSeries,
+    apiMatNuevosSeries,
+    apiMatAsignaturaBreakdown,
+    apiMatSeccionBreakdown,
+    apiMatEstadoBreakdown,
+    apiCarNseBreakdown,
+    apiCarFamiliarBreakdown,
+    apiCarRegionBreakdown,
+    apiCarColegioBreakdown,
+    apiCarViaBreakdown,
+    apiCarBecasBreakdown,
+    apiCarSexoBreakdown,
+    apiCarEdadBreakdown,
+    apiFilters
+  ]);
 
-  // Drawer handlers
-  const handleOpenIndicator = useCallback((key) => {
-    setCurrentIndicatorKey(key);
-    setDrawerPeriod('all');
-    setDrawerLoading(true);
-    setDrawerOpen(true);
-    setTimeout(() => {
-      setDrawerLoading(false);
-    }, 200);
-  }, []);
+  const isNoData = useMemo(() => !hasRealData, [hasRealData]);
 
-  const handleCloseDrawer = useCallback(() => {
-    setDrawerOpen(false);
-  }, []);
-
-  const handleDrawerPeriodChange = useCallback((val) => {
-    setDrawerPeriod(val);
-  }, []);
-
-  // Años visibles según el slider
+  // Años disponibles según filtros
   const availableYears = useMemo(() => {
     if (apiFilters?.years?.length) return apiFilters.years;
     return YEARS;
@@ -330,281 +534,768 @@ export const useDashboardAdmision = () => {
     return count;
   }, [selectedChips, periodoAcumulado, yearRange, minYear, maxYear]);
 
-  // Factor de escala dinámico según filtros seleccionados para simular reactividad perfecta
-  const filterFactor = useMemo(() => {
-    let factor = 1.0;
-    if (selectedChips.semestre.length === 1) factor *= 0.52;
-    if (selectedChips.estado.length > 0) factor *= (selectedChips.estado.length / 3);
-    if (selectedChips.colegio.length > 0) factor *= (selectedChips.colegio.length / 3);
-    if (selectedChips.via.length > 0) factor *= (selectedChips.via.length / 4);
-    if (selectedChips.sexo.length === 1) factor *= 0.55;
-    if (selectedChips.nse.length > 0) factor *= (selectedChips.nse.length / 5);
-    return Math.max(0.2, Math.min(1.0, factor));
-  }, [selectedChips]);
-
   // 1. Matrícula total por período (Semestre 1 / Semestre 2)
   const matTotalData = useMemo(() => {
-    const raw = [
-      { year: 2023, s1: 420, s2: 380 },
-      { year: 2024, s1: 450, s2: 400 },
-      { year: 2025, s1: 480, s2: 430 },
-      { year: 2026, s1: 520, s2: 460 }
-    ];
-    return visibleYears.map(y => {
-      const row = raw.find(r => r.year === y) || { year: y, s1: 400, s2: 360 };
-      const hasS1 = selectedChips.semestre.length === 0 || selectedChips.semestre.includes('1');
-      const hasS2 = selectedChips.semestre.length === 0 || selectedChips.semestre.includes('2');
+    if (!hasRealData || !apiMatTotalSeries) return [];
+    
+    // Si viene agrupado por serie (periodo 1 y 2)
+    const s1Series = apiMatTotalSeries.series?.find(s => String(s.label) === '1' || s.label?.toLowerCase().includes('primer') || s.label?.toLowerCase().includes('1'));
+    const s2Series = apiMatTotalSeries.series?.find(s => String(s.label) === '2' || s.label?.toLowerCase().includes('segundo') || s.label?.toLowerCase().includes('2'));
+
+    // Si viene como puntos planos por año
+    if (apiMatTotalSeries.points && (!apiMatTotalSeries.series || apiMatTotalSeries.series.length === 0)) {
+      return apiMatTotalSeries.points
+        .filter(p => p.year >= yearRange[0] && p.year <= yearRange[1])
+        .map(p => ({
+          year: p.year,
+          s1: p.value,
+          s2: 0
+        }));
+    }
+
+    const yearsSet = new Set([
+      ...(s1Series?.points?.map(p => p.year) || []),
+      ...(s2Series?.points?.map(p => p.year) || []),
+      ...visibleYears
+    ]);
+
+    const sortedYears = [...yearsSet].filter(y => y >= yearRange[0] && y <= yearRange[1]).sort((a, b) => a - b);
+    return sortedYears.map(y => {
+      const p1 = s1Series?.points?.find(p => p.year === y);
+      const p2 = s2Series?.points?.find(p => p.year === y);
       return {
         year: y,
-        s1: hasS1 ? Math.round(row.s1 * filterFactor) : 0,
-        s2: hasS2 ? Math.round(row.s2 * filterFactor) : 0
+        s1: p1 ? p1.value : 0,
+        s2: p2 ? p2.value : 0
       };
-    });
-  }, [visibleYears, selectedChips.semestre, filterFactor]);
+    }).filter(d => (d.s1 + d.s2) > 0 || (yearRange[0] === yearRange[1] && d.year === yearRange[0]));
+  }, [hasRealData, apiMatTotalSeries, visibleYears, yearRange]);
 
   // 2. Matrícula nuevos vs antiguos
   const matNuevosData = useMemo(() => {
-    const raw = [
-      { year: 2023, nuevos: 280, antiguos: 520 },
-      { year: 2024, nuevos: 300, antiguos: 550 },
-      { year: 2025, nuevos: 320, antiguos: 590 },
-      { year: 2026, nuevos: 340, antiguos: 640 }
-    ];
-    return visibleYears.map(y => {
-      const row = raw.find(r => r.year === y) || { year: y, nuevos: 250, antiguos: 500 };
+    if (!hasRealData || !apiMatNuevosSeries) return [];
+    const nuevoSeries = apiMatNuevosSeries.series?.find(s => String(s.label).toLowerCase().includes('nuevo'));
+    const antiguoSeries = apiMatNuevosSeries.series?.find(s => String(s.label).toLowerCase().includes('antiguo'));
+
+    const yearsSet = new Set([
+      ...(nuevoSeries?.points?.map(p => p.year) || []),
+      ...(antiguoSeries?.points?.map(p => p.year) || []),
+      ...visibleYears
+    ]);
+
+    const sortedYears = [...yearsSet].filter(y => y >= yearRange[0] && y <= yearRange[1]).sort((a, b) => a - b);
+    return sortedYears.map(y => {
+      const pN = nuevoSeries?.points?.find(p => p.year === y);
+      const pA = antiguoSeries?.points?.find(p => p.year === y);
       return {
         year: y,
-        nuevos: Math.round(row.nuevos * filterFactor),
-        antiguos: Math.round(row.antiguos * filterFactor)
+        nuevos: pN ? pN.value : 0,
+        antiguos: pA ? pA.value : 0
       };
-    });
-  }, [visibleYears, filterFactor]);
+    }).filter(d => (d.nuevos + d.antiguos) > 0 || (yearRange[0] === yearRange[1] && d.year === yearRange[0]));
+  }, [hasRealData, apiMatNuevosSeries, visibleYears, yearRange]);
 
   // 3. Matrícula por asignatura
   const matAsignaturaData = useMemo(() => {
-    const raw = [
-      { label: 'Contabilidad I', value: 180 },
-      { label: 'Contabilidad II', value: 160 },
-      { label: 'Auditoría', value: 150 },
-      { label: 'Tributación', value: 130 },
-      { label: 'Costos', value: 120 },
-      { label: 'Derecho Tributario', value: 100 },
-      { label: 'Finanzas', value: 90 }
-    ];
-    return raw.map(d => ({ ...d, value: Math.round(d.value * filterFactor) }));
-  }, [filterFactor]);
+    if (!hasRealData || !apiMatAsignaturaBreakdown?.items) return [];
+    return apiMatAsignaturaBreakdown.items
+      .filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10)
+      .map(item => ({ label: item.label, value: item.value }));
+  }, [hasRealData, apiMatAsignaturaBreakdown]);
 
   // 4. Matrícula por sección
   const matSeccionData = useMemo(() => {
-    const raw = [
-      { label: 'Sección A', value: 45 },
-      { label: 'Sección B', value: 42 },
-      { label: 'Sección C', value: 40 },
-      { label: 'Sección D', value: 38 },
-      { label: 'Sección E', value: 35 },
-      { label: 'Sección F', value: 30 }
-    ];
-    return raw.map(d => ({ ...d, value: Math.round(d.value * filterFactor) }));
-  }, [filterFactor]);
+    if (!hasRealData || !apiMatSeccionBreakdown?.items) return [];
+    return apiMatSeccionBreakdown.items
+      .filter(item => item.value > 0)
+      .map(item => ({ 
+        label: String(item.label).toLowerCase().startsWith('secc') ? String(item.label) : `Sección ${item.label}`, 
+        value: item.value 
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [hasRealData, apiMatSeccionBreakdown]);
 
   // 5. Matrícula por estado académico
   const matEstadoData = useMemo(() => {
-    const raw = [
-      { label: 'Regular', value: 820 },
-      { label: 'En riesgo', value: 110 },
-      { label: 'Suspendido', value: 30 },
-      { label: 'Egresado', value: 20 }
-    ];
-    let filtered = raw;
-    if (selectedChips.estado.length > 0) {
-      filtered = raw.filter(d => 
-        selectedChips.estado.some(e => d.label.toLowerCase().includes(e.toLowerCase()))
-      );
-    }
-    return filtered.map(d => ({ ...d, value: Math.round(d.value * filterFactor) }));
-  }, [selectedChips.estado, filterFactor]);
+    if (!hasRealData || !apiMatEstadoBreakdown?.items) return [];
+    return apiMatEstadoBreakdown.items
+      .filter(item => item.value > 0)
+      .map(item => ({ label: item.label, value: item.value }))
+      .sort((a, b) => b.value - a.value);
+  }, [hasRealData, apiMatEstadoBreakdown]);
 
   // 6. Nivel socioeconómico (quintiles)
   const carNseData = useMemo(() => {
-    const raw = [
-      { label: 'Quintil I', value: 120 },
-      { label: 'Quintil II', value: 180 },
-      { label: 'Quintil III', value: 260 },
-      { label: 'Quintil IV', value: 240 },
-      { label: 'Quintil V', value: 180 }
-    ];
-    let filtered = raw;
-    if (selectedChips.nse.length > 0) {
-      filtered = raw.filter(d => 
-        selectedChips.nse.some(n => d.label.toLowerCase().includes(n.toLowerCase()))
-      );
-    }
-    return filtered.map(d => ({ ...d, value: Math.round(d.value * filterFactor) }));
-  }, [selectedChips.nse, filterFactor]);
+    if (!hasRealData || !apiCarNseBreakdown?.items) return [];
+    return apiCarNseBreakdown.items
+      .filter(item => item.value > 0)
+      .map(item => ({ label: item.label, value: item.value }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [hasRealData, apiCarNseBreakdown]);
 
   // 7. Situación familiar
   const carFamiliarData = useMemo(() => {
-    const raw = [
-      { label: 'Ambos padres', value: 380 },
-      { label: 'Solo madre', value: 320 },
-      { label: 'Solo padre', value: 140 },
-      { label: 'Otro familiar', value: 90 },
-      { label: 'Independiente', value: 50 }
-    ];
-    return raw.map(d => ({ ...d, value: Math.round(d.value * filterFactor) }));
-  }, [filterFactor]);
+    if (!hasRealData || !apiCarFamiliarBreakdown?.items) return [];
+    return apiCarFamiliarBreakdown.items
+      .filter(item => item.value > 0)
+      .map(item => ({ label: item.label, value: item.value }))
+      .sort((a, b) => b.value - a.value);
+  }, [hasRealData, apiCarFamiliarBreakdown]);
 
   // 8. Procedencia geográfica
   const carRegionData = useMemo(() => {
-    const raw = [
-      { label: 'Metropolitana', value: 420 },
-      { label: 'Valparaíso', value: 180 },
-      { label: 'Biobío', value: 150 },
-      { label: 'Maule', value: 90 },
-      { label: 'Coquimbo', value: 70 },
-      { label: "O'Higgins", value: 70 }
-    ];
-    return raw.map(d => ({ ...d, value: Math.round(d.value * filterFactor) }));
-  }, [filterFactor]);
+    if (!hasRealData || !apiCarRegionBreakdown?.items) return [];
+    return apiCarRegionBreakdown.items
+      .filter(item => item.value > 0)
+      .map(item => ({ label: item.label, value: item.value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+  }, [hasRealData, apiCarRegionBreakdown]);
 
   // 9. Tipo de colegio
   const carColegioData = useMemo(() => {
-    const raw = [
-      { label: 'Municipal', value: 380 },
-      { label: 'Subvencionado', value: 420 },
-      { label: 'Particular', value: 180 }
-    ];
-    let filtered = raw;
-    if (selectedChips.colegio.length > 0) {
-      filtered = raw.filter(d => 
-        selectedChips.colegio.some(c => d.label.toLowerCase().includes(c.toLowerCase()))
-      );
-    }
-    return filtered.map(d => ({ ...d, value: Math.round(d.value * filterFactor) }));
-  }, [selectedChips.colegio, filterFactor]);
+    if (!hasRealData || !apiCarColegioBreakdown?.items) return [];
+    return apiCarColegioBreakdown.items
+      .filter(item => item.value > 0)
+      .map(item => ({ label: item.label, value: item.value }))
+      .sort((a, b) => b.value - a.value);
+  }, [hasRealData, apiCarColegioBreakdown]);
 
   // 10. Vía de acceso
   const carViaData = useMemo(() => {
-    const raw = [
-      { label: 'PAES', value: 610 },
-      { label: 'Admisión especial', value: 180 },
-      { label: 'Traspaso', value: 120 },
-      { label: 'Continuidad', value: 70 }
-    ];
-    let filtered = raw;
-    if (selectedChips.via.length > 0) {
-      filtered = raw.filter(d => 
-        selectedChips.via.some(v => d.label.toLowerCase().includes(v.toLowerCase()))
-      );
-    }
-    return filtered.map(d => ({ ...d, value: Math.round(d.value * filterFactor) }));
-  }, [selectedChips.via, filterFactor]);
+    if (!hasRealData || !apiCarViaBreakdown?.items) return [];
+    return apiCarViaBreakdown.items
+      .filter(item => item.value > 0)
+      .map(item => ({ label: item.label, value: item.value }))
+      .sort((a, b) => b.value - a.value);
+  }, [hasRealData, apiCarViaBreakdown]);
 
   // 11. Beneficios y becas
   const carBecasData = useMemo(() => {
-    const raw = [
-      { label: 'Gratuidad', value: 380 },
-      { label: 'Beca interna', value: 150 },
-      { label: 'Sin beneficio', value: 450 }
-    ];
-    return raw.map(d => ({ ...d, value: Math.round(d.value * filterFactor) }));
-  }, [filterFactor]);
+    if (!hasRealData || !apiCarBecasBreakdown?.items) return [];
+    return apiCarBecasBreakdown.items
+      .filter(item => item.value > 0)
+      .map(item => ({ label: item.label, value: item.value }))
+      .sort((a, b) => b.value - a.value);
+  }, [hasRealData, apiCarBecasBreakdown]);
 
   // 12. Distribución por sexo
   const carSexoData = useMemo(() => {
-    const raw = [
-      { label: 'Femenino', value: 560 },
-      { label: 'Masculino', value: 420 }
-    ];
-    let filtered = raw;
-    if (selectedChips.sexo.length > 0) {
-      filtered = raw.filter(d => 
-        selectedChips.sexo.some(s => d.label.toLowerCase().startsWith(s.toLowerCase()))
-      );
-    }
-    return filtered.map(d => ({ ...d, value: Math.round(d.value * filterFactor) }));
-  }, [selectedChips.sexo, filterFactor]);
+    if (!hasRealData || !apiCarSexoBreakdown?.items) return [];
+    const parsed = apiCarSexoBreakdown.items
+      .filter(item => item.value > 0)
+      .map(item => ({ label: formatSexoLabel(item.label), value: item.value }))
+      .sort((a, b) => b.value - a.value);
+    console.log('📊 [carSexoData] Datos procesados para el gráfico de sexo:', parsed);
+    return parsed;
+  }, [hasRealData, apiCarSexoBreakdown]);
 
   // 13. Distribución por edad
   const carEdadData = useMemo(() => {
-    const raw = [
-      { label: '17–18', value: 180 },
-      { label: '19–20', value: 320 },
-      { label: '21–22', value: 260 },
-      { label: '23–25', value: 140 },
-      { label: '26+', value: 80 }
-    ];
-    return raw.map(d => ({ ...d, value: Math.round(d.value * filterFactor) }));
-  }, [filterFactor]);
+    if (!hasRealData || !apiCarEdadBreakdown?.items) {
+      return [];
+    }
+    const parsed = apiCarEdadBreakdown.items
+      .filter(item => item.value > 0)
+      .map(item => ({ label: item.label, value: item.value }));
 
-  // KPIs calculados
+    console.log('📊 [carEdadData] Datos procesados para el gráfico de edad:', parsed);
+    return parsed;
+  }, [hasRealData, apiCarEdadBreakdown]);
+
+  // KPIs calculados (con soporte de período acumulado reactivo como en VcM)
   const kpis = useMemo(() => {
-    const currentYear = yearRange[1];
-    const prevYear = currentYear - 1;
+    const yDesde = yearRange[0];
+    const yHasta = yearRange[1];
+    const isSingleYear = yDesde === yHasta;
+    const isAccumulated = periodoAcumulado && !isSingleYear;
+    const minAvailableYear = availableYears.length > 0 ? Math.min(...availableYears) : 2023;
+    const isBaseline = isSingleYear && yDesde === minAvailableYear;
+    const prevYear = yHasta - 1;
     
-    // Matrícula total
-    const latestRow = matTotalData[matTotalData.length - 1] || { s1: 520, s2: 460 };
-    const latestTotal = latestRow.s1 + latestRow.s2;
-    const prevRow = matTotalData.find(r => r.year === prevYear) || { s1: 480, s2: 430 };
-    const prevTotal = prevRow.s1 + prevRow.s2;
-    const matEvo = prevTotal > 0 ? (((latestTotal - prevTotal) / prevTotal) * 100).toFixed(1) : '+7.7';
+    if (!hasRealData) {
+      return {
+        matriculaTotal: { title: 'Matrícula total', val: null, compareText: 'Sin datos disponibles', evo: null, isPositive: true },
+        nuevosAntiguos: { title: 'Nuevos vs antiguos', val: null, compareText: 'Sin datos disponibles', evo: null, isPositive: true },
+        viaAcceso: { title: 'Vía de acceso principal', val: null, compareText: 'Sin datos disponibles', evo: null, isPositive: true }
+      };
+    }
 
-    // Nuevos vs antiguos
-    const latestNuevosRow = matNuevosData[matNuevosData.length - 1] || { nuevos: 340, antiguos: 640 };
-    const totalEst = latestNuevosRow.nuevos + latestNuevosRow.antiguos;
-    const pctNuevos = totalEst > 0 ? ((latestNuevosRow.nuevos / totalEst) * 100).toFixed(1) : '34.7';
+    // 1. Matrícula total
+    let matVal = null;
+    let matCompareText = '';
+    let matEvo = null;
+    let matPositive = true;
+    let matTitle = 'Matrícula total';
 
-    // Vía de acceso
-    const paesItem = carViaData.find(v => v.label.toUpperCase() === 'PAES') || { value: 610 };
-    const totalVia = carViaData.reduce((acc, v) => acc + v.value, 0) || 980;
-    const pctPaes = totalVia > 0 ? ((paesItem.value / totalVia) * 100).toFixed(1) : '62.2';
+    if (isAccumulated) {
+      const accumulatedTotal = matTotalData.reduce((acc, d) => acc + (d.s1 + d.s2), 0);
+      const baseRow = matTotalData.find(r => r.year === yDesde);
+      const baseTotal = baseRow ? (baseRow.s1 + baseRow.s2) : 0;
+      matVal = accumulatedTotal > 0 ? accumulatedTotal : null;
+      if (baseTotal > 0 && accumulatedTotal > 0) {
+        const diff = (((accumulatedTotal - baseTotal) / baseTotal) * 100).toFixed(1);
+        matEvo = Number(diff) >= 0 ? `+${diff}%` : `${diff}%`;
+        matPositive = Number(diff) >= 0;
+        matCompareText = `vs Año base (${yDesde}): ${baseTotal.toLocaleString('es-CL')}`;
+      } else {
+        matCompareText = `Acumulado total de cohortes ${yDesde} a ${yHasta}`;
+      }
+    } else {
+      const latestRow = matTotalData.find(r => r.year === yHasta) || matTotalData[matTotalData.length - 1];
+      const latestTotal = latestRow ? (latestRow.s1 + latestRow.s2) : 0;
+      const prevRow = matTotalData.find(r => r.year === prevYear);
+      const prevTotal = prevRow ? (prevRow.s1 + prevRow.s2) : 0;
+      matVal = latestTotal > 0 ? latestTotal : null;
+
+      if (isBaseline) {
+        matCompareText = `Año ${yDesde} es la línea base`;
+        matEvo = null;
+      } else if (prevTotal > 0 && latestTotal > 0) {
+        const diff = (((latestTotal - prevTotal) / prevTotal) * 100).toFixed(1);
+        matEvo = Number(diff) >= 0 ? `+${diff}%` : `${diff}%`;
+        matPositive = Number(diff) >= 0;
+        matCompareText = `vs año anterior (${prevYear}): ${prevTotal.toLocaleString('es-CL')}`;
+      } else {
+        matCompareText = latestTotal > 0 ? `Total matriculados en ${yHasta}` : 'Sin datos disponibles';
+      }
+    }
+
+    // 2. Nuevos vs antiguos (mantiene el ratio real del año seleccionado sin distorsión por acumulación de cohortes)
+    let nuevosVal = null;
+    let nuevosCompareText = '';
+    let nuevosEvo = null;
+    let nuevosPositive = true;
+    let nuevosTitle = 'Nuevos vs antiguos';
+
+    const latestNuevosRow = matNuevosData.find(r => r.year === yHasta) || matNuevosData[matNuevosData.length - 1];
+    const totalEst = latestNuevosRow ? (latestNuevosRow.nuevos + latestNuevosRow.antiguos) : 0;
+    const pctNuevos = (latestNuevosRow && totalEst > 0) ? ((latestNuevosRow.nuevos / totalEst) * 100).toFixed(1) : null;
+    nuevosVal = pctNuevos !== null ? `${pctNuevos}%` : null;
+    nuevosCompareText = latestNuevosRow && totalEst > 0 
+      ? `nuevos (${latestNuevosRow.nuevos.toLocaleString('es-CL')}) sobre matrícula total (${totalEst.toLocaleString('es-CL')})` 
+      : 'Sin datos disponibles';
+
+    const prevNuevosRow = matNuevosData.find(r => r.year === prevYear);
+    const latestNuevos = latestNuevosRow ? latestNuevosRow.nuevos : 0;
+    const prevNuevos = prevNuevosRow ? prevNuevosRow.nuevos : 0;
+
+    if (!isBaseline && prevNuevos > 0 && latestNuevos > 0) {
+      const diff = (((latestNuevos - prevNuevos) / prevNuevos) * 100).toFixed(1);
+      nuevosEvo = Number(diff) >= 0 ? `+${diff}%` : `${diff}%`;
+      nuevosPositive = Number(diff) >= 0;
+    } else {
+      nuevosEvo = null;
+    }
+
+    // 3. Vía de acceso principal
+    const topVia = carViaData.length > 0 ? carViaData[0] : null;
+    const totalVia = carViaData.reduce((acc, v) => acc + v.value, 0);
+    const pctTopVia = (topVia && totalVia > 0) ? ((topVia.value / totalVia) * 100).toFixed(1) : null;
+    const viaTitle = 'Vía de acceso principal';
 
     return {
       matriculaTotal: {
-        val: latestTotal,
-        compareText: `vs período anterior (${prevYear}): ${prevTotal}`,
-        evo: Number(matEvo) >= 0 ? `+${matEvo}%` : `${matEvo}%`,
-        isPositive: Number(matEvo) >= 0
+        title: matTitle,
+        val: matVal,
+        compareText: matCompareText,
+        evo: matEvo,
+        isPositive: matPositive
       },
       nuevosAntiguos: {
-        val: `${pctNuevos}%`,
-        compareText: `nuevos (${latestNuevosRow.nuevos}) sobre matrícula total (${totalEst})`,
-        evo: null,
-        isPositive: true
+        title: nuevosTitle,
+        val: nuevosVal,
+        compareText: nuevosCompareText,
+        evo: nuevosEvo,
+        isPositive: nuevosPositive
       },
       viaAcceso: {
-        val: 'PAES',
-        compareText: `${paesItem.value} de ${totalVia} estudiantes (${pctPaes}%)`,
-        evo: `+${pctPaes}%`,
+        title: viaTitle,
+        val: topVia ? topVia.label : null,
+        compareText: topVia && totalVia > 0 
+          ? `${topVia.value.toLocaleString('es-CL')} de ${totalVia.toLocaleString('es-CL')} estudiantes (${pctTopVia}%)` 
+          : 'Sin datos disponibles',
+        evo: pctTopVia ? `${pctTopVia}%` : null,
         isPositive: true
       }
     };
-  }, [matTotalData, matNuevosData, carViaData, yearRange]);
+  }, [hasRealData, matTotalData, matNuevosData, carViaData, yearRange, periodoAcumulado, availableYears]);
 
-  // Determinar si hay datos disponibles
-  const hasData = useMemo(() => {
-    return matTotalData.some(d => (d.s1 + d.s2) > 0);
-  }, [matTotalData]);
+  // Drawer handlers
+  const handleOpenIndicator = useCallback((key) => {
+    setCurrentIndicatorKey(key);
+    const mostRecentYear = availableYears.length > 0 ? Math.max(...availableYears) : 2026;
+    setDrawerPeriod(String(mostRecentYear));
+    const defaultDim = INDICATOR_SPECIFIC_DIMENSION[key] || null;
+    setDrawerGroupBy(defaultDim);
+    setDrawerOpen(true);
+  }, [availableYears]);
 
-  // Indicador actual para el Drawer
+  const handleCloseDrawer = useCallback(() => {
+    setDrawerOpen(false);
+  }, []);
+
+  const handleDrawerPeriodChange = useCallback((val) => {
+    setDrawerPeriod(val);
+  }, []);
+
+  // Petición al endpoint GET /api/indicators/:key/detail (PIADI-409)
+  useEffect(() => {
+    if (!drawerOpen || !currentIndicatorKey) return;
+
+    setDrawerLoading(true);
+    setDrawerError(null);
+    const backendKey = UI_TO_BACKEND_KEY[currentIndicatorKey] || currentIndicatorKey.replace(/-/g, '_');
+    const params = {};
+
+    if (drawerPeriod) {
+      params.year = String(drawerPeriod);
+    }
+    if (drawerGroupBy) {
+      params.groupBy = drawerGroupBy;
+    }
+
+    console.group(`%c[PIADI-409] Detalle de Indicador: ${currentIndicatorKey} (${backendKey})`, 'background: #1E2875; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold;');
+    console.log('📌 Parámetros enviados (params):', params);
+    console.log('🔑 Indicador UI:', currentIndicatorKey);
+    console.log('🔑 Backend Key:', backendKey);
+    console.log('📅 Año (drawerPeriod):', drawerPeriod);
+    console.log('🏷️ Agrupación (drawerGroupBy):', drawerGroupBy);
+    console.groupEnd();
+
+    getIndicatorDetail(backendKey, params)
+      .then((res) => {
+        const detail = (res && res.data && typeof res.data === 'object' && !Array.isArray(res.data) && (res.data.title || res.data.indicatorKey))
+          ? res.data 
+          : res;
+
+        console.group(`%c[PIADI-409] Respuesta recibida: ${backendKey}`, 'background: #10B981; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold;');
+        console.log('📥 Respuesta completa de la API (res):', res);
+        console.log('📊 Datos procesados (detail):', detail);
+        console.log('📋 Tabla de datos (table):', detail?.table);
+        console.log('🏷️ Allowed GroupBy:', detail?.allowedGroupBy);
+        console.log('🏷️ Dimension Labels:', detail?.dimensionLabels);
+        console.groupEnd();
+
+        setApiIndicatorDetail(detail || null);
+        setDrawerError(null);
+      })
+      .catch((err) => {
+        console.group(`%c[PIADI-409] Error cargando detalle: ${backendKey}`, 'background: #EF4444; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold;');
+        console.error('❌ Error capturado:', err);
+        console.log('📌 Parámetros que causaron el error:', params);
+        console.groupEnd();
+
+        setApiIndicatorDetail(null);
+        setDrawerError(err?.message || 'Error al obtener la información del indicador desde el servidor');
+      })
+      .finally(() => {
+        setDrawerLoading(false);
+      });
+  }, [drawerOpen, currentIndicatorKey, drawerPeriod, drawerGroupBy]);
+
+  // Indicador actual para el Drawer (PIADI-409)
   const currentIndicator = useMemo(() => {
-    return INDICATORS[currentIndicatorKey] || INDICATORS['matricula-total'];
-  }, [currentIndicatorKey]);
+    const baseDef = INDICATORS[currentIndicatorKey] || INDICATORS['matricula-total'];
+
+    // 1. Integración con endpoint oficial GET /api/indicators/:key/detail (PIADI-409)
+    if (apiIndicatorDetail) {
+      const {
+        title,
+        description,
+        total,
+        formattedTotal,
+        hasData,
+        disaggregated,
+        groupBy,
+        allowedGroupBy,
+        dimensionLabels,
+        period,
+        comparison,
+        table,
+        unit
+      } = apiIndicatorDetail;
+
+      // Dimensiones categóricas para los tabs del Drawer (filtradas a la dimensión correspondiente al gráfico)
+      const specificDim = INDICATOR_SPECIFIC_DIMENSION[currentIndicatorKey];
+      const matchingDims = (allowedGroupBy || [])
+        .filter(dim => dim !== 'year' && dim !== 'periodo' && dim !== 'period')
+        .filter(dim => {
+          if (!specificDim) return false;
+          return dim.toLowerCase() === specificDim.toLowerCase();
+        });
+
+      const allowedTabs = matchingDims.map(dim => ({
+        key: dim,
+        label: dimensionLabels?.[dim] || dim
+      }));
+
+      // Tendencia / Comparación oficial enviada por backend
+      let trend = null;
+      if (comparison && comparison.diff !== null && comparison.diff !== undefined) {
+        const diffNum = comparison.diff;
+        const isPos = diffNum >= 0;
+        trend = {
+          delta: diffNum,
+          formattedDelta: isPos ? `+${diffNum.toLocaleString('es-CL')}` : diffNum.toLocaleString('es-CL'),
+          baseline: String(comparison.previousYear),
+          isPositive: isPos
+        };
+      }
+
+      // Columnas y filas para la tabla
+      let colLabels = baseDef.colLabels || ['Año', 'Estudiantes'];
+      if (currentIndicatorKey === 'nuevos-antiguos') {
+        colLabels = ['Tipo de estudiante', 'Estudiantes'];
+      } else if (disaggregated && groupBy) {
+        colLabels = [dimensionLabels?.[groupBy] || 'Categoría', 'Estudiantes'];
+      } else if (!disaggregated && !groupBy) {
+        colLabels = ['Año', 'Estudiantes'];
+      }
+
+      const rows = (table || []).map(row => {
+        let label = '';
+        let value = 0;
+        if (row.label !== undefined) { label = row.label; value = row.value; }
+        else if (row.year !== undefined) { label = String(row.year); value = row.value; }
+        else if (row.categoria !== undefined) { label = row.categoria; value = row.value; }
+        else { label = row[0] || ''; value = row[1] || 0; }
+
+        if (currentIndicatorKey === 'distribucion-sexo' || groupBy === 'sexo') {
+          label = formatSexoLabel(label);
+        }
+
+        if (currentIndicatorKey === 'nuevos-antiguos' || groupBy === 'nuevoAntiguo') {
+          label = typeof label === 'string' ? label.toUpperCase() : label;
+        }
+
+        return [label, value];
+      });
+
+      // Identificar el elemento con mayor cantidad de estudiantes dentro de las filas
+      let topItem = null;
+      let totalRowsVal = 0;
+      if (rows && rows.length > 0) {
+        rows.forEach(r => {
+          const val = Number(r[1]) || 0;
+          totalRowsVal += val;
+          if (!topItem || val > topItem.value) {
+            topItem = { label: String(r[0]), value: val };
+          }
+        });
+      }
+
+      // Cálculo de métrica destacada específica y contextual según el indicador
+      let customMetric = {
+        label: unit ? `Total (${unit})` : (baseDef.metric?.label || 'Total'),
+        value: formattedTotal ?? (typeof total === 'number' ? total.toLocaleString('es-CL') : total)
+      };
+      let customTrend = trend;
+
+      switch (currentIndicatorKey) {
+        case 'matricula-total': {
+          customMetric = {
+            label: 'Matrícula total',
+            value: total
+          };
+          break;
+        }
+
+        case 'nuevos-antiguos': {
+          customMetric = {
+            label: 'Tipo con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        case 'matricula-asignatura': {
+          customMetric = {
+            label: 'Asignatura con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        case 'matricula-seccion': {
+          customMetric = {
+            label: 'Sección con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        case 'estado-academico': {
+          customMetric = {
+            label: 'Estado con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        case 'nivel-socioeconomico': {
+          customMetric = {
+            label: 'Quintil con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        case 'situacion-familiar': {
+          customMetric = {
+            label: 'Situación con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        case 'procedencia-geografica': {
+          customMetric = {
+            label: 'Región con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        case 'tipo-colegio': {
+          customMetric = {
+            label: 'Tipo de colegio con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        case 'via-acceso':
+        case 'via-acceso-kpi': {
+          customMetric = {
+            label: 'Vía con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        case 'beneficios-becas': {
+          customMetric = {
+            label: 'Beneficio con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        case 'distribucion-sexo': {
+          customMetric = {
+            label: 'Género con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        case 'distribucion-edad': {
+          customMetric = {
+            label: 'Rango con más estudiantes',
+            value: topItem ? topItem.label : 'Sin datos'
+          };
+          customTrend = topItem ? {
+            rawText: `${topItem.value.toLocaleString('es-CL')} estudiantes`,
+            isPositive: true
+          } : null;
+          break;
+        }
+
+        default:
+          break;
+      }
+
+      return {
+        key: currentIndicatorKey,
+        title: title || baseDef.title,
+        desc: description || baseDef.desc,
+        hasData: hasData !== false && (rows.length > 0 || (total !== null && total !== undefined)),
+        isError: false,
+        errorMessage: null,
+        metric: customMetric,
+        trend: customTrend,
+        colLabels,
+        rows,
+        allowedTabs,
+        activeGroupBy: groupBy,
+        period
+      };
+    }
+
+    // 2. Si falló la petición o no hay datos, se reporta error/sin datos sin fallback calculado
+    return {
+      key: currentIndicatorKey,
+      title: baseDef.title,
+      desc: baseDef.desc,
+      hasData: false,
+      isError: Boolean(drawerError),
+      errorMessage: drawerError || (drawerLoading ? null : 'Error: no se encontraron datos cargados en el servidor para este indicador.'),
+      metric: null,
+      trend: null,
+      colLabels: ['Año', 'Valor'],
+      rows: [],
+      allowedTabs: []
+    };
+  }, [
+    currentIndicatorKey,
+    apiIndicatorDetail,
+    drawerError,
+    drawerLoading
+  ]);
+
+  // Helper para detectar si las filas del indicador son por año simple
+  const isSimpleYearRows = useCallback((ind) => {
+    return ind?.rows && ind.rows.length > 0 && ind.rows.every(r => /^\d{4}$/.test(String(r[0])));
+  }, []);
 
   // Filas a mostrar en la tabla según el período seleccionado
   const displayRows = useMemo(() => {
     if (!currentIndicator || !currentIndicator.rows) return [];
+    if (apiIndicatorDetail) {
+      return currentIndicator.rows;
+    }
     if (drawerPeriod === 'all' || !isSimpleYearRows(currentIndicator)) {
       return currentIndicator.rows;
     }
     const filtered = currentIndicator.rows.filter(r => String(r[0]) === drawerPeriod);
     return filtered.length > 0 ? filtered : currentIndicator.rows;
-  }, [currentIndicator, drawerPeriod, isSimpleYearRows]);
+  }, [currentIndicator, drawerPeriod, isSimpleYearRows, apiIndicatorDetail]);
+
+  // Años disponibles para el selector del Drawer
+  const drawerYears = useMemo(() => {
+    if (apiIndicatorDetail?.period?.from && apiIndicatorDetail?.period?.to) {
+      const { from, to } = apiIndicatorDetail.period;
+      const yrs = [];
+      for (let y = from; y <= to; y++) {
+        yrs.push(y);
+      }
+      return yrs;
+    }
+    return availableYears;
+  }, [apiIndicatorDetail, availableYears]);
 
   // Texto descriptivo del período para el footer del drawer
   const drawerPeriodText = useMemo(() => {
-    return drawerPeriod === 'all' ? 'Años: 2023 a 2026' : `Año: ${drawerPeriod}`;
+    return drawerPeriod ? `Año: ${drawerPeriod}` : '';
   }, [drawerPeriod]);
+
+  // Opciones dinámicas para los acordeones de filtros
+  const semestresList = useMemo(() => {
+    if (apiFilters?.semesters?.length) {
+      return apiFilters.semesters.map(s => ({ label: `Semestre ${s}`, value: String(s) }));
+    }
+    return [
+      { label: 'Semestre 1', value: '1' },
+      { label: 'Semestre 2', value: '2' }
+    ];
+  }, [apiFilters]);
+
+  const estadosList = useMemo(() => {
+    if (apiFilters?.estadosAcademicos?.length) {
+      return apiFilters.estadosAcademicos.map(e => ({ label: e.toUpperCase(), value: e.toLowerCase() }));
+    }
+    return [
+      { label: 'EGRESADO', value: 'egresado' },
+      { label: 'TITULADO', value: 'titulado' },
+      { label: 'VIGENTE', value: 'vigente' }
+    ];
+  }, [apiFilters]);
+
+  const colegiosList = useMemo(() => {
+    if (apiFilters?.tiposColegio?.length) {
+      return apiFilters.tiposColegio.map(c => ({ label: c.toUpperCase(), value: c.toLowerCase() }));
+    }
+    return [
+      { label: 'MUNICIPAL', value: 'municipal' },
+      { label: 'PARTICULAR SUBVENCIONADO', value: 'subvencionado' },
+      { label: 'PARTICULAR PAGADO', value: 'particular' }
+    ];
+  }, [apiFilters]);
+
+  const viasList = useMemo(() => {
+    if (apiFilters?.viasAcceso?.length) {
+      return apiFilters.viasAcceso.map(v => ({ label: v.toUpperCase(), value: v.toLowerCase() }));
+    }
+    return [
+      { label: 'PAES', value: 'paes' },
+      { label: 'RANKING', value: 'ranking' },
+      { label: 'CUPO ESPECIAL', value: 'cupo-especial' },
+      { label: 'CONVALIDACIÓN', value: 'convalidacion' },
+      { label: 'TRASLADO', value: 'traslado' },
+      { label: 'OTRA', value: 'otra' }
+    ];
+  }, [apiFilters]);
+
+  const sexosList = useMemo(() => {
+    if (apiFilters?.sexos?.length) {
+      return apiFilters.sexos.map(s => ({ label: formatSexoLabel(s), value: s.toLowerCase() }));
+    }
+    return [
+      { label: 'FEMENINO', value: 'femenino' },
+      { label: 'MASCULINO', value: 'masculino' },
+      { label: 'OTROS', value: 'otro' }
+    ];
+  }, [apiFilters]);
+
+  const nseList = useMemo(() => {
+    if (apiFilters?.nivelesSocioeconomicos?.length) {
+      return apiFilters.nivelesSocioeconomicos.map(n => ({ label: n.toUpperCase(), value: n.toLowerCase() }));
+    }
+    return [
+      { label: 'QUINTIL 1', value: 'quintil 1' },
+      { label: 'QUINTIL 2', value: 'quintil 2' },
+      { label: 'QUINTIL 3', value: 'quintil 3' },
+      { label: 'QUINTIL 4', value: 'quintil 4' },
+      { label: 'QUINTIL 5', value: 'quintil 5' }
+    ];
+  }, [apiFilters]);
 
   // Preguntas Frecuentes (FAQ) del Centro de Ayuda
   const faqData = useMemo(() => [
@@ -656,15 +1347,20 @@ export const useDashboardAdmision = () => {
     currentIndicator,
     drawerPeriod,
     handleDrawerPeriodChange,
+    drawerGroupBy,
+    setDrawerGroupBy,
+    drawerYears,
     displayRows,
     drawerPeriodText,
     YEARS,
     drawerLoading,
+    drawerError,
     handleOpenIndicator,
     handleCloseDrawer,
     faqData,
     apiLoading,
-    hasData,
+    hasRealData,
+    isNoData,
     kpis,
     availableYears,
     minYear,
@@ -682,6 +1378,12 @@ export const useDashboardAdmision = () => {
     carViaData,
     carBecasData,
     carSexoData,
-    carEdadData
+    carEdadData,
+    semestresList,
+    estadosList,
+    colegiosList,
+    viasList,
+    sexosList,
+    nseList
   };
 };

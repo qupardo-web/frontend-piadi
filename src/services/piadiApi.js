@@ -43,6 +43,9 @@ export const getIndicatorSeries = (key, params) =>
 export const getIndicatorBreakdown = (key, params) =>
   apiFetch(`/api/indicators/${key}/breakdown${buildParams(params)}`);
 
+export const getIndicatorDetail = (key, params) =>
+  apiFetch(`/api/indicators/${key}/detail${buildParams(params)}`);
+
 async function apiMutate(path, method, body) {
   const res = await fetch(`${API_URL}${path}`, {
     method,

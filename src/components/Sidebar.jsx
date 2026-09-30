@@ -51,7 +51,7 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
     { text: 'Inicio', icon: <HomeIcon />, path: '/' },
     { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
-    { text: 'Reportes', icon: <ReportesIcon />, path: '/reportes' },
+    // { text: 'Reportes', icon: <ReportesIcon />, path: '/reportes' }, // Oculto temporalmente para próximo sprint
     { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
     { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
   ].filter((item) => {
