@@ -135,6 +135,8 @@ export const DashboardAdmision = () => {
     handleDrawerPeriodChange,
     drawerGroupBy,
     setDrawerGroupBy,
+    drawerSemesterFilter,
+    setDrawerSemesterFilter,
     drawerYears,
     displayRows,
     drawerPeriodText,
@@ -1352,6 +1354,43 @@ export const DashboardAdmision = () => {
                         </Box>
                       )}
                     </Box>
+                  </Box>
+                )}
+
+                {/* Filtro por período / semestre (Pills) */}
+                {currentIndicator.key === 'matricula-total' && (
+                  <Box sx={{ display: 'flex', gap: 1, mt: 0.5, mb: 0.5 }}>
+                    {[
+                      { key: 'all', label: 'Todos' },
+                      { key: '1', label: 'Semestre 1' },
+                      { key: '2', label: 'Semestre 2' }
+                    ].map((tab) => {
+                      const isSelected = drawerSemesterFilter === tab.key;
+                      return (
+                        <Box
+                          key={tab.key}
+                          onClick={() => setDrawerSemesterFilter(tab.key)}
+                          sx={{
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: '16px',
+                            fontSize: '12px',
+                            fontWeight: isSelected ? 600 : 500,
+                            cursor: 'pointer',
+                            bgcolor: isSelected ? '#1E2875' : '#F1F5F9',
+                            color: isSelected ? '#FFFFFF' : '#475569',
+                            border: `1px solid ${isSelected ? '#1E2875' : '#E2E8F0'}`,
+                            transition: 'all 150ms ease',
+                            userSelect: 'none',
+                            '&:hover': {
+                              bgcolor: isSelected ? '#161796' : '#E2E8F0',
+                            }
+                          }}
+                        >
+                          {tab.label}
+                        </Box>
+                      );
+                    })}
                   </Box>
                 )}
 
