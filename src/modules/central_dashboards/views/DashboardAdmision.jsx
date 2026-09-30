@@ -17,6 +17,7 @@ import {
   Button,
   Checkbox,
   FormControlLabel,
+  Alert,
 } from '@mui/material';
 import {
   School as AdmisionIcon,
@@ -132,14 +133,19 @@ export const DashboardAdmision = () => {
     currentIndicator,
     drawerPeriod,
     handleDrawerPeriodChange,
+    drawerGroupBy,
+    setDrawerGroupBy,
+    drawerYears,
     displayRows,
     drawerPeriodText,
     drawerLoading,
+    drawerError,
     handleOpenIndicator,
     handleCloseDrawer,
     faqData,
     apiLoading,
-    hasData,
+    hasRealData,
+    isNoData,
     kpis,
     availableYears,
     minYear,
@@ -157,7 +163,13 @@ export const DashboardAdmision = () => {
     carViaData,
     carBecasData,
     carSexoData,
-    carEdadData
+    carEdadData,
+    semestresList,
+    estadosList,
+    colegiosList,
+    viasList,
+    sexosList,
+    nseList
   } = useDashboardAdmision();
 
   return (
@@ -221,42 +233,39 @@ export const DashboardAdmision = () => {
           {/* 3 Tarjetas KPI Superiores */}
           <Box sx={styles.kpiRow}>
             <KpiCard
-              label={`Matrícula total (${yearRange[1]})`}
+              label={kpis.matriculaTotal.title}
               value={kpis.matriculaTotal.val}
               icon={<AdmisionIcon />}
               accentColor="#1E2875"
-              hasData={hasData}
+              hasData={hasRealData && kpis.matriculaTotal.val !== null}
               loading={apiLoading}
               compareText={kpis.matriculaTotal.compareText}
               evolution={kpis.matriculaTotal.evo}
               isPositive={kpis.matriculaTotal.isPositive}
-              onClick={() => handleOpenIndicator('matricula-total')}
             />
 
             <KpiCard
-              label="Nuevos vs antiguos"
+              label={kpis.nuevosAntiguos.title}
               value={kpis.nuevosAntiguos.val}
               icon={<TrendingUpIcon />}
               accentColor="#5151CC"
-              hasData={hasData}
+              hasData={hasRealData && kpis.nuevosAntiguos.val !== null}
               loading={apiLoading}
               compareText={kpis.nuevosAntiguos.compareText}
               evolution={kpis.nuevosAntiguos.evo}
               isPositive={kpis.nuevosAntiguos.isPositive}
-              onClick={() => handleOpenIndicator('nuevos-antiguos')}
             />
 
             <KpiCard
-              label="Vía de acceso principal"
+              label={kpis.viaAcceso.title}
               value={kpis.viaAcceso.val}
               icon={<GroupIcon />}
               accentColor="#3E8FD9"
-              hasData={hasData}
+              hasData={hasRealData && kpis.viaAcceso.val !== null}
               loading={apiLoading}
               compareText={kpis.viaAcceso.compareText}
               evolution={kpis.viaAcceso.evo}
               isPositive={kpis.viaAcceso.isPositive}
-              onClick={() => handleOpenIndicator('via-acceso-kpi')}
             />
           </Box>
 
@@ -294,7 +303,8 @@ export const DashboardAdmision = () => {
                 iconColor="#1E2875"
                 isOpen={!collapsedSections['mat-total']}
                 onToggle={() => handleToggleSection('mat-total')}
-                hasData={hasData && matTotalData.some(d => (d.s1 + d.s2) > 0)}
+                hasData={!isNoData && matTotalData.some(d => (d.s1 + d.s2) > 0)}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -319,17 +329,23 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 270, width: '100%' }}>
-                  <BarChart
-                    grid={{ horizontal: true }}
-                    xAxis={[{ scaleType: 'band', data: matTotalData.map(d => String(d.year)) }]}
-                    series={[
-                      { data: matTotalData.map(d => d.s1), label: 'Semestre 1', stack: 'total', color: '#171796' },
-                      { data: matTotalData.map(d => d.s2), label: 'Semestre 2', stack: 'total', color: '#8181DE' }
-                    ]}
-                    height={280}
-                    margin={{ top: 30, right: 20, bottom: 40, left: 45 }}
-                    slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
-                  />
+                  {matTotalData.length > 0 && matTotalData.some(d => (d.s1 + d.s2) > 0) ? (
+                    <BarChart
+                      grid={{ horizontal: true }}
+                      xAxis={[{ scaleType: 'band', data: matTotalData.map(d => String(d.year)) }]}
+                      series={[
+                        { data: matTotalData.map(d => d.s1), label: 'Semestre 1', stack: 'total', color: '#171796' },
+                        { data: matTotalData.map(d => d.s2), label: 'Semestre 2', stack: 'total', color: '#8181DE' }
+                      ]}
+                      height={280}
+                      margin={{ top: 30, right: 20, bottom: 40, left: 45 }}
+                      slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
 
@@ -340,7 +356,8 @@ export const DashboardAdmision = () => {
                 iconColor="#5151CC"
                 isOpen={!collapsedSections['mat-nuevos']}
                 onToggle={() => handleToggleSection('mat-nuevos')}
-                hasData={hasData && matNuevosData.some(d => (d.nuevos + d.antiguos) > 0)}
+                hasData={!isNoData && matNuevosData.some(d => (d.nuevos + d.antiguos) > 0)}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -365,17 +382,23 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 270, width: '100%' }}>
-                  <BarChart
-                    grid={{ horizontal: true }}
-                    xAxis={[{ scaleType: 'band', data: matNuevosData.map(d => String(d.year)) }]}
-                    series={[
-                      { data: matNuevosData.map(d => d.nuevos), label: 'Nuevos', stack: 'total', color: '#171796' },
-                      { data: matNuevosData.map(d => d.antiguos), label: 'Antiguos', stack: 'total', color: '#3E8FD9' }
-                    ]}
-                    height={280}
-                    margin={{ top: 30, right: 20, bottom: 40, left: 45 }}
-                    slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
-                  />
+                  {matNuevosData.length > 0 && matNuevosData.some(d => (d.nuevos + d.antiguos) > 0) ? (
+                    <BarChart
+                      grid={{ horizontal: true }}
+                      xAxis={[{ scaleType: 'band', data: matNuevosData.map(d => String(d.year)) }]}
+                      series={[
+                        { data: matNuevosData.map(d => d.nuevos), label: 'Nuevos', stack: 'total', color: '#171796' },
+                        { data: matNuevosData.map(d => d.antiguos), label: 'Antiguos', stack: 'total', color: '#3E8FD9' }
+                      ]}
+                      height={280}
+                      margin={{ top: 30, right: 20, bottom: 40, left: 45 }}
+                      slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
 
@@ -386,7 +409,8 @@ export const DashboardAdmision = () => {
                 iconColor="#5151CC"
                 isOpen={!collapsedSections['mat-asignatura']}
                 onToggle={() => handleToggleSection('mat-asignatura')}
-                hasData={hasData && matAsignaturaData.length > 0}
+                hasData={!isNoData && matAsignaturaData.length > 0}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -411,21 +435,27 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 320, width: '100%' }}>
-                  <BarChart
-                    layout="horizontal"
-                    grid={{ vertical: true }}
-                    xAxis={[{ min: 0, max: Math.max(...matAsignaturaData.map(d => d.value), 0) * 1.15 }]}
-                    yAxis={[{ 
-                      scaleType: 'band', 
-                      data: matAsignaturaData.map(d => d.label),
-                      width: 145,
-                      tickLabelStyle: { fontSize: 11, fontWeight: 500 }
-                    }]}
-                    series={[{ data: matAsignaturaData.map(d => d.value), label: 'Estudiantes', color: '#5151CC' }]}
-                    height={320}
-                    margin={{ top: 20, right: 30, bottom: 30, left: 155 }}
-                    slotProps={{ legend: { hidden: true } }}
-                  />
+                  {matAsignaturaData.length > 0 ? (
+                    <BarChart
+                      layout="horizontal"
+                      grid={{ vertical: true }}
+                      xAxis={[{ min: 0, max: Math.max(...matAsignaturaData.map(d => d.value), 0) * 1.15 }]}
+                      yAxis={[{ 
+                        scaleType: 'band', 
+                        data: matAsignaturaData.map(d => d.label),
+                        width: 145,
+                        tickLabelStyle: { fontSize: 11, fontWeight: 500 }
+                      }]}
+                      series={[{ data: matAsignaturaData.map(d => d.value), label: 'Estudiantes', color: '#5151CC' }]}
+                      height={320}
+                      margin={{ top: 20, right: 30, bottom: 30, left: 155 }}
+                      slotProps={{ legend: { hidden: true } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
 
@@ -436,7 +466,8 @@ export const DashboardAdmision = () => {
                 iconColor="#171796"
                 isOpen={!collapsedSections['mat-seccion']}
                 onToggle={() => handleToggleSection('mat-seccion')}
-                hasData={hasData && matSeccionData.length > 0}
+                hasData={!isNoData && matSeccionData.length > 0}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -461,14 +492,20 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 260, width: '100%' }}>
-                  <BarChart
-                    grid={{ horizontal: true }}
-                    xAxis={[{ scaleType: 'band', data: matSeccionData.map(d => d.label) }]}
-                    series={[{ data: matSeccionData.map(d => d.value), label: 'Estudiantes', color: '#171796' }]}
-                    height={270}
-                    margin={{ top: 30, right: 20, bottom: 40, left: 45 }}
-                    slotProps={{ legend: { hidden: true } }}
-                  />
+                  {matSeccionData.length > 0 ? (
+                    <BarChart
+                      grid={{ horizontal: true }}
+                      xAxis={[{ scaleType: 'band', data: matSeccionData.map(d => d.label) }]}
+                      series={[{ data: matSeccionData.map(d => d.value), label: 'Estudiantes', color: '#171796' }]}
+                      height={270}
+                      margin={{ top: 30, right: 20, bottom: 40, left: 45 }}
+                      slotProps={{ legend: { hidden: true } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
 
@@ -479,7 +516,8 @@ export const DashboardAdmision = () => {
                 iconColor="#8A4BD6"
                 isOpen={!collapsedSections['mat-estado']}
                 onToggle={() => handleToggleSection('mat-estado')}
-                hasData={hasData && matEstadoData.length > 0}
+                hasData={!isNoData && matEstadoData.length > 0}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -504,17 +542,23 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 270, width: '100%' }}>
-                  <PieChart
-                    colors={CAT_COLORS}
-                    series={[{
-                      data: matEstadoData.map((d, i) => ({ id: i, value: d.value, label: d.label })),
-                      innerRadius: 50,
-                      outerRadius: 90,
-                    }]}
-                    height={270}
-                    margin={{ top: 10, bottom: 60, left: 10, right: 10 }}
-                    slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
-                  />
+                  {matEstadoData.length > 0 ? (
+                    <PieChart
+                      colors={CAT_COLORS}
+                      series={[{
+                        data: matEstadoData.map((d, i) => ({ id: i, value: d.value, label: d.label })),
+                        innerRadius: 50,
+                        outerRadius: 90,
+                      }]}
+                      height={270}
+                      margin={{ top: 10, bottom: 60, left: 10, right: 10 }}
+                      slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
             </Box>
@@ -532,7 +576,8 @@ export const DashboardAdmision = () => {
                 iconColor="#171796"
                 isOpen={!collapsedSections['car-nse']}
                 onToggle={() => handleToggleSection('car-nse')}
-                hasData={hasData && carNseData.length > 0}
+                hasData={!isNoData && carNseData.length > 0}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -557,14 +602,20 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 260, width: '100%' }}>
-                  <BarChart
-                    grid={{ horizontal: true }}
-                    xAxis={[{ scaleType: 'band', data: carNseData.map(d => d.label) }]}
-                    series={[{ data: carNseData.map(d => d.value), label: 'Estudiantes', color: '#171796' }]}
-                    height={270}
-                    margin={{ top: 30, right: 20, bottom: 40, left: 45 }}
-                    slotProps={{ legend: { hidden: true } }}
-                  />
+                  {carNseData.length > 0 ? (
+                    <BarChart
+                      grid={{ horizontal: true }}
+                      xAxis={[{ scaleType: 'band', data: carNseData.map(d => d.label) }]}
+                      series={[{ data: carNseData.map(d => d.value), label: 'Estudiantes', color: '#171796' }]}
+                      height={270}
+                      margin={{ top: 30, right: 20, bottom: 40, left: 45 }}
+                      slotProps={{ legend: { hidden: true } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
 
@@ -575,7 +626,8 @@ export const DashboardAdmision = () => {
                 iconColor="#5151CC"
                 isOpen={!collapsedSections['car-familiar']}
                 onToggle={() => handleToggleSection('car-familiar')}
-                hasData={hasData && carFamiliarData.length > 0}
+                hasData={!isNoData && carFamiliarData.length > 0}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -600,21 +652,27 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 270, width: '100%' }}>
-                  <BarChart
-                    layout="horizontal"
-                    grid={{ vertical: true }}
-                    xAxis={[{ min: 0, max: Math.max(...carFamiliarData.map(d => d.value), 0) * 1.15 }]}
-                    yAxis={[{ 
-                      scaleType: 'band', 
-                      data: carFamiliarData.map(d => d.label),
-                      width: 125,
-                      tickLabelStyle: { fontSize: 11, fontWeight: 500 }
-                    }]}
-                    series={[{ data: carFamiliarData.map(d => d.value), label: 'Estudiantes', color: '#5151CC' }]}
-                    height={270}
-                    margin={{ top: 20, right: 30, bottom: 30, left: 135 }}
-                    slotProps={{ legend: { hidden: true } }}
-                  />
+                  {carFamiliarData.length > 0 ? (
+                    <BarChart
+                      layout="horizontal"
+                      grid={{ vertical: true }}
+                      xAxis={[{ min: 0, max: Math.max(...carFamiliarData.map(d => d.value), 0) * 1.15 }]}
+                      yAxis={[{ 
+                        scaleType: 'band', 
+                        data: carFamiliarData.map(d => d.label),
+                        width: 125,
+                        tickLabelStyle: { fontSize: 11, fontWeight: 500 }
+                      }]}
+                      series={[{ data: carFamiliarData.map(d => d.value), label: 'Estudiantes', color: '#5151CC' }]}
+                      height={270}
+                      margin={{ top: 20, right: 30, bottom: 30, left: 135 }}
+                      slotProps={{ legend: { hidden: true } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
 
@@ -625,7 +683,8 @@ export const DashboardAdmision = () => {
                 iconColor="#3E8FD9"
                 isOpen={!collapsedSections['car-region']}
                 onToggle={() => handleToggleSection('car-region')}
-                hasData={hasData && carRegionData.length > 0}
+                hasData={!isNoData && carRegionData.length > 0}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -650,21 +709,27 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 270, width: '100%' }}>
-                  <BarChart
-                    layout="horizontal"
-                    grid={{ vertical: true }}
-                    xAxis={[{ min: 0, max: Math.max(...carRegionData.map(d => d.value), 0) * 1.15 }]}
-                    yAxis={[{ 
-                      scaleType: 'band', 
-                      data: carRegionData.map(d => d.label),
-                      width: 125,
-                      tickLabelStyle: { fontSize: 11, fontWeight: 500 }
-                    }]}
-                    series={[{ data: carRegionData.map(d => d.value), label: 'Estudiantes', color: '#3E8FD9' }]}
-                    height={270}
-                    margin={{ top: 20, right: 30, bottom: 30, left: 135 }}
-                    slotProps={{ legend: { hidden: true } }}
-                  />
+                  {carRegionData.length > 0 ? (
+                    <BarChart
+                      layout="horizontal"
+                      grid={{ vertical: true }}
+                      xAxis={[{ min: 0, max: Math.max(...carRegionData.map(d => d.value), 0) * 1.15 }]}
+                      yAxis={[{ 
+                        scaleType: 'band', 
+                        data: carRegionData.map(d => d.label),
+                        width: 125,
+                        tickLabelStyle: { fontSize: 11, fontWeight: 500 }
+                      }]}
+                      series={[{ data: carRegionData.map(d => d.value), label: 'Estudiantes', color: '#3E8FD9' }]}
+                      height={270}
+                      margin={{ top: 20, right: 30, bottom: 30, left: 135 }}
+                      slotProps={{ legend: { hidden: true } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
 
@@ -675,7 +740,8 @@ export const DashboardAdmision = () => {
                 iconColor="#171796"
                 isOpen={!collapsedSections['car-colegio']}
                 onToggle={() => handleToggleSection('car-colegio')}
-                hasData={hasData && carColegioData.length > 0}
+                hasData={!isNoData && carColegioData.length > 0}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -700,17 +766,23 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 270, width: '100%' }}>
-                  <PieChart
-                    colors={['#171796', '#8181DE', '#B4B4EC']}
-                    series={[{
-                      data: carColegioData.map((d, i) => ({ id: i, value: d.value, label: d.label })),
-                      innerRadius: 50,
-                      outerRadius: 90,
-                    }]}
-                    height={270}
-                    margin={{ top: 10, bottom: 60, left: 10, right: 10 }}
-                    slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
-                  />
+                  {carColegioData.length > 0 ? (
+                    <PieChart
+                      colors={['#171796', '#8181DE', '#B4B4EC']}
+                      series={[{
+                        data: carColegioData.map((d, i) => ({ id: i, value: d.value, label: d.label })),
+                        innerRadius: 50,
+                        outerRadius: 90,
+                      }]}
+                      height={270}
+                      margin={{ top: 10, bottom: 60, left: 10, right: 10 }}
+                      slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
 
@@ -721,7 +793,8 @@ export const DashboardAdmision = () => {
                 iconColor="#8A4BD6"
                 isOpen={!collapsedSections['car-via']}
                 onToggle={() => handleToggleSection('car-via')}
-                hasData={hasData && carViaData.length > 0}
+                hasData={!isNoData && carViaData.length > 0}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -746,21 +819,27 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 270, width: '100%' }}>
-                  <BarChart
-                    layout="horizontal"
-                    grid={{ vertical: true }}
-                    xAxis={[{ min: 0, max: Math.max(...carViaData.map(d => d.value), 0) * 1.15 }]}
-                    yAxis={[{ 
-                      scaleType: 'band', 
-                      data: carViaData.map(d => d.label),
-                      width: 140,
-                      tickLabelStyle: { fontSize: 11, fontWeight: 500 }
-                    }]}
-                    series={[{ data: carViaData.map(d => d.value), label: 'Estudiantes', color: '#8A4BD6' }]}
-                    height={270}
-                    margin={{ top: 20, right: 30, bottom: 30, left: 150 }}
-                    slotProps={{ legend: { hidden: true } }}
-                  />
+                  {carViaData.length > 0 ? (
+                    <BarChart
+                      layout="horizontal"
+                      grid={{ vertical: true }}
+                      xAxis={[{ min: 0, max: Math.max(...carViaData.map(d => d.value), 0) * 1.15 }]}
+                      yAxis={[{ 
+                        scaleType: 'band', 
+                        data: carViaData.map(d => d.label),
+                        width: 140,
+                        tickLabelStyle: { fontSize: 11, fontWeight: 500 }
+                      }]}
+                      series={[{ data: carViaData.map(d => d.value), label: 'Estudiantes', color: '#8A4BD6' }]}
+                      height={270}
+                      margin={{ top: 20, right: 30, bottom: 30, left: 150 }}
+                      slotProps={{ legend: { hidden: true } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
 
@@ -771,7 +850,8 @@ export const DashboardAdmision = () => {
                 iconColor="#2FB8A6"
                 isOpen={!collapsedSections['car-becas']}
                 onToggle={() => handleToggleSection('car-becas')}
-                hasData={hasData && carBecasData.length > 0}
+                hasData={!isNoData && carBecasData.length > 0}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -796,17 +876,23 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 270, width: '100%' }}>
-                  <PieChart
-                    colors={['#171796', '#3E8FD9', '#2FB8A6', '#E0A63B']}
-                    series={[{
-                      data: carBecasData.map((d, i) => ({ id: i, value: d.value, label: d.label })),
-                      innerRadius: 50,
-                      outerRadius: 90,
-                    }]}
-                    height={270}
-                    margin={{ top: 10, bottom: 60, left: 10, right: 10 }}
-                    slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
-                  />
+                  {carBecasData.length > 0 ? (
+                    <PieChart
+                      colors={['#171796', '#3E8FD9', '#2FB8A6', '#E0A63B']}
+                      series={[{
+                        data: carBecasData.map((d, i) => ({ id: i, value: d.value, label: d.label })),
+                        innerRadius: 50,
+                        outerRadius: 90,
+                      }]}
+                      height={270}
+                      margin={{ top: 10, bottom: 60, left: 10, right: 10 }}
+                      slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
 
@@ -817,7 +903,8 @@ export const DashboardAdmision = () => {
                 iconColor="#C24BC9"
                 isOpen={!collapsedSections['car-sexo']}
                 onToggle={() => handleToggleSection('car-sexo')}
-                hasData={hasData && carSexoData.length > 0}
+                hasData={!isNoData && carSexoData.length > 0}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -842,17 +929,23 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 270, width: '100%' }}>
-                  <PieChart
-                    colors={['#5151CC', '#C24BC9', '#94A3B8']}
-                    series={[{
-                      data: carSexoData.map((d, i) => ({ id: i, value: d.value, label: d.label })),
-                      innerRadius: 50,
-                      outerRadius: 90,
-                    }]}
-                    height={270}
-                    margin={{ top: 10, bottom: 60, left: 10, right: 10 }}
-                    slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
-                  />
+                  {carSexoData.length > 0 ? (
+                    <PieChart
+                      colors={['#5151CC', '#C24BC9', '#94A3B8']}
+                      series={[{
+                        data: carSexoData.map((d, i) => ({ id: i, value: d.value, label: d.label })),
+                        innerRadius: 50,
+                        outerRadius: 90,
+                      }]}
+                      height={270}
+                      margin={{ top: 10, bottom: 60, left: 10, right: 10 }}
+                      slotProps={{ legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' } } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
 
@@ -863,7 +956,8 @@ export const DashboardAdmision = () => {
                 iconColor="#171796"
                 isOpen={!collapsedSections['car-edad']}
                 onToggle={() => handleToggleSection('car-edad')}
-                hasData={hasData && carEdadData.length > 0}
+                hasData={!isNoData && carEdadData.length > 0}
+                noDataHeight={260}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
@@ -888,14 +982,20 @@ export const DashboardAdmision = () => {
                   </Button>
                 </Box>
                 <Box sx={{ minHeight: 260, width: '100%' }}>
-                  <BarChart
-                    grid={{ horizontal: true }}
-                    xAxis={[{ scaleType: 'band', data: carEdadData.map(d => d.label) }]}
-                    series={[{ data: carEdadData.map(d => d.value), label: 'Estudiantes', color: '#171796' }]}
-                    height={270}
-                    margin={{ top: 30, right: 20, bottom: 40, left: 45 }}
-                    slotProps={{ legend: { hidden: true } }}
-                  />
+                  {carEdadData.length > 0 ? (
+                    <BarChart
+                      grid={{ horizontal: true }}
+                      xAxis={[{ scaleType: 'band', data: carEdadData.map(d => d.label) }]}
+                      series={[{ data: carEdadData.map(d => d.value), label: 'Estudiantes', color: '#171796' }]}
+                      height={270}
+                      margin={{ top: 30, right: 20, bottom: 40, left: 45 }}
+                      slotProps={{ legend: { hidden: true } }}
+                    />
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%' }}>
+                      Sin datos disponibles
+                    </Box>
+                  )}
                 </Box>
               </DashboardSection>
             </Box>
@@ -911,7 +1011,7 @@ export const DashboardAdmision = () => {
           onToggleCollapse={() => setFiltersCollapsed(!filtersCollapsed)}
           mobileOpen={mobileFiltersOpen}
           onCloseMobile={() => setMobileFiltersOpen(false)}
-          hasData={hasData}
+          hasData={hasRealData}
           noDataMessage="No hay datos disponibles para los filtros seleccionados."
           onReset={handleResetFilters}
           resetLabel="Restablecer filtros"
@@ -965,225 +1065,202 @@ export const DashboardAdmision = () => {
             </Box>
           </Box>
 
-          {/* Acordeón: Semestre */}
-          <Accordion 
-            expanded={accordionsOpen.semestre} 
-            onChange={() => handleToggleAccordion('semestre')}
-            sx={styles.filterAccordion}
-          >
-            <AccordionSummary sx={styles.filterAccordionSummary}>
-              <ChevronRightIcon style={{ transform: accordionsOpen.semestre ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
-              <Typography sx={styles.filterAccordionTitle}>
-                Semestre
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={styles.filterAccordionDetails}>
-              <Typography sx={styles.filterCatLabel}>Período académico</Typography>
-              <Box sx={styles.filterChips}>
-                {[
-                  { label: 'Semestre 1', value: '1' },
-                  { label: 'Semestre 2', value: '2' }
-                ].map((chip) => {
-                  const isSelected = selectedChips.semestre.includes(chip.value);
-                  return (
-                    <Box
-                      key={chip.value}
-                      onClick={() => handleToggleChip('semestre', chip.value)}
-                      sx={styles.filterChip(isSelected)}
-                    >
-                      {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
-                      {chip.label}
-                    </Box>
-                  );
-                })}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
+          {/* Acordeones de Filtros (solo si hay datos disponibles) */}
+          {hasRealData && (
+            <>
+              {/* Acordeón: Semestre */}
+              <Accordion 
+                expanded={accordionsOpen.semestre} 
+                onChange={() => handleToggleAccordion('semestre')}
+                sx={styles.filterAccordion}
+              >
+                <AccordionSummary sx={styles.filterAccordionSummary}>
+                  <ChevronRightIcon style={{ transform: accordionsOpen.semestre ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
+                  <Typography sx={styles.filterAccordionTitle}>
+                    Semestre
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={styles.filterAccordionDetails}>
+                  <Typography sx={styles.filterCatLabel}>Período académico</Typography>
+                  <Box sx={styles.filterChips}>
+                    {semestresList.map((chip) => {
+                      const isSelected = selectedChips.semestre.includes(chip.value);
+                      return (
+                        <Box
+                          key={chip.value}
+                          onClick={() => handleToggleChip('semestre', chip.value)}
+                          sx={styles.filterChip(isSelected)}
+                        >
+                          {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
+                          {chip.label}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
 
-          {/* Acordeón: Estado Académico */}
-          <Accordion 
-            expanded={accordionsOpen.estado} 
-            onChange={() => handleToggleAccordion('estado')}
-            sx={styles.filterAccordion}
-          >
-            <AccordionSummary sx={styles.filterAccordionSummary}>
-              <ChevronRightIcon style={{ transform: accordionsOpen.estado ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
-              <Typography sx={styles.filterAccordionTitle}>
-                Estado académico
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={styles.filterAccordionDetails}>
-              <Typography sx={styles.filterCatLabel}>Situación del alumno</Typography>
-              <Box sx={styles.filterChips}>
-                {[
-                  { label: 'EGRESADO', value: 'egresado' },
-                  { label: 'TITULADO', value: 'titulado' },
-                  { label: 'VIGENTE', value: 'vigente' }
-                ].map((chip) => {
-                  const isSelected = selectedChips.estado.includes(chip.value);
-                  return (
-                    <Box
-                      key={chip.value}
-                      onClick={() => handleToggleChip('estado', chip.value)}
-                      sx={styles.filterChip(isSelected)}
-                    >
-                      {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
-                      {chip.label}
-                    </Box>
-                  );
-                })}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
+              {/* Acordeón: Estado Académico */}
+              <Accordion 
+                expanded={accordionsOpen.estado} 
+                onChange={() => handleToggleAccordion('estado')}
+                sx={styles.filterAccordion}
+              >
+                <AccordionSummary sx={styles.filterAccordionSummary}>
+                  <ChevronRightIcon style={{ transform: accordionsOpen.estado ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
+                  <Typography sx={styles.filterAccordionTitle}>
+                    Estado académico
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={styles.filterAccordionDetails}>
+                  <Typography sx={styles.filterCatLabel}>Situación del alumno</Typography>
+                  <Box sx={styles.filterChips}>
+                    {estadosList.map((chip) => {
+                      const isSelected = selectedChips.estado.includes(chip.value);
+                      return (
+                        <Box
+                          key={chip.value}
+                          onClick={() => handleToggleChip('estado', chip.value)}
+                          sx={styles.filterChip(isSelected)}
+                        >
+                          {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
+                          {chip.label}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
 
-          {/* Acordeón: Tipo de Colegio */}
-          <Accordion 
-            expanded={accordionsOpen.colegio} 
-            onChange={() => handleToggleAccordion('colegio')}
-            sx={styles.filterAccordion}
-          >
-            <AccordionSummary sx={styles.filterAccordionSummary}>
-              <ChevronRightIcon style={{ transform: accordionsOpen.colegio ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
-              <Typography sx={styles.filterAccordionTitle}>
-                Tipo de colegio
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={styles.filterAccordionDetails}>
-              <Typography sx={styles.filterCatLabel}>Establecimiento de origen</Typography>
-              <Box sx={styles.filterChips}>
-                {[
-                  { label: 'MUNICIPAL', value: 'municipal' },
-                  { label: 'PARTICULAR SUBVENCIONADO', value: 'subvencionado' },
-                  { label: 'PARTICULAR PAGADO', value: 'particular' }
-                ].map((chip) => {
-                  const isSelected = selectedChips.colegio.includes(chip.value);
-                  return (
-                    <Box
-                      key={chip.value}
-                      onClick={() => handleToggleChip('colegio', chip.value)}
-                      sx={styles.filterChip(isSelected)}
-                    >
-                      {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
-                      {chip.label}
-                    </Box>
-                  );
-                })}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
+              {/* Acordeón: Tipo de Colegio */}
+              <Accordion 
+                expanded={accordionsOpen.colegio} 
+                onChange={() => handleToggleAccordion('colegio')}
+                sx={styles.filterAccordion}
+              >
+                <AccordionSummary sx={styles.filterAccordionSummary}>
+                  <ChevronRightIcon style={{ transform: accordionsOpen.colegio ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
+                  <Typography sx={styles.filterAccordionTitle}>
+                    Tipo de colegio
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={styles.filterAccordionDetails}>
+                  <Typography sx={styles.filterCatLabel}>Establecimiento de origen</Typography>
+                  <Box sx={styles.filterChips}>
+                    {colegiosList.map((chip) => {
+                      const isSelected = selectedChips.colegio.includes(chip.value);
+                      return (
+                        <Box
+                          key={chip.value}
+                          onClick={() => handleToggleChip('colegio', chip.value)}
+                          sx={styles.filterChip(isSelected)}
+                        >
+                          {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
+                          {chip.label}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
 
-          {/* Acordeón: Vía de Acceso */}
-          <Accordion 
-            expanded={accordionsOpen.via} 
-            onChange={() => handleToggleAccordion('via')}
-            sx={styles.filterAccordion}
-          >
-            <AccordionSummary sx={styles.filterAccordionSummary}>
-              <ChevronRightIcon style={{ transform: accordionsOpen.via ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
-              <Typography sx={styles.filterAccordionTitle}>
-                Vía de acceso
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={styles.filterAccordionDetails}>
-              <Typography sx={styles.filterCatLabel}>Mecanismo de ingreso</Typography>
-              <Box sx={styles.filterChips}>
-                {[
-                  { label: 'PAES', value: 'paes' },
-                  { label: 'RANKING', value: 'ranking' },
-                  { label: 'CUPO ESPECIAL', value: 'cupo-especial' },
-                  { label: 'CONVALIDACIÓN', value: 'convalidacion' },
-                  { label: 'TRASLADO', value: 'traslado' },
-                  { label: 'OTRA', value: 'otra' }
-                ].map((chip) => {
-                  const isSelected = selectedChips.via.includes(chip.value);
-                  return (
-                    <Box
-                      key={chip.value}
-                      onClick={() => handleToggleChip('via', chip.value)}
-                      sx={styles.filterChip(isSelected)}
-                    >
-                      {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
-                      {chip.label}
-                    </Box>
-                  );
-                })}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
+              {/* Acordeón: Vía de Acceso */}
+              <Accordion 
+                expanded={accordionsOpen.via} 
+                onChange={() => handleToggleAccordion('via')}
+                sx={styles.filterAccordion}
+              >
+                <AccordionSummary sx={styles.filterAccordionSummary}>
+                  <ChevronRightIcon style={{ transform: accordionsOpen.via ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
+                  <Typography sx={styles.filterAccordionTitle}>
+                    Vía de acceso
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={styles.filterAccordionDetails}>
+                  <Typography sx={styles.filterCatLabel}>Mecanismo de ingreso</Typography>
+                  <Box sx={styles.filterChips}>
+                    {viasList.map((chip) => {
+                      const isSelected = selectedChips.via.includes(chip.value);
+                      return (
+                        <Box
+                          key={chip.value}
+                          onClick={() => handleToggleChip('via', chip.value)}
+                          sx={styles.filterChip(isSelected)}
+                        >
+                          {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
+                          {chip.label}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
 
-          {/* Acordeón: Sexo */}
-          <Accordion 
-            expanded={accordionsOpen.sexo} 
-            onChange={() => handleToggleAccordion('sexo')}
-            sx={styles.filterAccordion}
-          >
-            <AccordionSummary sx={styles.filterAccordionSummary}>
-              <ChevronRightIcon style={{ transform: accordionsOpen.sexo ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
-              <Typography sx={styles.filterAccordionTitle}>
-                Sexo
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={styles.filterAccordionDetails}>
-              <Typography sx={styles.filterCatLabel}>Identificación de género</Typography>
-              <Box sx={styles.filterChips}>
-                {[
-                  { label: 'Femenino', value: 'f' },
-                  { label: 'Masculino', value: 'm' },
-                  { label: 'Otro', value: 'o' }
-                ].map((chip) => {
-                  const isSelected = selectedChips.sexo.includes(chip.value);
-                  return (
-                    <Box
-                      key={chip.value}
-                      onClick={() => handleToggleChip('sexo', chip.value)}
-                      sx={styles.filterChip(isSelected)}
-                    >
-                      {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
-                      {chip.label}
-                    </Box>
-                  );
-                })}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
+              {/* Acordeón: Sexo */}
+              <Accordion 
+                expanded={accordionsOpen.sexo} 
+                onChange={() => handleToggleAccordion('sexo')}
+                sx={styles.filterAccordion}
+              >
+                <AccordionSummary sx={styles.filterAccordionSummary}>
+                  <ChevronRightIcon style={{ transform: accordionsOpen.sexo ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
+                  <Typography sx={styles.filterAccordionTitle}>
+                    Sexo
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={styles.filterAccordionDetails}>
+                  <Typography sx={styles.filterCatLabel}>Identificación de género</Typography>
+                  <Box sx={styles.filterChips}>
+                    {sexosList.map((chip) => {
+                      const isSelected = selectedChips.sexo.includes(chip.value);
+                      return (
+                        <Box
+                          key={chip.value}
+                          onClick={() => handleToggleChip('sexo', chip.value)}
+                          sx={styles.filterChip(isSelected)}
+                        >
+                          {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
+                          {chip.label}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
 
-          {/* Acordeón: Nivel Socioeconómico (NSE) */}
-          <Accordion 
-            expanded={accordionsOpen.nse} 
-            onChange={() => handleToggleAccordion('nse')}
-            sx={styles.filterAccordion}
-          >
-            <AccordionSummary sx={styles.filterAccordionSummary}>
-              <ChevronRightIcon style={{ transform: accordionsOpen.nse ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
-              <Typography sx={styles.filterAccordionTitle}>
-                NSE (Quintiles)
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={styles.filterAccordionDetails}>
-              <Typography sx={styles.filterCatLabel}>Quintil de ingreso</Typography>
-              <Box sx={styles.filterChips}>
-                {[
-                  { label: 'QUINTIL 1', value: 'q1' },
-                  { label: 'QUINTIL 2', value: 'q2' },
-                  { label: 'QUINTIL 3', value: 'q3' },
-                  { label: 'QUINTIL 4', value: 'q4' },
-                  { label: 'QUINTIL 5', value: 'q5' }
-                ].map((chip) => {
-                  const isSelected = selectedChips.nse.includes(chip.value);
-                  return (
-                    <Box
-                      key={chip.value}
-                      onClick={() => handleToggleChip('nse', chip.value)}
-                      sx={styles.filterChip(isSelected)}
-                    >
-                      {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
-                      {chip.label}
-                    </Box>
-                  );
-                })}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
+              {/* Acordeón: Nivel Socioeconómico (NSE) */}
+              <Accordion 
+                expanded={accordionsOpen.nse} 
+                onChange={() => handleToggleAccordion('nse')}
+                sx={styles.filterAccordion}
+              >
+                <AccordionSummary sx={styles.filterAccordionSummary}>
+                  <ChevronRightIcon style={{ transform: accordionsOpen.nse ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569', fontSize: 16 }} />
+                  <Typography sx={styles.filterAccordionTitle}>
+                    NSE (Quintiles)
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={styles.filterAccordionDetails}>
+                  <Typography sx={styles.filterCatLabel}>Quintil de ingreso</Typography>
+                  <Box sx={styles.filterChips}>
+                    {nseList.map((chip) => {
+                      const isSelected = selectedChips.nse.includes(chip.value);
+                      return (
+                        <Box
+                          key={chip.value}
+                          onClick={() => handleToggleChip('nse', chip.value)}
+                          sx={styles.filterChip(isSelected)}
+                        >
+                          {isSelected && <CheckIcon sx={{ fontSize: '12px' }} />}
+                          {chip.label}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
+            </>
+          )}
         </DashboardFilterSidebar>
 
         {/* ----------------- DRAWER LATERAL DE DETALLE DE INDICADOR (PIADI-306) ----------------- */}
@@ -1224,6 +1301,12 @@ export const DashboardAdmision = () => {
               <Box sx={{ width: '100%', py: 4 }}>
                 <LinearProgress sx={{ bgcolor: '#E2E8F0', '& .MuiLinearProgress-bar': { bgcolor: '#1E2875' } }} />
               </Box>
+            ) : currentIndicator.isError ? (
+              <Box sx={{ mt: 2 }}>
+                <Alert severity="error" sx={{ borderRadius: '8px', fontSize: '13px', fontWeight: 500 }}>
+                  {currentIndicator.errorMessage || 'Error al cargar los datos del indicador desde el servidor.'}
+                </Alert>
+              </Box>
             ) : (
               <>
                 {/* 1. Qué mide */}
@@ -1242,16 +1325,29 @@ export const DashboardAdmision = () => {
                     <Typography sx={styles.drawerMetricLabel}>
                       {currentIndicator.metric.label}
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
                       <Typography sx={styles.drawerMetricValue}>
-                        {typeof currentIndicator.metric.value === 'number' 
-                          ? currentIndicator.metric.value.toLocaleString('es-CL') 
-                          : currentIndicator.metric.value}
+                        {currentIndicator.metric.value !== null 
+                          ? (typeof currentIndicator.metric.value === 'number' 
+                              ? currentIndicator.metric.value.toLocaleString('es-CL') 
+                              : currentIndicator.metric.value)
+                          : 'Sin datos'}
                       </Typography>
-                      {currentIndicator.trend && currentIndicator.trend.delta !== 0 && (
-                        <Box sx={styles.drawerMetaBadge(currentIndicator.trend.delta > 0)}>
+                      {currentIndicator.trend && (
+                        <Box sx={styles.drawerMetaBadge(currentIndicator.trend.isPositive !== false)}>
                           <Typography sx={{ fontSize: '12px', fontWeight: 600 }}>
-                            {currentIndicator.trend.delta > 0 ? `▲ +${currentIndicator.trend.delta}` : `▼ ${currentIndicator.trend.delta}`} vs {currentIndicator.trend.baseline}
+                            {currentIndicator.trend.rawText 
+                              ? currentIndicator.trend.rawText
+                              : `${currentIndicator.trend.isPositive !== false 
+                                  ? `▲ ${currentIndicator.trend.formattedDelta || `+${currentIndicator.trend.delta}`}` 
+                                  : `▼ ${currentIndicator.trend.formattedDelta || currentIndicator.trend.delta}`
+                                } ${currentIndicator.trend.baseline ? (
+                                  currentIndicator.trend.baseline.startsWith('del ') || 
+                                  currentIndicator.trend.baseline.startsWith('de ') || 
+                                  currentIndicator.trend.baseline.startsWith('total')
+                                    ? currentIndicator.trend.baseline
+                                    : `vs ${currentIndicator.trend.baseline}`
+                                ) : ''}`}
                           </Typography>
                         </Box>
                       )}
@@ -1260,13 +1356,13 @@ export const DashboardAdmision = () => {
                 )}
 
                 {/* 3. Desglose de datos en tabla */}
-                {displayRows && displayRows.length > 0 && (
+                {displayRows && displayRows.length > 0 ? (
                   <Box sx={{ mt: 0.5 }}>
                     <Box sx={styles.drawerTableWrap}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', fontFamily: "'Inter', sans-serif" }}>
                         <thead>
                           <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 1 }}>
-                            {(currentIndicator.colLabels || ['Período', 'Valor']).map((col, idx) => (
+                            {(currentIndicator.colLabels || ['Año', 'Valor']).map((col, idx) => (
                               <th 
                                 key={idx} 
                                 style={{ 
@@ -1312,17 +1408,21 @@ export const DashboardAdmision = () => {
                       </table>
                     </Box>
                   </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 160, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%', mt: 2 }}>
+                    Sin datos disponibles
+                  </Box>
                 )}
               </>
             )}
           </Box>
 
-          {/* Footer exacto a dashboard-admision.html */}
+          {/* Footer exacto a dashboard-admision */}
           <Box component="footer" sx={styles.drawerFooter}>
             <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <CalendarIcon sx={{ fontSize: 14, color: '#64748B' }} />
               <Typography component="label" htmlFor="drawerPeriodSelect" sx={{ fontSize: '12px', color: '#64748B' }}>
-                Período
+                Año
               </Typography>
               <select
                 id="drawerPeriodSelect"
@@ -1342,8 +1442,7 @@ export const DashboardAdmision = () => {
                   outline: 'none',
                 }}
               >
-                <option value="all">Todos los años</option>
-                {YEARS.map((yr) => (
+                {(drawerYears || availableYears).map((yr) => (
                   <option key={yr} value={String(yr)}>{yr}</option>
                 ))}
               </select>
