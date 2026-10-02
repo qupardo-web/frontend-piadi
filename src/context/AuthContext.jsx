@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { API_URL } from '../services/piadiApi';
 
 const AuthContext = createContext(null);
 
@@ -120,7 +121,6 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     const token = sessionStorage.getItem('auth_token');
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     if (token) {
       fetch(`${API_URL}/api/auth/logout`, {
         method: 'POST',

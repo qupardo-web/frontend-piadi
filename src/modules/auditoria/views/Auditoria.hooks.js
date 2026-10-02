@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
-import { getRoles } from '../../../services/piadiApi';
+import { API_URL, getRoles } from '../../../services/piadiApi';
 
 const DEFAULT_ROLE_FILTER = 'Todos';
 
@@ -400,7 +400,6 @@ export const useAuditoria = () => {
 
   useEffect(() => {
     const token = sessionStorage.getItem('auth_token');
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
     const fetchLogs = async (apiType, displayType, module, setter) => {
       try {
