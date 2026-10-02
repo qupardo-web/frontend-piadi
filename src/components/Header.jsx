@@ -38,7 +38,7 @@ export const Header = ({
     { label: title, path: null },
   ];
 
-  const showBreadcrumbs = !topContent && breadcrumbs !== false && breadcrumbs !== null;
+  const showBreadcrumbs = breadcrumbs !== false && breadcrumbs !== null;
   const breadcrumbsList = Array.isArray(breadcrumbs) ? breadcrumbs : defaultBreadcrumbs;
 
   return (
