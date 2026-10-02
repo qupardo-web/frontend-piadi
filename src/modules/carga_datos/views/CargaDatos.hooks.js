@@ -32,7 +32,14 @@ export const isAdmisionTemplate = (template) => {
   return name.includes('admisión') || name.includes('admision') || roleName === 'admisión' || roleName === 'admision';
 };
 
-export const canViewTemplate = (template, userRole) => {
+export const canViewTemplate = (template, userOrRole) => {
+  const userRole = typeof userOrRole === 'string' ? userOrRole : userOrRole?.role;
+  const roleGroup = typeof userOrRole === 'object' ? userOrRole?.roleGroup : null;
+
+  if (isAdmisionTemplate(template)) {
+    return userRole === 'Admisión' || userRole === 'Rector' || roleGroup === 'Rectoria';
+  }
+
   if (isVcmTemplate(template)) {
     return [VCM_ROLE, 'Rector'].includes(userRole);
   }
@@ -216,7 +223,7 @@ export const useCargaDatos = () => {
     }
   }
 
-  const filteredTemplates = uniqueDepartmentTemplates.filter((template) => canViewTemplate(template, user?.role));
+  const filteredTemplates = uniqueDepartmentTemplates.filter((template) => canViewTemplate(template, user));
 
   // Función para alternar la inclusión de una hoja en Admisión
   const toggleAdmisionSheet = (sheetKey) => {
