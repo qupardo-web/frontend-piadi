@@ -418,4 +418,174 @@ export const styles = {
     fontWeight: 700,
     fontSize: '12px',
   }),
+
+  // Drawer modal lateral de Detalle del indicador
+  drawerOverlay: (isOpen) => ({
+    position: 'fixed',
+    inset: 0,
+    bgcolor: 'rgba(0,0,0,0.4)',
+    opacity: isOpen ? 1 : 0,
+    visibility: isOpen ? 'visible' : 'hidden',
+    transition: 'opacity 250ms ease-out, visibility 250ms ease-out',
+    zIndex: 1300,
+  }),
+
+  indicatorDrawer: (isOpen) => ({
+    position: 'fixed',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: { xs: '100vw', sm: 400 },
+    maxWidth: '100vw',
+    bgcolor: '#FFFFFF',
+    borderLeft: '1px solid #e5e7eb',
+    boxShadow: '-12px 0 28px rgba(0,0,0,0.22)',
+    transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+    visibility: isOpen ? 'visible' : 'hidden',
+    transition: 'transform 250ms ease-out, visibility 250ms ease-out',
+    zIndex: 1400,
+    display: 'flex',
+    flexDirection: 'column',
+  }),
+
+  drawerHeader: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 1,
+    p: '16px 24px 12px',
+    borderBottom: '1px solid #e5e7eb',
+    flexShrink: 0,
+  },
+
+  drawerTitleRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 1.5,
+  },
+
+  drawerTitle: {
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '18px',
+    fontWeight: 700,
+    color: '#1E2875',
+    letterSpacing: '-0.01em',
+    lineHeight: 1.3,
+    flex: 1,
+  },
+
+  drawerBody: {
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
+    p: '20px 24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+  },
+
+  drawerDescLabel: {
+    fontSize: '11px',
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    color: '#9E9E9E',
+    mb: 0.5,
+  },
+
+  drawerDesc: {
+    fontSize: '13px',
+    lineHeight: 1.6,
+    color: '#212121',
+  },
+
+  drawerMetricBox: {
+    bgcolor: '#F8FAFC',
+    borderRadius: '10px',
+    p: '16px',
+    border: '1px solid #E2E8F0',
+  },
+
+  drawerMetricLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    color: '#64748B',
+    display: 'block',
+    mb: 0.5,
+  },
+
+  drawerMetricValue: {
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '24px',
+    fontWeight: 700,
+    color: '#1E2875',
+    letterSpacing: '-0.02em',
+    lineHeight: 1.2,
+    wordBreak: 'break-word',
+  },
+
+  drawerMetaBadge: (status) => {
+    const isPos = status === true || status === 'positive';
+    const isNeg = status === false || status === 'negative';
+    let bgcolor = '#F1F5F9';
+    let color = '#64748B';
+    if (isPos) {
+      bgcolor = '#ECFDF5';
+      color = '#059669';
+    } else if (isNeg) {
+      bgcolor = '#FEF2F2';
+      color = '#DC2626';
+    }
+    return {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 0.5,
+      mt: 1,
+      px: 1.2,
+      py: 0.4,
+      borderRadius: '6px',
+      fontSize: '12px',
+      fontWeight: 600,
+      bgcolor,
+      color,
+    };
+  },
+
+  drawerTableWrap: {
+    maxHeight: '240px',
+    overflowY: 'auto',
+    border: '1px solid #E2E8F0',
+    borderRadius: '8px',
+    mt: 1,
+  },
+
+  drawerFooter: {
+    p: '14px 24px',
+    borderTop: '1px solid #e5e7eb',
+    flexShrink: 0,
+    fontSize: '12px',
+    color: '#64748B',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+  },
+
+  // Botón flotante de ayuda
+  floatingHelpButton: {
+    position: 'fixed',
+    bottom: 24,
+    right: 24,
+    bgcolor: '#1E2875',
+    color: '#ffffff',
+    width: 48,
+    height: 48,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    zIndex: 1000,
+    '&:hover': {
+      bgcolor: '#161796',
+    },
+  },
 };

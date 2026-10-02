@@ -589,7 +589,7 @@ export const styles = {
     top: 0,
     right: 0,
     bottom: 0,
-    width: { xs: '100vw', sm: 380 },
+    width: { xs: '100vw', sm: 400 },
     maxWidth: '100vw',
     bgcolor: '#FFFFFF',
     borderLeft: '1px solid #e5e7eb',
@@ -619,10 +619,10 @@ export const styles = {
   },
 
   drawerTitle: {
-    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+    fontFamily: "'Inter', sans-serif",
     fontSize: '18px',
     fontWeight: 700,
-    color: '#161796',
+    color: '#1E2875',
     letterSpacing: '-0.01em',
     lineHeight: 1.3,
     flex: 1,
@@ -654,9 +654,10 @@ export const styles = {
   },
 
   drawerMetricBox: {
-    bgcolor: '#F5F5F5',
-    borderRadius: '8px',
-    p: '14px 16px',
+    bgcolor: '#F8FAFC',
+    borderRadius: '10px',
+    p: '16px',
+    border: '1px solid #E2E8F0',
   },
 
   drawerMetricLabel: {
@@ -664,37 +665,52 @@ export const styles = {
     fontWeight: 600,
     letterSpacing: '0.06em',
     textTransform: 'uppercase',
-    color: '#9E9E9E',
+    color: '#64748B',
     display: 'block',
     mb: 0.5,
   },
 
   drawerMetricValue: {
-    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
-    fontSize: '26px',
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '24px',
     fontWeight: 700,
-    color: '#212121',
+    color: '#1E2875',
     letterSpacing: '-0.02em',
-    lineHeight: 1.15,
+    lineHeight: 1.2,
+    wordBreak: 'break-word',
   },
 
-  drawerMetaBadge: (isMet) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 0.8,
-    mt: 1.5,
-    p: '6px 12px',
-    borderRadius: '999px',
-    fontSize: '12px',
-    fontWeight: 600,
-    bgcolor: isMet ? '#ecfdf5' : '#eff6ff',
-    color: isMet ? '#059669' : '#1a71f6',
-  }),
+  drawerMetaBadge: (status) => {
+    const isPos = status === true || status === 'positive';
+    const isNeg = status === false || status === 'negative';
+    let bgcolor = '#F1F5F9';
+    let color = '#64748B';
+    if (isPos) {
+      bgcolor = '#ECFDF5';
+      color = '#059669';
+    } else if (isNeg) {
+      bgcolor = '#FEF2F2';
+      color = '#DC2626';
+    }
+    return {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 0.5,
+      mt: 1,
+      px: 1.2,
+      py: 0.4,
+      borderRadius: '6px',
+      fontSize: '12px',
+      fontWeight: 600,
+      bgcolor,
+      color,
+    };
+  },
 
   drawerTableWrap: {
-    maxHeight: '220px',
+    maxHeight: '240px',
     overflowY: 'auto',
-    border: '1px solid #E0E0E0',
+    border: '1px solid #E2E8F0',
     borderRadius: '8px',
     mt: 1,
   },
@@ -704,9 +720,10 @@ export const styles = {
     borderTop: '1px solid #e5e7eb',
     flexShrink: 0,
     fontSize: '12px',
-    color: '#9E9E9E',
+    color: '#64748B',
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 1,
   },
 

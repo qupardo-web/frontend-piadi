@@ -26,6 +26,12 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+  LinearProgress,
 } from '@mui/material';
 import {
   TableChart as TablaIcon,
@@ -40,6 +46,9 @@ import {
   Assignment as AssignmentIcon,
   Public as PublicIcon,
   ExpandMore as ExpandMoreIcon,
+  Close as CloseIcon,
+  HelpOutline as HelpOutlineIcon,
+  InfoOutlined as InfoOutlinedIcon,
 } from '@mui/icons-material';
 
 // Lucide Icons from TallerDevops
@@ -65,7 +74,11 @@ import {
   MESES_LIST,
   TIPOS_LIST,
   MODALIDADES_LIST,
-  AREAS_LIST
+  AREAS_LIST,
+  OFERTA_GROUP_BY_MAP,
+  INGRESOS_GROUP_BY_MAP,
+  MATRICULA_GROUP_BY_MAP,
+  PERFIL_GROUP_BY_MAP
 } from './DashboardEducacionContinua.hooks';
 
 const dashboardLightTheme = createTheme({
@@ -200,6 +213,25 @@ export const DashboardEducacionContinua = () => {
     totalRevenueCLP,
     perfilParticipantesData,
     activePeriodosText,
+    // Drawer & Help Center
+    drawerOpen,
+    currentIndicatorKey,
+    drawerPeriod,
+    drawerGroupBy,
+    drawerLoading,
+    drawerError,
+    apiIndicatorDetail,
+    drawerYears,
+    currentIndicator,
+    displayRows,
+    drawerPeriodText,
+    openHelpDialog,
+    setOpenHelpDialog,
+    handleOpenIndicator,
+    handleCloseDrawer,
+    handleDrawerPeriodChange,
+    setDrawerGroupBy,
+    faqData,
   } = useDashboardEducacionContinua();
 
   const hasData = !apiLoading && apiSummary && Object.keys(apiSummary).length > 0;
@@ -435,7 +467,7 @@ export const DashboardEducacionContinua = () => {
       
       {/* SCOPED STYLE BLOCK TO AVOID GLOBAL COLLISION */}
       <style dangerouslySetInnerHTML={{__html: `
-        .taller-devops-dashboard {
+        .educacion-continua-dashboard {
           font-family: 'Inter', sans-serif;
           color: #1e293b;
           width: 100%;
@@ -444,18 +476,18 @@ export const DashboardEducacionContinua = () => {
         }
 
         /* Chart SVG text visibility */
-        .taller-devops-dashboard svg text,
-        .taller-devops-dashboard svg text tspan,
-        .taller-devops-dashboard svg tspan {
+        .educacion-continua-dashboard svg text,
+        .educacion-continua-dashboard svg text tspan,
+        .educacion-continua-dashboard svg tspan {
           fill: #1e293b !important;
           opacity: 1 !important;
           fill-opacity: 1 !important;
         }
-        .taller-devops-dashboard .MuiChartsAxis-label,
-        .taller-devops-dashboard .MuiChartsAxis-tickLabel,
-        .taller-devops-dashboard .MuiChartsLegend-root text,
-        .taller-devops-dashboard .MuiChartsLegend-root text tspan,
-        .taller-devops-dashboard .MuiChartsLegend-root tspan {
+        .educacion-continua-dashboard .MuiChartsAxis-label,
+        .educacion-continua-dashboard .MuiChartsAxis-tickLabel,
+        .educacion-continua-dashboard .MuiChartsLegend-root text,
+        .educacion-continua-dashboard .MuiChartsLegend-root text tspan,
+        .educacion-continua-dashboard .MuiChartsLegend-root tspan {
           fill: #1E2875 !important;
           font-weight: 600 !important;
           opacity: 1 !important;
@@ -463,7 +495,7 @@ export const DashboardEducacionContinua = () => {
         }
         
         /* Top summary cards */
-        .taller-devops-dashboard .kpi-container {
+        .educacion-continua-dashboard .kpi-container {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 20px;
@@ -472,18 +504,18 @@ export const DashboardEducacionContinua = () => {
           box-sizing: border-box;
         }
         @media (max-width: 1100px) {
-          .taller-devops-dashboard .kpi-container {
+          .educacion-continua-dashboard .kpi-container {
             grid-template-columns: repeat(2, 1fr);
             gap: 16px;
           }
         }
         @media (max-width: 600px) {
-          .taller-devops-dashboard .kpi-container {
+          .educacion-continua-dashboard .kpi-container {
             grid-template-columns: 1fr;
             gap: 14px;
           }
         }
-        .taller-devops-dashboard .kpi-card {
+        .educacion-continua-dashboard .kpi-card {
           background: #ffffff;
           border: 1px solid #e2e8f0;
           border-left: 4px solid #1E2875;
@@ -493,7 +525,7 @@ export const DashboardEducacionContinua = () => {
           width: 100%;
           box-sizing: border-box;
         }
-        .taller-devops-dashboard .kpi-header {
+        .educacion-continua-dashboard .kpi-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -503,20 +535,20 @@ export const DashboardEducacionContinua = () => {
           text-transform: uppercase;
           margin-bottom: 8px;
         }
-        .taller-devops-dashboard .kpi-value {
+        .educacion-continua-dashboard .kpi-value {
           font-size: 26px;
           font-weight: 700;
           color: #1e1b4b;
           margin-bottom: 6px;
         }
-        .taller-devops-dashboard .kpi-trend {
+        .educacion-continua-dashboard .kpi-trend {
           font-size: 12px;
           color: #64748b;
           font-weight: 500;
         }
 
         /* Subheader banner */
-        .taller-devops-dashboard .info-banner {
+        .educacion-continua-dashboard .info-banner {
           background-color: #f8fafc;
           border: 1px solid #e2e8f0;
           border-radius: 10px;
@@ -529,20 +561,20 @@ export const DashboardEducacionContinua = () => {
           box-sizing: border-box;
           flex-wrap: wrap;
         }
-        .taller-devops-dashboard .info-banner-label {
+        .educacion-continua-dashboard .info-banner-label {
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
           color: #1E2875;
         }
-        .taller-devops-dashboard .info-banner-value {
+        .educacion-continua-dashboard .info-banner-value {
           font-size: 13px;
           color: #334155;
           font-weight: 500;
         }
 
         /* Charts grid */
-        .taller-devops-dashboard .charts-grid {
+        .educacion-continua-dashboard .charts-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 24px;
@@ -550,12 +582,12 @@ export const DashboardEducacionContinua = () => {
           box-sizing: border-box;
         }
         @media (max-width: 1024px) {
-          .taller-devops-dashboard .charts-grid {
+          .educacion-continua-dashboard .charts-grid {
             grid-template-columns: 1fr;
             gap: 16px;
           }
         }
-        .taller-devops-dashboard .chart-card {
+        .educacion-continua-dashboard .chart-card {
           background-color: #ffffff;
           border: 1px solid #e2e8f0;
           border-radius: 16px;
@@ -573,15 +605,15 @@ export const DashboardEducacionContinua = () => {
           transition: transform 0.15s, box-shadow 0.15s;
         }
         @media (max-width: 600px) {
-          .taller-devops-dashboard .chart-card {
+          .educacion-continua-dashboard .chart-card {
             padding: 16px 14px;
             min-height: 340px;
           }
         }
-        .taller-devops-dashboard .chart-card:hover {
+        .educacion-continua-dashboard .chart-card:hover {
           box-shadow: 0 4px 12px rgba(30, 40, 117, 0.05);
         }
-        .taller-devops-dashboard .chart-header {
+        .educacion-continua-dashboard .chart-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -590,13 +622,13 @@ export const DashboardEducacionContinua = () => {
           gap: 10px;
           width: 100%;
         }
-        .taller-devops-dashboard .chart-title {
+        .educacion-continua-dashboard .chart-title {
           font-size: 15px;
           font-weight: 700;
           color: #1E2875;
           font-family: 'Inter', sans-serif;
         }
-        .taller-devops-dashboard .chart-wrapper {
+        .educacion-continua-dashboard .chart-wrapper {
           flex-grow: 1;
           position: relative;
           min-height: 280px;
@@ -608,21 +640,24 @@ export const DashboardEducacionContinua = () => {
           align-items: center;
           justify-content: center;
         }
-        .taller-devops-dashboard .chart-wrapper .MuiResponsiveChart-container {
+        .educacion-continua-dashboard .chart-wrapper .MuiResponsiveChart-container {
           width: 100% !important;
           max-width: 100% !important;
         }
 
         /* Toggle Buttons */
-        .taller-devops-dashboard .card-toggle-group {
-          display: flex;
+        .educacion-continua-dashboard .card-toggle-group {
+          display: inline-flex !important;
+          width: fit-content !important;
+          max-width: 100% !important;
+          align-self: flex-start !important;
           flex-wrap: wrap;
           background-color: #f1f5f9;
           border-radius: 8px;
           padding: 3px;
           gap: 2px;
         }
-        .taller-devops-dashboard .btn-toggle {
+        .educacion-continua-dashboard .btn-toggle {
           background: transparent;
           border: none;
           padding: 4px 10px;
@@ -633,12 +668,12 @@ export const DashboardEducacionContinua = () => {
           color: #475569;
           transition: background-color 0.1s, color 0.1s;
         }
-        .taller-devops-dashboard .btn-toggle.active {
+        .educacion-continua-dashboard .btn-toggle.active {
           background-color: #ffffff;
           color: #1E2875;
           box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        .taller-devops-dashboard .btn-details {
+        .educacion-continua-dashboard .btn-details {
           background: transparent;
           border: 1px solid #e2e8f0;
           border-radius: 6px;
@@ -651,13 +686,13 @@ export const DashboardEducacionContinua = () => {
           font-size: 11px;
           font-weight: 600;
         }
-        .taller-devops-dashboard .btn-details:hover {
+        .educacion-continua-dashboard .btn-details:hover {
           background-color: #f8fafc;
           color: #1E2875;
         }
 
         /* Modals and overlay */
-        .taller-devops-dashboard .modal-overlay {
+        .educacion-continua-dashboard .modal-overlay {
           position: fixed;
           top: 0;
           left: 0;
@@ -670,7 +705,7 @@ export const DashboardEducacionContinua = () => {
           z-index: 9999;
           padding: 20px;
         }
-        .taller-devops-dashboard .modal-content {
+        .educacion-continua-dashboard .modal-content {
           background: #ffffff;
           border-radius: 16px;
           max-width: 650px;
@@ -681,7 +716,7 @@ export const DashboardEducacionContinua = () => {
           position: relative;
           box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
         }
-        .taller-devops-dashboard .modal-close {
+        .educacion-continua-dashboard .modal-close {
           position: absolute;
           top: 16px;
           right: 16px;
@@ -692,19 +727,19 @@ export const DashboardEducacionContinua = () => {
         }
         
         /* Modal Table styling */
-        .taller-devops-dashboard .details-table {
+        .educacion-continua-dashboard .details-table {
           width: 100%;
           border-collapse: collapse;
           margin-top: 16px;
           font-size: 13px;
         }
-        .taller-devops-dashboard .details-table th,
-        .taller-devops-dashboard .details-table td {
+        .educacion-continua-dashboard .details-table th,
+        .educacion-continua-dashboard .details-table td {
           border-bottom: 1px solid #f1f5f9;
           padding: 10px 12px;
           text-align: left;
         }
-        .taller-devops-dashboard .details-table th {
+        .educacion-continua-dashboard .details-table th {
           background-color: #f8fafc;
           font-weight: 700;
           color: #1E2875;
@@ -715,7 +750,7 @@ export const DashboardEducacionContinua = () => {
       <Sidebar />
 
       {/* ÁREA DE CONTENIDO CENTRAL */}
-      <Box component="main" sx={styles.contentArea} className="taller-devops-dashboard">
+      <Box component="main" sx={styles.contentArea} className="educacion-continua-dashboard">
         
         {/* Cabecera del Panel Principal */}
         <Header
@@ -758,6 +793,7 @@ export const DashboardEducacionContinua = () => {
                   }
                   evolution={card.evo != null && hasDiffYears ? `${Math.abs(card.evo)}%` : null}
                   isPositive={evoPos}
+                  onClick={() => handleOpenIndicator(card.key)}
                 />
               </Grid>
             );
@@ -784,13 +820,32 @@ export const DashboardEducacionContinua = () => {
             icon={<BookOpen size={16} />}
             iconColor="#1E2875"
             title="Oferta programada"
-            actions={
-              <div className="card-toggle-group">
+            headerContent={
+              <div className="card-toggle-group" style={{ marginTop: '4px' }}>
                 <button className={`btn-toggle ${ofertaViewMode === 'total' ? 'active' : ''}`} onClick={() => setOfertaViewMode('total')}>Total</button>
                 <button className={`btn-toggle ${ofertaViewMode === 'area' ? 'active' : ''}`} onClick={() => setOfertaViewMode('area')}>Área</button>
                 <button className={`btn-toggle ${ofertaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setOfertaViewMode('tipo')}>Tipo</button>
                 <button className={`btn-toggle ${ofertaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setOfertaViewMode('modalidad')}>Modalidad</button>
               </div>
+            }
+            actions={
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => handleOpenIndicator('oferta-programada', OFERTA_GROUP_BY_MAP[ofertaViewMode])}
+                sx={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#1E2875',
+                  textTransform: 'none',
+                  py: 0.25,
+                  px: 1,
+                  borderRadius: '6px',
+                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                }}
+              >
+                Ver detalles
+              </Button>
             }
             hasData={ofertaChartData.labels.length > 0}
           >
@@ -826,6 +881,25 @@ export const DashboardEducacionContinua = () => {
             icon={<CheckCircle size={16} />}
             iconColor="#10B981"
             title="Cursos efectivamente dictados"
+            actions={
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => handleOpenIndicator('cursos-dictados')}
+                sx={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#1E2875',
+                  textTransform: 'none',
+                  py: 0.25,
+                  px: 1,
+                  borderRadius: '6px',
+                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                }}
+              >
+                Ver detalles
+              </Button>
+            }
             hasData={Boolean(effectiveDictadosSeries && effectiveDictadosSeries.length > 0)}
           >
             <BarChart
@@ -857,6 +931,25 @@ export const DashboardEducacionContinua = () => {
             icon={<Percent size={16} />}
             iconColor="#1E2875"
             title="Tasa de ejecución (%)"
+            actions={
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => handleOpenIndicator('tasa-ejecucion')}
+                sx={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#1E2875',
+                  textTransform: 'none',
+                  py: 0.25,
+                  px: 1,
+                  borderRadius: '6px',
+                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                }}
+              >
+                Ver detalles
+              </Button>
+            }
             hasData={Boolean(effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0)}
           >
             <LineChart
@@ -888,12 +981,31 @@ export const DashboardEducacionContinua = () => {
             icon={<DollarSign size={16} />}
             iconColor="#10B981"
             title={`Ingresos por ${ingresosViewMode === 'area' ? 'área' : (ingresosViewMode === 'tipo' ? 'tipo de programa' : 'modalidad')} ($M CLP)`}
-            actions={
-              <div className="card-toggle-group">
+            headerContent={
+              <div className="card-toggle-group" style={{ marginTop: '4px' }}>
                 <button className={`btn-toggle ${ingresosViewMode === 'area' ? 'active' : ''}`} onClick={() => setIngresosViewMode('area')}>Área</button>
                 <button className={`btn-toggle ${ingresosViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setIngresosViewMode('tipo')}>Tipo</button>
                 <button className={`btn-toggle ${ingresosViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setIngresosViewMode('modalidad')}>Modalidad</button>
               </div>
+            }
+            actions={
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => handleOpenIndicator('ingresos-generados', INGRESOS_GROUP_BY_MAP[ingresosViewMode])}
+                sx={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#1E2875',
+                  textTransform: 'none',
+                  py: 0.25,
+                  px: 1,
+                  borderRadius: '6px',
+                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                }}
+              >
+                Ver detalles
+              </Button>
             }
             hasData={ingresosChartData.labels.length > 0}
           >
@@ -919,21 +1031,38 @@ export const DashboardEducacionContinua = () => {
             />
           </DashboardChartCard>
 
-          {/* Card 5: Matrícula por programa (Radar Chart) */}
+          {/* Card 5: Matrícula por programa */}
           <DashboardChartCard
             id="matricula-por-programa"
             fullWidth
             minHeight="480px"
             title="Matrícula por programa"
             headerContent={
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
-                <div className="card-toggle-group">
-                  <button className={`btn-toggle ${matriculaViewMode === 'total' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('total')}>Total</button>
-                  <button className={`btn-toggle ${matriculaViewMode === 'area' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('area')}>Área</button>
-                  <button className={`btn-toggle ${matriculaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('modalidad')}>Modalidad</button>
-                  <button className={`btn-toggle ${matriculaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('tipo')}>Tipo Programa</button>
-                </div>
+              <div className="card-toggle-group" style={{ marginTop: '4px' }}>
+                <button className={`btn-toggle ${matriculaViewMode === 'total' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('total')}>Total</button>
+                <button className={`btn-toggle ${matriculaViewMode === 'area' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('area')}>Área</button>
+                <button className={`btn-toggle ${matriculaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('modalidad')}>Modalidad</button>
+                <button className={`btn-toggle ${matriculaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('tipo')}>Tipo Programa</button>
               </div>
+            }
+            actions={
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => handleOpenIndicator('matricula-por-programa', MATRICULA_GROUP_BY_MAP[matriculaViewMode])}
+                sx={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#1E2875',
+                  textTransform: 'none',
+                  py: 0.25,
+                  px: 1,
+                  borderRadius: '6px',
+                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                }}
+              >
+                Ver detalles
+              </Button>
             }
             wrapperStyle={{ height: isMobile ? '340px' : '390px' }}
             hasData={matriculaChartData.labels.length > 0}
@@ -969,6 +1098,25 @@ export const DashboardEducacionContinua = () => {
             icon={<Award size={16} />}
             iconColor="#a855f7"
             title="Tasa de aprobación"
+            actions={
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => handleOpenIndicator('tasa-aprobacion')}
+                sx={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#1E2875',
+                  textTransform: 'none',
+                  py: 0.25,
+                  px: 1,
+                  borderRadius: '6px',
+                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                }}
+              >
+                Ver detalles
+              </Button>
+            }
             wrapperStyle={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', padding: '8px' }}
             hasData={aprobacionProgramasData.length > 0}
             noDataMessage="No hay datos coincidentes"
@@ -1015,7 +1163,7 @@ export const DashboardEducacionContinua = () => {
             iconColor="#F59E0B"
             title="Perfil del participante"
             headerContent={
-              <div className="card-toggle-group" style={{ display: 'flex', flexWrap: 'wrap', maxWidth: '380px', marginTop: '4px' }}>
+              <div className="card-toggle-group" style={{ maxWidth: '380px', marginTop: '4px' }}>
                 <button className={`btn-toggle ${perfilViewMode === 'region' ? 'active' : ''}`} onClick={() => setPerfilViewMode('region')}>Región</button>
                 <button className={`btn-toggle ${perfilViewMode === 'sector' ? 'active' : ''}`} onClick={() => setPerfilViewMode('sector')}>Sector</button>
                 <button className={`btn-toggle ${perfilViewMode === 'escolaridad' ? 'active' : ''}`} onClick={() => setPerfilViewMode('escolaridad')}>Escolaridad</button>
@@ -1023,6 +1171,25 @@ export const DashboardEducacionContinua = () => {
                 <button className={`btn-toggle ${perfilViewMode === 'genero' ? 'active' : ''}`} onClick={() => setPerfilViewMode('genero')}>Género</button>
                 <button className={`btn-toggle ${perfilViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setPerfilViewMode('tipo')}>Tipo</button>
               </div>
+            }
+            actions={
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => handleOpenIndicator('perfil-participante', PERFIL_GROUP_BY_MAP[perfilViewMode])}
+                sx={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#1E2875',
+                  textTransform: 'none',
+                  py: 0.25,
+                  px: 1,
+                  borderRadius: '6px',
+                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                }}
+              >
+                Ver detalles
+              </Button>
             }
             wrapperStyle={{ marginTop: '8px' }}
             hasData={Boolean(perfilParticipantesData && perfilParticipantesData.length > 0)}
@@ -1055,6 +1222,25 @@ export const DashboardEducacionContinua = () => {
             icon={<Users size={16} />}
             iconColor="#8b5cf6"
             title="Pictograma: Participantes Únicos"
+            actions={
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => handleOpenIndicator('participantes-unicos')}
+                sx={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#1E2875',
+                  textTransform: 'none',
+                  py: 0.25,
+                  px: 1,
+                  borderRadius: '6px',
+                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                }}
+              >
+                Ver detalles
+              </Button>
+            }
             wrapperStyle={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}
             hasData={uniqueParticipantsAgeDist.length > 0}
           >
@@ -1107,6 +1293,25 @@ export const DashboardEducacionContinua = () => {
             icon={<RefreshCw size={16} />}
             iconColor="#ec4899"
             title="Pictograma: Frecuencia de Matrículas"
+            actions={
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => handleOpenIndicator('recurrencia-formativa')}
+                sx={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#1E2875',
+                  textTransform: 'none',
+                  py: 0.25,
+                  px: 1,
+                  borderRadius: '6px',
+                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                }}
+              >
+                Ver detalles
+              </Button>
+            }
             wrapperStyle={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}
             hasData={recurrenceFreqDist.length > 0}
           >
@@ -1166,6 +1371,286 @@ export const DashboardEducacionContinua = () => {
       >
         {filtersContent}
       </DashboardPersistentFilterSidebar>
+
+      {/* ----------------- DRAWER LATERAL DE DETALLE DE INDICADOR ----------------- */}
+      <Box 
+        sx={styles.drawerOverlay(drawerOpen)} 
+        onClick={handleCloseDrawer} 
+        aria-hidden={!drawerOpen}
+      />
+      <Box 
+        component="aside"
+        role="dialog" 
+        aria-modal="true" 
+        aria-label="Detalle del indicador"
+        sx={styles.indicatorDrawer(drawerOpen)} 
+      >
+        <Box sx={styles.drawerHeader}>
+          <Box sx={styles.drawerTitleRow}>
+            <Typography sx={styles.drawerTitle}>
+              {currentIndicator.title}
+            </Typography>
+            <IconButton 
+              size="small" 
+              onClick={handleCloseDrawer} 
+              sx={{ 
+                color: '#64748B',
+                borderRadius: '6px',
+                '&:hover': { bgcolor: '#F1F5F9', color: '#1E293B' }
+              }}
+              aria-label="Cerrar detalle"
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </Box>
+
+        <Box sx={styles.drawerBody}>
+          {drawerLoading ? (
+            <Box sx={{ width: '100%', py: 4 }}>
+              <LinearProgress sx={{ bgcolor: '#E2E8F0', '& .MuiLinearProgress-bar': { bgcolor: '#1E2875' } }} />
+            </Box>
+          ) : currentIndicator.isError ? (
+            <Box sx={{ mt: 2 }}>
+              <Alert severity="error" sx={{ borderRadius: '8px', fontSize: '13px', fontWeight: 500 }}>
+                {currentIndicator.errorMessage || 'Error al cargar los datos del indicador desde el servidor.'}
+              </Alert>
+            </Box>
+          ) : (
+            <>
+              {/* 1. Qué mide */}
+              {currentIndicator.desc && (
+                <Box>
+                  <Typography sx={styles.drawerDescLabel}>Qué mide</Typography>
+                  <Typography sx={styles.drawerDesc}>
+                    {currentIndicator.desc}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* 2. Métrica destacada */}
+              {currentIndicator.metric && (
+                <Box sx={styles.drawerMetricBox}>
+                  <Typography sx={styles.drawerMetricLabel}>
+                    {currentIndicator.metric.label}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
+                    <Typography sx={styles.drawerMetricValue}>
+                      {currentIndicator.metric.value !== null 
+                        ? (typeof currentIndicator.metric.value === 'number' 
+                            ? currentIndicator.metric.value.toLocaleString('es-CL') 
+                            : currentIndicator.metric.value)
+                        : 'Sin datos'}
+                    </Typography>
+                    {currentIndicator.trend && (
+                      <Box sx={styles.drawerMetaBadge(
+                        currentIndicator.trend.isNeutral 
+                          ? 'neutral' 
+                          : (currentIndicator.trend.isPositive !== false)
+                      )}>
+                        <Typography sx={{ fontSize: '12px', fontWeight: 600 }}>
+                          {currentIndicator.trend.rawText 
+                            ? currentIndicator.trend.rawText
+                            : currentIndicator.trend.isNeutral
+                                ? `Igual al año anterior${currentIndicator.trend.baseline ? ` (${currentIndicator.trend.baseline})` : ''}`
+                                : `${currentIndicator.trend.isPositive !== false 
+                                    ? `▲ ${currentIndicator.trend.formattedDelta || `+${currentIndicator.trend.delta}`}` 
+                                    : `▼ ${currentIndicator.trend.formattedDelta || currentIndicator.trend.delta}`
+                                  } ${currentIndicator.trend.baseline ? (
+                                    currentIndicator.trend.baseline.startsWith('del ') || 
+                                    currentIndicator.trend.baseline.startsWith('de ') || 
+                                    currentIndicator.trend.baseline.startsWith('total')
+                                      ? currentIndicator.trend.baseline
+                                      : `vs ${currentIndicator.trend.baseline}`
+                                  ) : ''}`}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              )}
+
+
+              {/* 3. Desglose de datos en tabla */}
+              {displayRows && displayRows.length > 0 ? (
+                <Box sx={{ mt: 0.5 }}>
+                  <Box sx={styles.drawerTableWrap}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', fontFamily: "'Inter', sans-serif" }}>
+                      <thead>
+                        <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 1 }}>
+                          {(currentIndicator.colLabels || ['Año', 'Valor']).map((col, idx) => (
+                            <th 
+                              key={idx} 
+                              style={{ 
+                                padding: '9px 14px', 
+                                textAlign: idx === (currentIndicator.colLabels || []).length - 1 ? 'right' : 'left', 
+                                color: '#64748B', 
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                letterSpacing: '0.06em',
+                                textTransform: 'uppercase',
+                                borderBottom: '1px solid #E2E8F0'
+                              }}
+                            >
+                              {col}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {displayRows.map((row, idx) => (
+                          <tr 
+                            key={idx} 
+                            style={{ 
+                              borderBottom: idx === displayRows.length - 1 ? 'none' : '1px solid #F1F5F9'
+                            }}
+                          >
+                            {row.map((cell, cIdx) => (
+                              <td 
+                                key={cIdx} 
+                                style={{ 
+                                  padding: '8px 14px', 
+                                  textAlign: cIdx === row.length - 1 ? 'right' : 'left', 
+                                  color: '#1E293B',
+                                  fontWeight: cIdx === row.length - 1 ? 600 : 400
+                                }}
+                              >
+                                {typeof cell === 'number' ? cell.toLocaleString('es-CL') : cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 160, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%', mt: 2 }}>
+                  Sin datos disponibles
+                </Box>
+              )}
+            </>
+          )}
+        </Box>
+
+        {/* Footer */}
+        <Box component="footer" sx={styles.drawerFooter}>
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <CalendarIcon sx={{ fontSize: 14, color: '#64748B' }} />
+            <Typography component="label" htmlFor="drawerPeriodSelect" sx={{ fontSize: '12px', color: '#64748B' }}>
+              Año
+            </Typography>
+            <select
+              id="drawerPeriodSelect"
+              aria-label="Seleccionar período"
+              value={drawerPeriod}
+              onChange={(e) => handleDrawerPeriodChange(e.target.value)}
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: '12px',
+                fontWeight: 500,
+                color: '#1E293B',
+                border: '1px solid #CBD5E1',
+                borderRadius: '6px',
+                padding: '5px 8px',
+                backgroundColor: '#FFFFFF',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {drawerYears.map((yr) => (
+                <option key={yr} value={String(yr)}>{yr}</option>
+              ))}
+            </select>
+          </Box>
+          <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
+            {drawerPeriodText}
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* BOTÓN FLOTANTE DE CENTRO DE AYUDA (?) */}
+      <IconButton
+        onClick={() => setOpenHelpDialog(true)}
+        sx={styles.floatingHelpButton}
+        aria-label="Centro de Ayuda"
+      >
+        <HelpOutlineIcon />
+      </IconButton>
+
+      {/* MODAL DE CENTRO DE AYUDA (FAQ) */}
+      <Dialog
+        open={openHelpDialog}
+        onClose={() => setOpenHelpDialog(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: '16px', p: 1 }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <HelpOutlineIcon sx={{ color: '#1E2875', fontSize: 28 }} />
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E2875', fontFamily: "'Inter', sans-serif" }}>
+              Centro de Ayuda — Educación Continua
+            </Typography>
+          </Box>
+          <IconButton onClick={() => setOpenHelpDialog(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ py: 2 }}>
+          <Typography variant="body2" sx={{ color: '#64748B', mb: 3, fontSize: '14px' }}>
+            Respuestas a las dudas más comunes sobre la interpretación de las métricas, metodologías de cálculo y uso de filtros del panel de Educación Continua.
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {faqData.map((faq, index) => (
+              <Accordion 
+                key={index}
+                disableGutters
+                elevation={0}
+                sx={{
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '12px !important',
+                  '&:before': { display: 'none' },
+                  overflow: 'hidden'
+                }}
+              >
+                <AccordionSummary 
+                  expandIcon={<ExpandMoreIcon sx={{ color: '#1E2875' }} />}
+                  sx={{ bgcolor: '#F8FAFC', px: 2, py: 0.5 }}
+                >
+                  <Typography sx={{ fontWeight: 600, color: '#1E2875', fontSize: '14px' }}>
+                    {faq.q}
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: 2, py: 2, bgcolor: '#FFFFFF' }}>
+                  <Typography variant="body2" sx={{ color: '#334155', lineHeight: 1.6, fontSize: '13.5px' }}>
+                    {faq.a}
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+            ))}
+          </Box>
+
+          <Box sx={{ mt: 3, p: 2, bgcolor: '#F0FDF4', border: '1px solid #1DC2A0', borderRadius: '12px', display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+            <InfoOutlinedIcon sx={{ color: '#1DC2A0', fontSize: 20, mt: 0.2 }} />
+            <Typography variant="caption" sx={{ color: '#065F46', fontSize: '12.5px', lineHeight: 1.5 }}>
+              <strong>Tip de navegación:</strong> Puedes interactuar haciendo clic en el botón "Ver detalles" de cada indicador para visualizar la evolución histórica año a año y el desglose cualitativo.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 1.5 }}>
+          <Button 
+            onClick={() => setOpenHelpDialog(false)} 
+            variant="contained" 
+            sx={{ bgcolor: '#1E2875', color: '#FFFFFF', textTransform: 'none', fontWeight: 600, borderRadius: '8px', '&:hover': { bgcolor: '#161796' } }}
+          >
+            Entendido
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       </Box>
     </ThemeProvider>

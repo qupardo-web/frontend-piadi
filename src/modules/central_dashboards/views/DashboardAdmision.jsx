@@ -1336,20 +1336,26 @@ export const DashboardAdmision = () => {
                           : 'Sin datos'}
                       </Typography>
                       {currentIndicator.trend && (
-                        <Box sx={styles.drawerMetaBadge(currentIndicator.trend.isPositive !== false)}>
+                        <Box sx={styles.drawerMetaBadge(
+                          currentIndicator.trend.isNeutral
+                            ? 'neutral'
+                            : currentIndicator.trend.isPositive !== false
+                        )}>
                           <Typography sx={{ fontSize: '12px', fontWeight: 600 }}>
                             {currentIndicator.trend.rawText 
                               ? currentIndicator.trend.rawText
-                              : `${currentIndicator.trend.isPositive !== false 
-                                  ? `▲ ${currentIndicator.trend.formattedDelta || `+${currentIndicator.trend.delta}`}` 
-                                  : `▼ ${currentIndicator.trend.formattedDelta || currentIndicator.trend.delta}`
-                                } ${currentIndicator.trend.baseline ? (
-                                  currentIndicator.trend.baseline.startsWith('del ') || 
-                                  currentIndicator.trend.baseline.startsWith('de ') || 
-                                  currentIndicator.trend.baseline.startsWith('total')
-                                    ? currentIndicator.trend.baseline
-                                    : `vs ${currentIndicator.trend.baseline}`
-                                ) : ''}`}
+                              : currentIndicator.trend.isNeutral
+                                  ? `Igual al año anterior${currentIndicator.trend.baseline ? ` (${currentIndicator.trend.baseline})` : ''}`
+                                  : `${currentIndicator.trend.isPositive !== false 
+                                      ? `▲ ${currentIndicator.trend.formattedDelta || `+${currentIndicator.trend.delta}`}` 
+                                      : `▼ ${currentIndicator.trend.formattedDelta || currentIndicator.trend.delta}`
+                                    } ${currentIndicator.trend.baseline ? (
+                                      currentIndicator.trend.baseline.startsWith('del ') || 
+                                      currentIndicator.trend.baseline.startsWith('de ') || 
+                                      currentIndicator.trend.baseline.startsWith('total')
+                                        ? currentIndicator.trend.baseline
+                                        : `vs ${currentIndicator.trend.baseline}`
+                                    ) : ''}`}
                           </Typography>
                         </Box>
                       )}

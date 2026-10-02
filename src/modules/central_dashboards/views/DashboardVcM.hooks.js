@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { Calendar, Users, Briefcase, Award } from 'lucide-react';
-import { getDashboardSummary, getIndicatorSeries, getIndicatorBreakdown, getDepartmentFilters } from '../../../services/piadiApi';
+import { getDashboardSummary, getIndicatorSeries, getIndicatorBreakdown, getDepartmentFilters, getIndicatorDetail } from '../../../services/piadiApi';
 
 export const SEMESTRES_LIST = ['Primer semestre', 'Segundo semestre'];
 export const SEXO_LIST = ['Femenino', 'Masculino', 'No binario', 'Prefiere no responder'];
@@ -10,6 +10,108 @@ export const MESES_LIST = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'
 export const TIPOS_LIST = ['Charla', 'Taller', 'Seminario', 'Proyecto Social', 'Asistencia Técnica', 'Operativo Comunitario'];
 export const MODALIDADES_LIST = ['Presencial', 'Online', 'Semipresencial', 'Híbrida'];
 export const AREAS_LIST = ['Social-Comunitaria', 'Productiva-Empresarial', 'Cultural-Artística', 'Medioambiental', 'Titulados y Empleabilidad'];
+
+export const UI_TO_BACKEND_KEY = {
+  'convenios-activos': 'convenios_activos',
+  'convenios_activos': 'convenios_activos',
+  'total-convenios': 'total_convenios',
+  'total_convenios': 'total_convenios',
+  'convenios-sector': 'convenios_por_sector',
+  'convenios_por_sector': 'convenios_por_sector',
+  'actividades-realizadas': 'actividades_realizadas',
+  'actividades_realizadas': 'actividades_realizadas',
+  'participaciones': 'participaciones',
+  'articulaciones-tp': 'articulaciones_tp',
+  'articulaciones_tp': 'articulaciones_tp',
+  'convenios_vigentes': 'convenios_activos',
+  'nuevos_convenios': 'total_convenios',
+  'total_participantes': 'participaciones'
+};
+
+export const INDICATOR_SPECIFIC_DIMENSION = {
+  'convenios-activos': 'sector',
+  'convenios_vigentes': 'sector',
+  'total-convenios': 'tipoConvenio',
+  'nuevos_convenios': 'tipoConvenio',
+  'convenios-sector': 'sector',
+  'actividades-realizadas': 'modalidad',
+  'participaciones': 'tipoParticipante',
+  'total_participantes': 'tipoParticipante',
+  'articulaciones-tp': 'plataformaFoco'
+};
+
+export const SEC1_GROUP_BY_MAP = {
+  'Sector': 'sector',
+  'Tipo': 'tipoConvenio',
+  'Contraparte': 'contraparte',
+  'Área vinculada': 'areaVinculada'
+};
+
+export const SEC2_GROUP_BY_MAP = {
+  'Sector': 'sector',
+  'Tipo': 'tipoConvenio',
+  'Responsable': 'responsableEcas'
+};
+
+export const SEC4_GROUP_BY_MAP = {
+  'Línea VcM': 'lineaVcM',
+  'Modalidad': 'modalidad',
+  'Tipo de Actividad': 'tipoActividad',
+  'Comuna': 'comuna'
+};
+
+export const SEC5_GROUP_BY_MAP = {
+  'Público objetivo': 'tipoParticipante',
+  'Sexo': 'sexo',
+  'Institución': 'institucion',
+  'Comuna': 'comuna'
+};
+
+export const SEC6_GROUP_BY_MAP = {
+  'Plataforma': 'plataformaFoco',
+  'Tipo': 'tipoArticulacion',
+  'Especialidad': 'especialidad',
+  'Colegio': 'colegioLiceoTP'
+};
+
+export const INDICATORS = {
+  'convenios-activos': {
+    title: 'Total de convenios vigentes',
+    desc: 'Mide la cantidad total de convenios institucionales vigentes con organizaciones públicas, privadas y de la sociedad civil.',
+    metric: { label: 'Convenios vigentes' },
+    colLabels: ['Año', 'Convenios']
+  },
+  'total-convenios': {
+    title: 'Nuevos convenios firmados',
+    desc: 'Mide el número de nuevos convenios suscritos por ECAS con diversas entidades en el período analizado.',
+    metric: { label: 'Nuevos convenios' },
+    colLabels: ['Año', 'Convenios']
+  },
+  'convenios-sector': {
+    title: 'Convenios por sector',
+    desc: 'Distribución de convenios según el sector de la contraparte (Público, Privado, ONG/Fundaciones, Academia, etc.).',
+    metric: { label: 'Sector con más convenios' },
+    colLabels: ['Sector', 'Convenios']
+  },
+  'actividades-realizadas': {
+    title: 'Actividades VcM',
+    desc: 'Cuantifica las actividades de Vinculación con el Medio ejecutadas (charlas, ferias, seminarios, operativos, etc.).',
+    metric: { label: 'Total actividades' },
+    colLabels: ['Año', 'Actividades']
+  },
+  'participaciones': {
+    title: 'Participantes en actividades VcM',
+    desc: 'Número total de personas (estudiantes, docentes, titulados y externos) que participaron en iniciativas de VcM.',
+    metric: { label: 'Total participantes' },
+    colLabels: ['Año', 'Participantes']
+  },
+  'articulaciones-tp': {
+    title: 'Articulaciones TP ejecutadas',
+    desc: 'Mide las acciones de articulación con la Educación Media Técnico-Profesional (EMTP) y plataformas de vinculación.',
+    metric: { label: 'Total articulaciones' },
+    colLabels: ['Año', 'Articulaciones']
+  }
+};
 
 export const cleanKey = (label) => {
   return String(label || '')
@@ -1043,6 +1145,382 @@ export const useDashboardVcM = () => {
     };
   }, [hasRealData, selectedPlataformas, selectedTiposArticulacion, apiArticulacionesTPSeries, apiArticulacionesPlataforma, apiArticulacionesTipo, apiArticulacionesColegio]);
 
+  // ----------------- DRAWER DE DETALLE DE INDICADORES (PIADI-409) -----------------
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [currentIndicatorKey, setCurrentIndicatorKey] = useState('convenios-activos');
+  const [drawerPeriod, setDrawerPeriod] = useState('2026');
+  const [drawerGroupBy, setDrawerGroupBy] = useState(null);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [drawerError, setDrawerError] = useState(null);
+  const [apiIndicatorDetail, setApiIndicatorDetail] = useState(null);
+  const [openHelpDialog, setOpenHelpDialog] = useState(false);
+
+  const availableYears = useMemo(() => {
+    return apiFilters?.filters?.years ?? [2023, 2024, 2025, 2026];
+  }, [apiFilters]);
+
+  const minYear = availableYears.length ? Math.min(...availableYears) : 2023;
+  const maxYear = availableYears.length ? Math.max(...availableYears) : 2026;
+
+  const handleOpenIndicator = useCallback((key, overrideGroupBy = undefined) => {
+    setCurrentIndicatorKey(key);
+    const mostRecentYear = availableYears.length > 0 ? Math.max(...availableYears) : 2026;
+    setDrawerPeriod(String(mostRecentYear));
+    const defaultDim = overrideGroupBy !== undefined 
+      ? overrideGroupBy 
+      : (INDICATOR_SPECIFIC_DIMENSION[key] || null);
+    setDrawerGroupBy(defaultDim);
+    setDrawerOpen(true);
+  }, [availableYears]);
+
+  const handleCloseDrawer = useCallback(() => {
+    setDrawerOpen(false);
+  }, []);
+
+  const handleDrawerPeriodChange = useCallback((val) => {
+    setDrawerPeriod(val);
+  }, []);
+
+  // Petición al endpoint GET /api/indicators/:key/detail
+  useEffect(() => {
+    if (!drawerOpen || !currentIndicatorKey) return;
+
+    setDrawerLoading(true);
+    setDrawerError(null);
+    const backendKey = UI_TO_BACKEND_KEY[currentIndicatorKey] || currentIndicatorKey.replace(/-/g, '_');
+    const params = {};
+
+    if (drawerPeriod) {
+      params.year = String(drawerPeriod);
+    }
+    if (drawerGroupBy) {
+      params.groupBy = drawerGroupBy;
+    }
+
+    getIndicatorDetail(backendKey, params)
+      .then((res) => {
+        const detail = (res && res.data && typeof res.data === 'object' && !Array.isArray(res.data) && (res.data.title || res.data.indicatorKey))
+          ? res.data 
+          : res;
+
+        setApiIndicatorDetail(detail || null);
+        setDrawerError(null);
+      })
+      .catch((err) => {
+        setApiIndicatorDetail(null);
+        setDrawerError(err?.message || 'Error al obtener la información del indicador desde el servidor');
+      })
+      .finally(() => {
+        setDrawerLoading(false);
+      });
+  }, [drawerOpen, currentIndicatorKey, drawerPeriod, drawerGroupBy]);
+
+  // Años disponibles para el selector del Drawer (con soporte de 0s y rango completo)
+  const drawerYears = useMemo(() => {
+    const yearsSet = new Set(availableYears || []);
+    if (apiIndicatorDetail?.period?.from && apiIndicatorDetail?.period?.to) {
+      const { from, to } = apiIndicatorDetail.period;
+      for (let y = from; y <= to; y++) {
+        yearsSet.add(y);
+      }
+    }
+    if (minYear && maxYear) {
+      for (let y = minYear; y <= maxYear; y++) {
+        yearsSet.add(y);
+      }
+    }
+    const yrs = Array.from(yearsSet).filter(Number.isFinite).sort((a, b) => a - b);
+    return yrs.length > 0 ? yrs : [2023, 2024, 2025, 2026];
+  }, [apiIndicatorDetail, availableYears, minYear, maxYear]);
+
+  // Indicador actual para el Drawer
+  const currentIndicator = useMemo(() => {
+    const baseDef = INDICATORS[currentIndicatorKey] || INDICATORS['convenios-activos'];
+
+    if (apiIndicatorDetail) {
+      const {
+        title,
+        description,
+        total,
+        formattedTotal,
+        hasData: detailHasData,
+        disaggregated,
+        groupBy,
+        allowedGroupBy,
+        dimensionLabels,
+        period,
+        comparison,
+        table,
+        unit
+      } = apiIndicatorDetail;
+
+      // Dimensiones categóricas para los tabs del Drawer
+      const allowedTabs = (allowedGroupBy || [])
+        .filter(dim => dim !== 'year' && dim !== 'periodo' && dim !== 'period')
+        .map(dim => ({
+          key: dim,
+          label: dimensionLabels?.[dim] || dim
+        }));
+
+      // Columnas y filas para la tabla
+      let colLabels = baseDef.colLabels || ['Año', 'Valor'];
+      if (currentIndicatorKey === 'convenios-sector' || groupBy === 'sector') {
+        colLabels = ['Sector', 'Convenios'];
+      } else if (groupBy === 'tipoConvenio') {
+        colLabels = ['Tipo de Convenio', 'Convenios'];
+      } else if (groupBy === 'contraparte') {
+        colLabels = ['Contraparte', 'Convenios'];
+      } else if (groupBy === 'areaVinculada') {
+        colLabels = ['Área Vinculada', 'Convenios'];
+      } else if (groupBy === 'modalidad') {
+        colLabels = ['Modalidad', 'Actividades'];
+      } else if (groupBy === 'lineaVcM') {
+        colLabels = ['Línea VcM', 'Actividades'];
+      } else if (groupBy === 'tipoActividad') {
+        colLabels = ['Tipo de Actividad', 'Actividades'];
+      } else if (groupBy === 'tipoParticipante') {
+        colLabels = ['Tipo de Participante', 'Participantes'];
+      } else if (groupBy === 'sexo') {
+        colLabels = ['Sexo', 'Participantes'];
+      } else if (groupBy === 'institucion') {
+        colLabels = ['Institución', 'Participantes'];
+      } else if (groupBy === 'comuna') {
+        colLabels = ['Comuna', 'Valor'];
+      } else if (groupBy === 'plataformaFoco') {
+        colLabels = ['Plataforma', 'Articulaciones'];
+      } else if (groupBy === 'tipoArticulacion') {
+        colLabels = ['Tipo Articulación', 'Articulaciones'];
+      } else if (groupBy === 'colegioLiceoTP') {
+        colLabels = ['Colegio / Liceo TP', 'Articulaciones'];
+      } else if (disaggregated && groupBy) {
+        colLabels = [dimensionLabels?.[groupBy] || 'Categoría', 'Valor'];
+      } else if (!disaggregated && !groupBy) {
+        colLabels = ['Año', 'Total'];
+      }
+
+      let rows = (table || []).map(row => {
+        let label = '';
+        let value = 0;
+        if (row.label !== undefined) { label = row.label; value = row.value; }
+        else if (row.year !== undefined) { label = String(row.year); value = row.value; }
+        else if (row.categoria !== undefined) { label = row.categoria; value = row.value; }
+        else { label = row[0] || ''; value = row[1] || 0; }
+
+        return [label, value];
+      });
+
+      // Si es una tabla anual (no desagregada por dimensión cualitativa), aseguramos que todos los años aparezcan con 0 si no tienen datos
+      const isAnnualTable = (!groupBy || groupBy === 'year') && (
+        rows.length === 0 || rows.every(r => /^\d{4}$/.test(String(r[0])))
+      );
+
+      if (isAnnualTable) {
+        const rowsMap = new Map(rows.map(r => [Number(r[0]), r[1]]));
+        const allYrs = Array.from(new Set([...drawerYears, ...rows.map(r => Number(r[0]))])).sort((a, b) => a - b);
+        rows = allYrs.map(yr => [String(yr), rowsMap.has(yr) ? rowsMap.get(yr) : 0]);
+      }
+
+      // Identificar el elemento con mayor cantidad dentro de las filas
+      let topItem = null;
+      if (rows && rows.length > 0) {
+        rows.forEach(r => {
+          const val = Number(r[1]) || 0;
+          if (!topItem || val > topItem.value) {
+            topItem = { label: String(r[0]), value: val };
+          }
+        });
+      }
+
+      // Tendencia / Comparación oficial enviada por backend o calculada de forma reactiva con las filas anuales
+      let trend = null;
+      if (comparison && comparison.diff !== null && comparison.diff !== undefined) {
+        const diffNum = Number(comparison.diff) || 0;
+        const isPos = diffNum > 0;
+        const isNeutral = diffNum === 0;
+        trend = {
+          delta: diffNum,
+          formattedDelta: isPos ? `+${diffNum.toLocaleString('es-CL')}` : (isNeutral ? '0' : diffNum.toLocaleString('es-CL')),
+          baseline: String(comparison.previousYear),
+          isPositive: isNeutral ? null : isPos,
+          isNeutral
+        };
+      } else if (isAnnualTable && drawerPeriod) {
+        const selYr = Number(drawerPeriod);
+        const prevYr = selYr - 1;
+        const rowsMap = new Map(rows.map(r => [Number(r[0]), Number(r[1]) || 0]));
+        if (rowsMap.has(selYr) && rowsMap.has(prevYr)) {
+          const currV = rowsMap.get(selYr);
+          const prevV = rowsMap.get(prevYr);
+          const diffNum = currV - prevV;
+          const isPos = diffNum > 0;
+          const isNeutral = diffNum === 0;
+          trend = {
+            delta: diffNum,
+            formattedDelta: isPos ? `+${diffNum.toLocaleString('es-CL')}` : (isNeutral ? '0' : String(diffNum)),
+            baseline: String(prevYr),
+            isPositive: isNeutral ? null : isPos,
+            isNeutral
+          };
+        }
+      }
+
+      // Valor a desplegar en la métrica destacada
+      const selectedYearRowVal = isAnnualTable && drawerPeriod ? (rows.find(r => r[0] === drawerPeriod)?.[1] ?? 0) : total;
+      const finalTotal = (total !== null && total !== undefined) ? total : (selectedYearRowVal ?? 0);
+
+      let customMetric = {
+        label: unit ? `Total (${unit})` : (baseDef.metric?.label || 'Total'),
+        value: (typeof finalTotal === 'number') ? finalTotal.toLocaleString('es-CL') : (formattedTotal ?? finalTotal)
+      };
+      let customTrend = trend;
+
+      if (disaggregated && groupBy && topItem) {
+        const dimLabel = dimensionLabels?.[groupBy] || 'Categoría';
+        customMetric = {
+          label: `${dimLabel} con mayor cantidad`,
+          value: topItem.label
+        };
+        customTrend = {
+          rawText: `${topItem.value.toLocaleString('es-CL')} ${unit || 'registros'}`,
+          isPositive: true
+        };
+      } else {
+        switch (currentIndicatorKey) {
+          case 'convenios-activos':
+          case 'convenios_vigentes': {
+            customMetric = {
+              label: 'Convenios vigentes',
+              value: finalTotal
+            };
+            break;
+          }
+
+          case 'total-convenios':
+          case 'nuevos_convenios': {
+            customMetric = {
+              label: 'Nuevos convenios firmados',
+              value: finalTotal
+            };
+            break;
+          }
+
+          case 'convenios-sector': {
+            customMetric = {
+              label: 'Sector con más convenios',
+              value: topItem ? topItem.label : 'Sin datos'
+            };
+            customTrend = topItem ? {
+              rawText: `${topItem.value.toLocaleString('es-CL')} convenios`,
+              isPositive: true
+            } : null;
+            break;
+          }
+
+          case 'actividades-realizadas': {
+            customMetric = {
+              label: 'Total actividades realizadas',
+              value: finalTotal
+            };
+            break;
+          }
+
+          case 'participaciones':
+          case 'total_participantes': {
+            customMetric = {
+              label: 'Total participantes en actividades',
+              value: finalTotal
+            };
+            break;
+          }
+
+          case 'articulaciones-tp': {
+            customMetric = {
+              label: 'Total articulaciones TP',
+              value: finalTotal
+            };
+            break;
+          }
+
+          default:
+            break;
+        }
+      }
+
+      return {
+        key: currentIndicatorKey,
+        title: title || baseDef.title,
+        desc: description || baseDef.desc,
+        hasData: detailHasData !== false || rows.length > 0 || (total !== null && total !== undefined),
+        isError: false,
+        errorMessage: null,
+        metric: customMetric,
+        trend: customTrend,
+        colLabels,
+        rows,
+        allowedTabs,
+        activeGroupBy: groupBy,
+        period
+      };
+    }
+
+    return {
+      key: currentIndicatorKey,
+      title: baseDef.title,
+      desc: baseDef.desc,
+      hasData: false,
+      isError: Boolean(drawerError),
+      errorMessage: drawerError || (drawerLoading ? null : 'Error: no se encontraron datos cargados en el servidor para este indicador.'),
+      metric: null,
+      trend: null,
+      colLabels: ['Año', 'Valor'],
+      rows: [],
+      allowedTabs: []
+    };
+  }, [
+    currentIndicatorKey,
+    apiIndicatorDetail,
+    drawerError,
+    drawerLoading,
+    drawerYears,
+    drawerPeriod
+  ]);
+
+  const isSimpleYearRows = useCallback((ind) => {
+    return ind?.rows && ind.rows.length > 0 && ind.rows.every(r => /^\d{4}$/.test(String(r[0])));
+  }, []);
+
+  const displayRows = useMemo(() => {
+    if (!currentIndicator || !currentIndicator.rows) return [];
+    if (apiIndicatorDetail) {
+      return currentIndicator.rows;
+    }
+    if (drawerPeriod === 'all' || !isSimpleYearRows(currentIndicator)) {
+      return currentIndicator.rows;
+    }
+    const filtered = currentIndicator.rows.filter(r => String(r[0]) === drawerPeriod);
+    return filtered.length > 0 ? filtered : currentIndicator.rows;
+  }, [currentIndicator, drawerPeriod, isSimpleYearRows, apiIndicatorDetail]);
+
+  const drawerPeriodText = useMemo(() => {
+    return drawerPeriod ? `Año: ${drawerPeriod}` : '';
+  }, [drawerPeriod]);
+
+  // FAQ Data
+  const faqData = [
+    {
+      q: '¿Qué mide el Dashboard de Vinculación con el Medio (VcM)?',
+      a: 'Presenta estadísticas e indicadores de convenios vigentes, nuevas firmas, actividades ejecutadas, participantes internos/externos y articulaciones con la Educación Técnico-Profesional (EMTP).'
+    },
+    {
+      q: '¿Cómo se contabilizan los convenios vigentes vs nuevos?',
+      a: 'Los convenios vigentes consideran todos los acuerdos activos durante el año seleccionado, mientras que los nuevos convenios corresponden a los suscritos formalmente durante dicho año.'
+    },
+    {
+      q: '¿Cómo interactúo con los filtros del panel lateral?',
+      a: 'Puedes filtrar por período (slider de años o período acumulado), sector de la contraparte, línea de acción VcM, modalidad y plataformas de articulación TP.'
+    }
+  ];
+
   return {
     navigate,
     user,
@@ -1131,6 +1609,23 @@ export const useDashboardVcM = () => {
     activeMenu: 'dashboard',
     handleDrawerToggle,
     handleResetFilters,
-    kpiCardsData
+    kpiCardsData,
+    // Drawer properties (PIADI-409)
+    drawerOpen,
+    currentIndicator,
+    drawerPeriod,
+    handleDrawerPeriodChange,
+    drawerGroupBy,
+    setDrawerGroupBy,
+    drawerYears,
+    displayRows,
+    drawerPeriodText,
+    drawerLoading,
+    drawerError,
+    handleOpenIndicator,
+    handleCloseDrawer,
+    openHelpDialog,
+    setOpenHelpDialog,
+    faqData,
   };
 };

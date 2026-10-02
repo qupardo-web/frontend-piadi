@@ -305,19 +305,32 @@ export const styles = {
     wordBreak: 'break-word',
   },
 
-  drawerMetaBadge: (isPositive) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 0.5,
-    mt: 1,
-    px: 1.2,
-    py: 0.4,
-    borderRadius: '6px',
-    fontSize: '12px',
-    fontWeight: 600,
-    bgcolor: isPositive ? '#ECFDF5' : '#FEF2F2',
-    color: isPositive ? '#059669' : '#DC2626',
-  }),
+  drawerMetaBadge: (status) => {
+    const isPos = status === true || status === 'positive';
+    const isNeg = status === false || status === 'negative';
+    let bgcolor = '#F1F5F9';
+    let color = '#64748B';
+    if (isPos) {
+      bgcolor = '#ECFDF5';
+      color = '#059669';
+    } else if (isNeg) {
+      bgcolor = '#FEF2F2';
+      color = '#DC2626';
+    }
+    return {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 0.5,
+      mt: 1,
+      px: 1.2,
+      py: 0.4,
+      borderRadius: '6px',
+      fontSize: '12px',
+      fontWeight: 600,
+      bgcolor,
+      color,
+    };
+  },
 
   drawerTableWrap: {
     maxHeight: '240px',
