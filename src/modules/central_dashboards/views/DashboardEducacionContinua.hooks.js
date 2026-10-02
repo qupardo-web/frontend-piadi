@@ -168,9 +168,12 @@ export const useDashboardEducacionContinua = () => {
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // ESTADOS DE FILTROS PERSISTENTES (SIDEBAR DERECHO)
+  // ESTADOS DE FILTROS PERSISTENTES (SIDEBAR MODULAR)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [cohorteDesde, setCohorteDesde] = useState('2023');
   const [cohorteHasta, setCohorteHasta] = useState('2026');
+  const [periodoAcumulado, setPeriodoAcumulado] = useState(false);
   const [semestresSeleccionados, setSemestresSeleccionados] = useState([]);
   const [mesDesde, setMesDesde] = useState('Enero');
   const [mesHasta, setMesHasta] = useState('Diciembre');
@@ -183,6 +186,23 @@ export const useDashboardEducacionContinua = () => {
   const [ingresosViewMode, setIngresosViewMode] = useState('area'); // 'area', 'tipo', 'modalidad'
   const [matriculaViewMode, setMatriculaViewMode] = useState('total'); // 'total', 'area', 'modalidad', 'tipo'
   const [perfilViewMode, setPerfilViewMode] = useState('region'); // 'region', 'sector', 'escolaridad', 'edad', 'genero', 'tipo'
+
+  // ESTADOS DE SECCIONES COLAPSABLES
+  const [sectionsOpen, setSectionsOpen] = useState({
+    oferta: true,
+    dictados: true,
+    ejecucion: true,
+    ingresos: true,
+    matricula: true,
+    aprobacion: true,
+    perfil: true,
+    participantesUnicos: true,
+    recurrencia: true,
+  });
+
+  const toggleSection = (sectionKey) => {
+    setSectionsOpen(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
+  };
 
   // Local states for Unique Participants
   const [localSexoFilter, setLocalSexoFilter] = useState('Todos');
@@ -416,6 +436,7 @@ export const useDashboardEducacionContinua = () => {
   const handleResetFilters = () => {
     setCohorteDesde('2023');
     setCohorteHasta('2026');
+    setPeriodoAcumulado(false);
     setSemestresSeleccionados([]);
     setMesDesde('Enero');
     setMesHasta('Diciembre');
@@ -504,50 +525,99 @@ export const useDashboardEducacionContinua = () => {
   }), [apiSummary]);
 
   const kpiCardsData = useMemo(() => {
-    const yHasta = Number(cohorteHasta);
-    const yDesde = Number(cohorteDesde);
-    
-    // Función para obtener la suma de los valores de la serie en el rango seleccionado
+    const yHasta = Number(cohorteHasta) || 2026;
+    const yDesde = Number(cohorteDesde) || 2023;
+    const isSingleYear = yDesde === yHasta;
+    const minAvailableYear = 2023;
+
+    const getValForYear = (series, year) => {
+      if (!series) return null;
+      const match = series.find(p => Number(p.year ?? p.period ?? p.label ?? p.cohorte) === Number(year));
+      return match ? (match.value ?? match.val ?? match.count ?? 0) : null;
+    };
+
     const getRangeSum = (series) => {
       if (!series) return null;
       const filtered = series.filter(p => {
-        const yr = Number(p.year);
+        const yr = Number(p.year ?? p.period ?? p.label ?? p.cohorte);
         return yr >= yDesde && yr <= yHasta;
       });
       if (!filtered.length) return null;
-      return filtered.reduce((acc, curr) => acc + (curr.value ?? 0), 0);
+      return filtered.reduce((acc, curr) => acc + Number(curr.value ?? curr.val ?? curr.count ?? 0), 0);
     };
 
-    const getValForYear = (series, year) => series?.find(p => Number(p.year) === year)?.value ?? null;
-
-    // Los valores principales de las tarjetas serán el total acumulado en el rango seleccionado
-    const oVal = apiSummary?.oferta_programada?.value ?? getRangeSum(apiOfertaSeries);
-    const dVal = apiSummary?.cursos_dictados?.value ?? getRangeSum(apiDictadosSeries);
-    const mVal = apiSummary?.matricula_por_programa?.value ?? getRangeSum(apiMatriculaSeries);
-    const iVal = apiSummary?.ingresos_generados?.value ?? getRangeSum(apiIngresosSeries);
-
-    // Para la evolución, comparamos el último año con el primero en el rango
-    const evo = (key, series) => {
-      if (apiSummary?.[key]?.evolution != null) {
-        return apiSummary[key].evolution;
+    const computeKpi = (key, title, Icon, color, series, backendSummaryKey, fmt) => {
+      const summaryCard = apiSummary?.[backendSummaryKey];
+      
+      let val;
+      if (periodoAcumulado && !isSingleYear) {
+        val = getRangeSum(series) ?? summaryCard?.value ?? null;
+      } else {
+        val = getValForYear(series, yHasta) ?? summaryCard?.value ?? null;
       }
-      const vHasta = getValForYear(series, yHasta);
-      const vDesde = getValForYear(series, yDesde);
-      return (vDesde != null && vHasta != null && vDesde !== 0) ? parseFloat(((vHasta - vDesde) / vDesde * 100).toFixed(1)) : null;
-    };
 
-    const oDesde = getValForYear(apiOfertaSeries, yDesde);
-    const dDesde = getValForYear(apiDictadosSeries, yDesde);
-    const mDesde = getValForYear(apiMatriculaSeries, yDesde);
-    const iDesde = getValForYear(apiIngresosSeries, yDesde);
+      let compareYear = yDesde;
+      let isBaseline = false;
+      if (isSingleYear) {
+        if (yDesde === minAvailableYear) {
+          isBaseline = true;
+        } else {
+          compareYear = yDesde - 1;
+        }
+      }
+
+      let baseVal = getValForYear(series, compareYear);
+      let evo = null;
+      let hasEvo = false;
+      let isPositive = true;
+      let isNeutral = false;
+
+      if (!isBaseline && baseVal !== null && val !== null && baseVal > 0) {
+        const diff = val - baseVal;
+        evo = parseFloat(((diff / baseVal) * 100).toFixed(1));
+        hasEvo = true;
+        isPositive = evo >= 0;
+        if (evo === 0) isNeutral = true;
+      } else if (!isBaseline && summaryCard?.evolution != null) {
+        evo = summaryCard.evolution;
+        hasEvo = true;
+        isPositive = evo >= 0;
+        if (evo === 0) isNeutral = true;
+      }
+
+      let compareText = null;
+      if (isBaseline) {
+        compareText = `Año ${yDesde} es la línea base`;
+      } else if (hasEvo) {
+        if (isNeutral) {
+          compareText = `Igual al año anterior (${compareYear})`;
+        } else {
+          const compLabel = (periodoAcumulado || !isSingleYear) ? 'vs Año base' : 'vs Año anterior';
+          compareText = `${compLabel} (${compareYear}): ${fmt(baseVal ?? 0)}`;
+        }
+      }
+
+      return {
+        key,
+        title,
+        value: val !== null ? fmt(val) : '-',
+        rawVal: val,
+        icon: Icon,
+        color,
+        hasData: val !== null,
+        compareText,
+        evolution: hasEvo && !isNeutral ? `${Math.abs(evo)}%` : null,
+        isPositive,
+      };
+    };
 
     return [
-      { key: 'oferta', label: 'Oferta programada', Icon: BookOpen, color: '#1E2875', borderColor: '#1E2875', valHasta: oVal, valDesde: oDesde, yHasta, yDesde, evo: evo('oferta_programada', apiOfertaSeries), fmt: v => v != null ? String(v) : null },
-      { key: 'dictados', label: 'Cursos dictados', Icon: CheckCircle, color: '#047857', borderColor: '#10B981', valHasta: dVal, valDesde: dDesde, yHasta, yDesde, evo: evo('cursos_dictados', apiDictadosSeries), fmt: v => v != null ? String(v) : null },
-      { key: 'matricula', label: 'Matrícula total', Icon: Users, color: '#6d28d9', borderColor: '#8b5cf6', valHasta: mVal, valDesde: mDesde, yHasta, yDesde, evo: evo('matricula_por_programa', apiMatriculaSeries), fmt: v => v != null ? Number(v).toLocaleString('es-CL') : null },
-      { key: 'ingresos', label: 'Ingresos netos', Icon: DollarSign, color: '#b45309', borderColor: '#F59E0B', valHasta: iVal, valDesde: iDesde, yHasta, yDesde, evo: evo('ingresos_generados', apiIngresosSeries), fmt: v => v != null ? `$${Number(v).toLocaleString('es-CL')}` : null },
+      computeKpi('oferta-programada', 'Oferta programada', BookOpen, '#1E2875', apiOfertaSeries, 'oferta_programada', v => String(v)),
+      computeKpi('cursos-dictados', 'Cursos dictados', CheckCircle, '#10B981', apiDictadosSeries, 'cursos_dictados', v => String(v)),
+      computeKpi('matricula-por-programa', 'Matrícula total', Users, '#8B5CF6', apiMatriculaSeries, 'matricula_por_programa', v => Number(v).toLocaleString('es-CL')),
+      computeKpi('ingresos-generados', 'Ingresos netos', DollarSign, '#F59E0B', apiIngresosSeries, 'ingresos_generados', v => `$${Number(v).toLocaleString('es-CL')}`),
     ];
-  }, [apiOfertaSeries, apiDictadosSeries, apiMatriculaSeries, apiIngresosSeries, apiSummary, cohorteDesde, cohorteHasta]);
+  }, [apiOfertaSeries, apiDictadosSeries, apiMatriculaSeries, apiIngresosSeries, apiSummary, cohorteDesde, cohorteHasta, periodoAcumulado]);
 
   const uniqueParticipantsData = useMemo(() => {
     const map = new Map();
@@ -1048,10 +1118,16 @@ export const useDashboardEducacionContinua = () => {
     user,
     logout,
     mobileOpen,
+    mobileFiltersOpen,
+    setMobileFiltersOpen,
+    filtersCollapsed,
+    setFiltersCollapsed,
     cohorteDesde,
     setCohorteDesde,
     cohorteHasta,
     setCohorteHasta,
+    periodoAcumulado,
+    setPeriodoAcumulado,
     semestresSeleccionados,
     setSemestresSeleccionados,
     mesDesde,
@@ -1105,6 +1181,8 @@ export const useDashboardEducacionContinua = () => {
     activeMenu,
     handleDrawerToggle,
     handleResetFilters,
+    sectionsOpen,
+    toggleSection,
     filteredNominalGroup1,
     filteredNominalGroup2,
     filteredCohorteData,

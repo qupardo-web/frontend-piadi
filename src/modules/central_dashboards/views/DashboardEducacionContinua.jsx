@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { styles } from './DashboardEducacionContinua.styles';
-import { Header, Sidebar, KpiCard, DashboardChartCard, DashboardPersistentFilterSidebar } from '../../../components';
+import { Header, Sidebar, KpiCard, DashboardChartCard, DashboardMiniSection, DashboardFilterSidebar, DashboardSection } from '../../../components';
 import {
   Box,
   Typography,
@@ -17,6 +17,7 @@ import {
   FormControl,
   InputLabel,
   Checkbox,
+  FormControlLabel,
   ListItemText,
   OutlinedInput,
   createTheme,
@@ -134,10 +135,16 @@ export const DashboardEducacionContinua = () => {
     user,
     logout,
     mobileOpen,
+    mobileFiltersOpen,
+    setMobileFiltersOpen,
+    filtersCollapsed,
+    setFiltersCollapsed,
     cohorteDesde,
     setCohorteDesde,
     cohorteHasta,
     setCohorteHasta,
+    periodoAcumulado,
+    setPeriodoAcumulado,
     semestresSeleccionados,
     setSemestresSeleccionados,
     mesDesde,
@@ -189,6 +196,8 @@ export const DashboardEducacionContinua = () => {
     activeMenu,
     handleDrawerToggle,
     handleResetFilters,
+    sectionsOpen,
+    toggleSection,
     filteredNominalGroup1,
     filteredNominalGroup2,
     filteredCohorteData,
@@ -234,8 +243,52 @@ export const DashboardEducacionContinua = () => {
     faqData,
   } = useDashboardEducacionContinua();
 
+  const [openTemporalidad, setOpenTemporalidad] = React.useState(true);
+  const [openOferta, setOpenOferta] = React.useState(true);
+
   const hasData = !apiLoading && apiSummary && Object.keys(apiSummary).length > 0;
 
+  const toggleChip = (list, setList, val) => {
+    if (list.includes(val)) {
+      setList(list.filter(item => item !== val));
+    } else {
+      setList([...list, val]);
+    }
+  };
+
+  const FilterChip = ({ label, selected, onClick }) => (
+    <Button
+      onClick={onClick}
+      sx={{
+        textTransform: 'none',
+        fontSize: '11.5px',
+        py: 0.5,
+        px: 1.5,
+        m: 0.4,
+        borderRadius: '20px',
+        minWidth: 0,
+        bgcolor: selected ? '#1DC2A0' : '#F1F5F9',
+        color: selected ? '#ffffff' : '#475569',
+        border: `1px solid ${selected ? '#1DC2A0' : '#E2E8F0'}`,
+        fontWeight: selected ? 600 : 500,
+        display: 'inline-flex',
+        boxShadow: selected ? '0 2px 4px rgba(29, 194, 160, 0.2)' : 'none',
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          bgcolor: selected ? '#17a88b' : '#E2E8F0',
+          borderColor: selected ? '#17a88b' : '#CBD5E1',
+          transform: 'translateY(-1px)',
+        },
+        '&:active': {
+          transform: 'translateY(0)',
+        }
+      }}
+    >
+      {label}
+    </Button>
+  );
+
+  // Scroll into view if hash present
   useEffect(() => {
     if (!location.hash) return;
     const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
@@ -244,222 +297,6 @@ export const DashboardEducacionContinua = () => {
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
   }, [location.hash]);
-
-  const filtersContent = (
-    <>
-      {/* Selector de Año (Slider) */}
-      <Box sx={styles.filterSection}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-          <Typography sx={styles.filterSectionTitle}>
-            Año
-          </Typography>
-        </Box>
-        <Box sx={{ px: 1, mt: 0.5 }}>
-          <Slider
-            value={[parseInt(cohorteDesde), parseInt(cohorteHasta)]}
-            onChange={(e, newValue) => {
-              setCohorteDesde(newValue[0].toString());
-              setCohorteHasta(newValue[1].toString());
-            }}
-            valueLabelDisplay="auto"
-            min={2023}
-            max={2026}
-            step={1}
-            marks={[
-              { value: 2023, label: '2023' },
-              { value: 2024, label: '2024' },
-              { value: 2025, label: '2025' },
-              { value: 2026, label: '2026' }
-            ]}
-            sx={styles.ageSliderStyle}
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-            <Typography sx={styles.ageRangeLabels}>
-              <span>{cohorteDesde}</span> — <span>{cohorteHasta}</span>
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-
-      {/* Selector de Semestre (Selector Múltiple) */}
-      {hasData && (
-      <Box sx={styles.filterSection}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-          <Typography sx={styles.filterSectionTitle}>
-            Semestre
-          </Typography>
-        </Box>
-        <FormControl fullWidth size="small">
-          <InputLabel id="semestre-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-          <Select
-            labelId="semestre-select-label"
-            multiple
-            value={semestresSeleccionados}
-            onChange={(e) => setSemestresSeleccionados(e.target.value)}
-            input={<OutlinedInput label="Seleccionar" />}
-            renderValue={(selected) => selected.join(', ')}
-            sx={styles.selectInputStyle}
-          >
-            {(dynamicSemestres.length > 0 ? dynamicSemestres : SEMESTRES_LIST).map((name) => (
-              <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                <Checkbox checked={semestresSeleccionados.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                <ListItemText primary={name} />
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-      )}
-
-      {/* Selector de Mes (Rango) */}
-      {hasData && (
-      <Box sx={styles.filterSection}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CalendarIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-          <Typography sx={styles.filterSectionTitle}>
-            Mes
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel id="mes-desde-label" sx={styles.selectLabelStyle}>Desde</InputLabel>
-            <Select
-              labelId="mes-desde-label"
-              value={mesDesde}
-              label="Desde"
-              onChange={(e) => setMesDesde(e.target.value)}
-              sx={styles.selectInputStyle}
-            >
-              {MESES_LIST.map((m) => {
-                const isDisabled = MESES_LIST.indexOf(m) > MESES_LIST.indexOf(mesHasta);
-                return (
-                  <MenuItem key={m} value={m} disabled={isDisabled}>
-                    {m}
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
-          <Typography sx={{ color: '#94A3B8' }}>—</Typography>
-          <FormControl fullWidth size="small">
-            <InputLabel id="mes-hasta-label" sx={styles.selectLabelStyle}>Hasta</InputLabel>
-            <Select
-              labelId="mes-hasta-label"
-              value={mesHasta}
-              label="Hasta"
-              onChange={(e) => setMesHasta(e.target.value)}
-              sx={styles.selectInputStyle}
-            >
-              {MESES_LIST.map((m) => {
-                const isDisabled = MESES_LIST.indexOf(m) < MESES_LIST.indexOf(mesDesde);
-                return (
-                  <MenuItem key={m} value={m} disabled={isDisabled}>
-                    {m}
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
-        </Box>
-      </Box>
-      )}
-
-      {/* Tipo de programa (Selector Múltiple) */}
-      {hasData && (
-      <Box sx={styles.filterSection}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AssignmentIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-          <Typography sx={styles.filterSectionTitle}>
-            Tipo de programa
-          </Typography>
-        </Box>
-        <FormControl fullWidth size="small">
-          <InputLabel id="tipo-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-          <Select
-            labelId="tipo-select-label"
-            multiple
-            value={tipoSeleccionado}
-            onChange={(e) => setTipoSeleccionado(e.target.value)}
-            input={<OutlinedInput label="Seleccionar" />}
-            renderValue={(selected) => selected.join(', ')}
-            sx={styles.selectInputStyle}
-          >
-            {(dynamicTipos.length > 0 ? dynamicTipos : TIPOS_LIST).map((name) => (
-              <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                <Checkbox checked={tipoSeleccionado.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                <ListItemText primary={name} />
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-      )}
-
-      {/* Modalidad (Selector Múltiple) */}
-      {hasData && (
-      <Box sx={styles.filterSection}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <PublicIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-          <Typography sx={styles.filterSectionTitle}>
-            Modalidad
-          </Typography>
-        </Box>
-        <FormControl fullWidth size="small">
-          <InputLabel id="modalidad-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-          <Select
-            labelId="modalidad-select-label"
-            multiple
-            value={modalidadSeleccionada}
-            onChange={(e) => setModalidadSeleccionada(e.target.value)}
-            input={<OutlinedInput label="Seleccionar" />}
-            renderValue={(selected) => selected.join(', ')}
-            sx={styles.selectInputStyle}
-          >
-            {(dynamicModalidades.length > 0 ? dynamicModalidades : MODALIDADES_LIST).map((name) => (
-              <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                <Checkbox checked={modalidadSeleccionada.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                <ListItemText primary={name} />
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-      )}
-
-      {/* Área (Selector Múltiple) */}
-      {hasData && (
-      <Box sx={styles.filterSection}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CategoryIcon sx={{ fontSize: 18, color: '#1E2875' }} />
-          <Typography sx={styles.filterSectionTitle}>
-            Área de programa
-          </Typography>
-        </Box>
-        <FormControl fullWidth size="small">
-          <InputLabel id="area-select-label" sx={styles.selectLabelStyle}>Seleccionar</InputLabel>
-          <Select
-            labelId="area-select-label"
-            multiple
-            value={areaSeleccionada}
-            onChange={(e) => setAreaSeleccionada(e.target.value)}
-            input={<OutlinedInput label="Seleccionar" />}
-            renderValue={(selected) => selected.join(', ')}
-            sx={styles.selectInputStyle}
-          >
-            {(dynamicAreas.length > 0 ? dynamicAreas : AREAS_LIST).map((name) => (
-              <MenuItem key={name} value={name} sx={styles.menuItemCheckStyle}>
-                <Checkbox checked={areaSeleccionada.indexOf(name) > -1} sx={styles.checkboxStyle} />
-                <ListItemText primary={name} />
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-      )}
-    </>
-  );
 
   return (
     <ThemeProvider theme={dashboardLightTheme}>
@@ -746,8 +583,18 @@ export const DashboardEducacionContinua = () => {
         }
       `}} />
 
-      {/* SIDEBAR TRANSVERSAL (Escritorio + Drawer + AppBar Móvil) */}
-      <Sidebar />
+      {/* SIDEBAR TRANSVERSAL (Escritorio + Drawer + AppBar Móvil con botón de filtros) */}
+      <Sidebar
+        mobileRightAction={
+          <IconButton
+            color="inherit"
+            onClick={() => setMobileFiltersOpen(true)}
+            sx={{ p: 0.5, color: '#ffffff' }}
+          >
+            <FilterIcon />
+          </IconButton>
+        }
+      />
 
       {/* ÁREA DE CONTENIDO CENTRAL */}
       <Box component="main" sx={styles.contentArea} className="educacion-continua-dashboard">
@@ -761,94 +608,64 @@ export const DashboardEducacionContinua = () => {
           loading={apiLoading}
         />
 
-        {/* SECCIÓN DE FILTROS EN MÓVIL (ACORDEÓN) */}
-        <DashboardPersistentFilterSidebar
-          variant="accordion"
-          title="Filtros"
-          hasData={hasData}
-          onReset={handleResetFilters}
-        >
-          {filtersContent}
-        </DashboardPersistentFilterSidebar>
-
-        {/* Top Summary Cards — 4 indicadores clave con evolución 2023→2026 */}
-        <Grid container spacing={2.5} sx={{ mb: 3 }}>
-          {kpiCardsData.map(card => {
-            const { Icon } = card;
-            const evoPos = card.evo != null && card.evo >= 0;
-            const hasDiffYears = card.yHasta !== card.yDesde;
+        {/* ----------------- SECCIÓN 1: TARJETAS KPI (4 de Educación Continua) ----------------- */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3, width: '100%', mb: 1 }}>
+          {kpiCardsData.map((kpi) => {
+            const Icon = kpi.icon;
             return (
-              <Grid item xs={12} sm={6} md={3} key={card.key} sx={{ display: 'flex' }}>
-                <KpiCard
-                  label={card.label}
-                  value={card.valHasta != null ? card.fmt(card.valHasta) : '-'}
-                  icon={<Icon size={24} />}
-                  accentColor={card.borderColor}
-                  hasData={card.valHasta != null}
-                  loading={apiLoading}
-                  compareText={
-                    card.valDesde != null && hasDiffYears
-                      ? `${card.yDesde}: ${card.fmt(card.valDesde)}`
-                      : null
-                  }
-                  evolution={card.evo != null && hasDiffYears ? `${Math.abs(card.evo)}%` : null}
-                  isPositive={evoPos}
-                  onClick={() => handleOpenIndicator(card.key)}
-                />
-              </Grid>
+              <KpiCard
+                key={kpi.key}
+                id={kpi.key}
+                label={kpi.title}
+                value={kpi.value}
+                icon={<Icon size={24} />}
+                accentColor={kpi.color}
+                hasData={hasData && kpi.hasData}
+                loading={apiLoading}
+                compareText={kpi.compareText}
+                evolution={kpi.evolution}
+                isPositive={kpi.isPositive}
+                onClick={() => handleOpenIndicator(kpi.key)}
+              />
             );
           })}
-        </Grid>
+        </Box>
 
-        {/* Subheader Period Banner */}
-        <div className="info-banner">
-          <Info size={16} style={{ color: '#1E2875' }} />
-          <div>
-            <span className="info-banner-label">Período Visualizado: </span>
-            <span className="info-banner-value">{activePeriodosText}</span>
-          </div>
-        </div>
-
-        {/* Charts Grid */}
-        <div className="charts-grid">
-
-          {/* Card 1: Oferta de cursos programada */}
-          <DashboardChartCard
-            id="oferta-programada"
-            fullWidth
-            minHeight="390px"
-            icon={<BookOpen size={16} />}
-            iconColor="#1E2875"
-            title="Oferta programada"
-            headerContent={
-              <div className="card-toggle-group" style={{ marginTop: '4px' }}>
-                <button className={`btn-toggle ${ofertaViewMode === 'total' ? 'active' : ''}`} onClick={() => setOfertaViewMode('total')}>Total</button>
-                <button className={`btn-toggle ${ofertaViewMode === 'area' ? 'active' : ''}`} onClick={() => setOfertaViewMode('area')}>Área</button>
-                <button className={`btn-toggle ${ofertaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setOfertaViewMode('tipo')}>Tipo</button>
-                <button className={`btn-toggle ${ofertaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setOfertaViewMode('modalidad')}>Modalidad</button>
-              </div>
-            }
-            actions={
-              <Button
-                size="small"
-                variant="text"
-                onClick={() => handleOpenIndicator('oferta-programada', OFERTA_GROUP_BY_MAP[ofertaViewMode])}
-                sx={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#1E2875',
-                  textTransform: 'none',
-                  py: 0.25,
-                  px: 1,
-                  borderRadius: '6px',
-                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
-                }}
-              >
-                Ver detalles
-              </Button>
-            }
-            hasData={ofertaChartData.labels.length > 0}
-          >
+        {/* ----------------- SECCIÓN: Oferta programada ----------------- */}
+        <DashboardSection
+          title="Oferta programada"
+          icon={<BookOpen size={20} />}
+          iconColor="#1E2875"
+          isOpen={sectionsOpen.oferta}
+          onToggle={() => toggleSection('oferta')}
+          hasData={ofertaChartData.labels.length > 0}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <div className="card-toggle-group">
+              <button className={`btn-toggle ${ofertaViewMode === 'total' ? 'active' : ''}`} onClick={() => setOfertaViewMode('total')}>Total</button>
+              <button className={`btn-toggle ${ofertaViewMode === 'area' ? 'active' : ''}`} onClick={() => setOfertaViewMode('area')}>Área</button>
+              <button className={`btn-toggle ${ofertaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setOfertaViewMode('tipo')}>Tipo</button>
+              <button className={`btn-toggle ${ofertaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setOfertaViewMode('modalidad')}>Modalidad</button>
+            </div>
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => handleOpenIndicator('oferta-programada', OFERTA_GROUP_BY_MAP[ofertaViewMode])}
+              sx={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#1E2875',
+                textTransform: 'none',
+                py: 0.25,
+                px: 1,
+                borderRadius: '6px',
+                '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+              }}
+            >
+              Ver detalles
+            </Button>
+          </Box>
+          <Box sx={{ minHeight: isMobile ? 280 : 320, width: '100%' }}>
             <BarChart
               xAxis={[{
                 scaleType: 'band',
@@ -863,6 +680,7 @@ export const DashboardEducacionContinua = () => {
                 }
               }]}
               series={ofertaChartData.series}
+              height={isMobile ? 280 : 320}
               margin={{ top: 15, right: 15, bottom: isMobile ? 65 : 60, left: isMobile ? 35 : 40 }}
               slotProps={{
                 legend: {
@@ -873,14 +691,19 @@ export const DashboardEducacionContinua = () => {
                 tooltip: { trigger: 'axis' }
               }}
             />
-          </DashboardChartCard>
+          </Box>
+        </DashboardSection>
 
+        {/* ----------------- PAR DE GRÁFICOS: Cursos dictados y Tasa de ejecución ----------------- */}
+        <div className="charts-grid" style={{ marginBottom: '24px' }}>
           {/* Card 2: Cursos efectivamente dictados */}
-          <DashboardChartCard
+          <DashboardMiniSection
             id="cursos-dictados"
-            icon={<CheckCircle size={16} />}
+            icon={<CheckCircle size={18} />}
             iconColor="#10B981"
             title="Cursos efectivamente dictados"
+            isOpen={sectionsOpen.dictados}
+            onToggle={() => toggleSection('dictados')}
             actions={
               <Button
                 size="small"
@@ -902,35 +725,40 @@ export const DashboardEducacionContinua = () => {
             }
             hasData={Boolean(effectiveDictadosSeries && effectiveDictadosSeries.length > 0)}
           >
-            <BarChart
-              xAxis={[{ 
-                scaleType: 'band', 
-                data: (effectiveDictadosSeries || []).map(d => d.cohorte), 
-                label: isMobile ? undefined : 'Año',
-                tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 }
-              }]}
-              series={[
-                { data: (effectiveDictadosSeries || []).map(d => d.planificados), label: 'Programados', color: '#cbd5e1' },
-                { data: (effectiveDictadosSeries || []).map(d => d.dictados), label: 'Dictados', color: '#10B981' }
-              ]}
-              margin={{ top: 15, right: 15, bottom: isMobile ? 55 : 40, left: isMobile ? 35 : 40 }}
-              slotProps={{
-                legend: {
-                  direction: 'horizontal',
-                  position: { vertical: 'bottom', horizontal: 'center' },
-                  labelStyle: { fontSize: isMobile ? '9px' : '10px', fill: '#1e293b' }
-                },
-                tooltip: { trigger: 'axis' }
-              }}
-            />
-          </DashboardChartCard>
+            <Box sx={{ width: '100%', minHeight: isMobile ? 240 : 270 }}>
+              <BarChart
+                xAxis={[{ 
+                  scaleType: 'band', 
+                  data: (effectiveDictadosSeries || []).map(d => d.cohorte), 
+                  label: isMobile ? undefined : 'Año',
+                  tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 }
+                }]}
+                series={[
+                  { data: (effectiveDictadosSeries || []).map(d => d.planificados), label: 'Programados', color: '#cbd5e1' },
+                  { data: (effectiveDictadosSeries || []).map(d => d.dictados), label: 'Dictados', color: '#10B981' }
+                ]}
+                height={isMobile ? 240 : 270}
+                margin={{ top: 15, right: 10, bottom: isMobile ? 55 : 40, left: 35 }}
+                slotProps={{
+                  legend: {
+                    direction: 'horizontal',
+                    position: { vertical: 'bottom', horizontal: 'center' },
+                    labelStyle: { fontSize: isMobile ? '9px' : '10px', fill: '#1e293b' }
+                  },
+                  tooltip: { trigger: 'axis' }
+                }}
+              />
+            </Box>
+          </DashboardMiniSection>
 
           {/* Card 3: Tasa de ejecución (%) */}
-          <DashboardChartCard
+          <DashboardMiniSection
             id="tasa-ejecucion"
-            icon={<Percent size={16} />}
+            icon={<Percent size={18} />}
             iconColor="#1E2875"
             title="Tasa de ejecución (%)"
+            isOpen={sectionsOpen.ejecucion}
+            onToggle={() => toggleSection('ejecucion')}
             actions={
               <Button
                 size="small"
@@ -952,63 +780,65 @@ export const DashboardEducacionContinua = () => {
             }
             hasData={Boolean(effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0)}
           >
-            <LineChart
-              xAxis={[{ 
-                scaleType: 'point', 
-                data: (effectiveEjecucionSeries || []).map(d => d.cohorte), 
-                label: isMobile ? undefined : 'Año',
-                tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 }
-              }]}
-              series={[{
-                data: (effectiveEjecucionSeries || []).map(d => d.tasa),
-                color: '#1E2875',
-                label: 'Tasa Ejecución %',
-                valueFormatter: (value) => `${value}%`,
-                showMark: true,
-              }]}
-              margin={{ top: 15, right: 15, bottom: isMobile ? 55 : 40, left: isMobile ? 35 : 45 }}
-              slotProps={{
-                tooltip: { trigger: 'axis' }
-              }}
-            />
-          </DashboardChartCard>
-
-          {/* Card 4: Ingresos Generados */}
-          <DashboardChartCard
-            id="ingresos-generados"
-            fullWidth
-            minHeight="390px"
-            icon={<DollarSign size={16} />}
-            iconColor="#10B981"
-            title={`Ingresos por ${ingresosViewMode === 'area' ? 'área' : (ingresosViewMode === 'tipo' ? 'tipo de programa' : 'modalidad')} ($M CLP)`}
-            headerContent={
-              <div className="card-toggle-group" style={{ marginTop: '4px' }}>
-                <button className={`btn-toggle ${ingresosViewMode === 'area' ? 'active' : ''}`} onClick={() => setIngresosViewMode('area')}>Área</button>
-                <button className={`btn-toggle ${ingresosViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setIngresosViewMode('tipo')}>Tipo</button>
-                <button className={`btn-toggle ${ingresosViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setIngresosViewMode('modalidad')}>Modalidad</button>
-              </div>
-            }
-            actions={
-              <Button
-                size="small"
-                variant="text"
-                onClick={() => handleOpenIndicator('ingresos-generados', INGRESOS_GROUP_BY_MAP[ingresosViewMode])}
-                sx={{
-                  fontSize: '12px',
-                  fontWeight: 600,
+            <Box sx={{ width: '100%', minHeight: isMobile ? 240 : 270 }}>
+              <LineChart
+                xAxis={[{ 
+                  scaleType: 'point', 
+                  data: (effectiveEjecucionSeries || []).map(d => d.cohorte), 
+                  label: isMobile ? undefined : 'Año',
+                  tickLabelStyle: { fontSize: isMobile ? 8 : 10, fontWeight: 500 }
+                }]}
+                series={[{
+                  data: (effectiveEjecucionSeries || []).map(d => d.tasa),
                   color: '#1E2875',
-                  textTransform: 'none',
-                  py: 0.25,
-                  px: 1,
-                  borderRadius: '6px',
-                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                  label: 'Tasa Ejecución %',
+                  valueFormatter: (value) => `${value}%`,
+                  showMark: true,
+                }]}
+                height={isMobile ? 240 : 270}
+                margin={{ top: 15, right: 10, bottom: isMobile ? 55 : 40, left: 35 }}
+                slotProps={{
+                  tooltip: { trigger: 'axis' }
                 }}
-              >
-                Ver detalles
-              </Button>
-            }
-            hasData={ingresosChartData.labels.length > 0}
-          >
+              />
+            </Box>
+          </DashboardMiniSection>
+        </div>
+
+        {/* ----------------- SECCIÓN: Ingresos generados ----------------- */}
+        <DashboardSection
+          title={`Ingresos por ${ingresosViewMode === 'area' ? 'área' : (ingresosViewMode === 'tipo' ? 'tipo de programa' : 'modalidad')} ($M CLP)`}
+          icon={<DollarSign size={20} />}
+          iconColor="#10B981"
+          isOpen={sectionsOpen.ingresos}
+          onToggle={() => toggleSection('ingresos')}
+          hasData={ingresosChartData.labels.length > 0}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <div className="card-toggle-group">
+              <button className={`btn-toggle ${ingresosViewMode === 'area' ? 'active' : ''}`} onClick={() => setIngresosViewMode('area')}>Área</button>
+              <button className={`btn-toggle ${ingresosViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setIngresosViewMode('tipo')}>Tipo</button>
+              <button className={`btn-toggle ${ingresosViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setIngresosViewMode('modalidad')}>Modalidad</button>
+            </div>
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => handleOpenIndicator('ingresos-generados', INGRESOS_GROUP_BY_MAP[ingresosViewMode])}
+              sx={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#1E2875',
+                textTransform: 'none',
+                py: 0.25,
+                px: 1,
+                borderRadius: '6px',
+                '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+              }}
+            >
+              Ver detalles
+            </Button>
+          </Box>
+          <Box sx={{ minHeight: isMobile ? 280 : 320, width: '100%' }}>
             <BarChart
               xAxis={[{
                 scaleType: 'band',
@@ -1023,52 +853,53 @@ export const DashboardEducacionContinua = () => {
                 }
               }]}
               series={ingresosChartData.series}
+              height={isMobile ? 280 : 320}
               margin={{ top: 15, right: 15, bottom: isMobile ? 70 : 80, left: isMobile ? 40 : 50 }}
               slotProps={{ 
                 legend: { direction: 'horizontal', position: { vertical: 'bottom', horizontal: 'center' }, labelStyle: { fontSize: isMobile ? '9px' : '10px' } },
                 tooltip: { trigger: 'axis' }
               }}
             />
-          </DashboardChartCard>
+          </Box>
+        </DashboardSection>
 
-          {/* Card 5: Matrícula por programa */}
-          <DashboardChartCard
-            id="matricula-por-programa"
-            fullWidth
-            minHeight="480px"
-            title="Matrícula por programa"
-            headerContent={
-              <div className="card-toggle-group" style={{ marginTop: '4px' }}>
-                <button className={`btn-toggle ${matriculaViewMode === 'total' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('total')}>Total</button>
-                <button className={`btn-toggle ${matriculaViewMode === 'area' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('area')}>Área</button>
-                <button className={`btn-toggle ${matriculaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('modalidad')}>Modalidad</button>
-                <button className={`btn-toggle ${matriculaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('tipo')}>Tipo Programa</button>
-              </div>
-            }
-            actions={
-              <Button
-                size="small"
-                variant="text"
-                onClick={() => handleOpenIndicator('matricula-por-programa', MATRICULA_GROUP_BY_MAP[matriculaViewMode])}
-                sx={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#1E2875',
-                  textTransform: 'none',
-                  py: 0.25,
-                  px: 1,
-                  borderRadius: '6px',
-                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
-                }}
-              >
-                Ver detalles
-              </Button>
-            }
-            wrapperStyle={{ height: isMobile ? '340px' : '390px' }}
-            hasData={matriculaChartData.labels.length > 0}
-          >
+        {/* ----------------- SECCIÓN: Matrícula por programa ----------------- */}
+        <DashboardSection
+          title="Matrícula por programa"
+          icon={<Users size={20} />}
+          iconColor="#8B5CF6"
+          isOpen={sectionsOpen.matricula}
+          onToggle={() => toggleSection('matricula')}
+          hasData={matriculaChartData.labels.length > 0}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <div className="card-toggle-group">
+              <button className={`btn-toggle ${matriculaViewMode === 'total' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('total')}>Total</button>
+              <button className={`btn-toggle ${matriculaViewMode === 'area' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('area')}>Área</button>
+              <button className={`btn-toggle ${matriculaViewMode === 'modalidad' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('modalidad')}>Modalidad</button>
+              <button className={`btn-toggle ${matriculaViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setMatriculaViewMode('tipo')}>Tipo Programa</button>
+            </div>
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => handleOpenIndicator('matricula-por-programa', MATRICULA_GROUP_BY_MAP[matriculaViewMode])}
+              sx={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#1E2875',
+                textTransform: 'none',
+                py: 0.25,
+                px: 1,
+                borderRadius: '6px',
+                '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+              }}
+            >
+              Ver detalles
+            </Button>
+          </Box>
+          <Box sx={{ minHeight: isMobile ? 320 : 360, width: '100%' }}>
             <BarChart
-              height={isMobile ? 330 : 370}
+              height={isMobile ? 320 : 360}
               xAxis={[{
                 scaleType: 'band',
                 data: matriculaChartData.labels,
@@ -1088,39 +919,38 @@ export const DashboardEducacionContinua = () => {
                 tooltip: { trigger: 'axis' }
               }}
             />
-          </DashboardChartCard>
+          </Box>
+        </DashboardSection>
 
-          {/* Card 6: Tasa de aprobación por programa */}
-          <DashboardChartCard
-            id="tasa-aprobacion"
-            fullWidth
-            minHeight="380px"
-            icon={<Award size={16} />}
-            iconColor="#a855f7"
-            title="Tasa de aprobación"
-            actions={
-              <Button
-                size="small"
-                variant="text"
-                onClick={() => handleOpenIndicator('tasa-aprobacion')}
-                sx={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#1E2875',
-                  textTransform: 'none',
-                  py: 0.25,
-                  px: 1,
-                  borderRadius: '6px',
-                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
-                }}
-              >
-                Ver detalles
-              </Button>
-            }
-            wrapperStyle={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', padding: '8px' }}
-            hasData={aprobacionProgramasData.length > 0}
-            noDataMessage="No hay datos coincidentes"
-          >
+        {/* ----------------- SECCIÓN: Tasa de aprobación ----------------- */}
+        <DashboardSection
+          title="Tasa de aprobación"
+          icon={<Award size={20} />}
+          iconColor="#A855F7"
+          isOpen={sectionsOpen.aprobacion}
+          onToggle={() => toggleSection('aprobacion')}
+          hasData={aprobacionProgramasData.length > 0}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => handleOpenIndicator('tasa-aprobacion')}
+              sx={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#1E2875',
+                textTransform: 'none',
+                py: 0.25,
+                px: 1,
+                borderRadius: '6px',
+                '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+              }}
+            >
+              Ver detalles
+            </Button>
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', padding: '8px' }}>
             {aprobacionProgramasData.map(row => (
               <div key={row.area} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
                 <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569', marginBottom: '12px', textAlign: 'center' }}>
@@ -1154,46 +984,46 @@ export const DashboardEducacionContinua = () => {
                 </span>
               </div>
             ))}
-          </DashboardChartCard>
+          </Box>
+        </DashboardSection>
 
-          {/* Card 7: Perfil del participante */}
-          <DashboardChartCard
-            fullWidth
-            icon={<UserCheck size={16} />}
-            iconColor="#F59E0B"
-            title="Perfil del participante"
-            headerContent={
-              <div className="card-toggle-group" style={{ maxWidth: '380px', marginTop: '4px' }}>
-                <button className={`btn-toggle ${perfilViewMode === 'region' ? 'active' : ''}`} onClick={() => setPerfilViewMode('region')}>Región</button>
-                <button className={`btn-toggle ${perfilViewMode === 'sector' ? 'active' : ''}`} onClick={() => setPerfilViewMode('sector')}>Sector</button>
-                <button className={`btn-toggle ${perfilViewMode === 'escolaridad' ? 'active' : ''}`} onClick={() => setPerfilViewMode('escolaridad')}>Escolaridad</button>
-                <button className={`btn-toggle ${perfilViewMode === 'edad' ? 'active' : ''}`} onClick={() => setPerfilViewMode('edad')}>Edad</button>
-                <button className={`btn-toggle ${perfilViewMode === 'genero' ? 'active' : ''}`} onClick={() => setPerfilViewMode('genero')}>Género</button>
-                <button className={`btn-toggle ${perfilViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setPerfilViewMode('tipo')}>Tipo</button>
-              </div>
-            }
-            actions={
-              <Button
-                size="small"
-                variant="text"
-                onClick={() => handleOpenIndicator('perfil-participante', PERFIL_GROUP_BY_MAP[perfilViewMode])}
-                sx={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#1E2875',
-                  textTransform: 'none',
-                  py: 0.25,
-                  px: 1,
-                  borderRadius: '6px',
-                  '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
-                }}
-              >
-                Ver detalles
-              </Button>
-            }
-            wrapperStyle={{ marginTop: '8px' }}
-            hasData={Boolean(perfilParticipantesData && perfilParticipantesData.length > 0)}
-          >
+        {/* ----------------- SECCIÓN: Perfil del participante ----------------- */}
+        <DashboardSection
+          title="Perfil del participante"
+          icon={<UserCheck size={20} />}
+          iconColor="#F59E0B"
+          isOpen={sectionsOpen.perfil}
+          onToggle={() => toggleSection('perfil')}
+          hasData={Boolean(perfilParticipantesData && perfilParticipantesData.length > 0)}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <div className="card-toggle-group" style={{ maxWidth: '380px' }}>
+              <button className={`btn-toggle ${perfilViewMode === 'region' ? 'active' : ''}`} onClick={() => setPerfilViewMode('region')}>Región</button>
+              <button className={`btn-toggle ${perfilViewMode === 'sector' ? 'active' : ''}`} onClick={() => setPerfilViewMode('sector')}>Sector</button>
+              <button className={`btn-toggle ${perfilViewMode === 'escolaridad' ? 'active' : ''}`} onClick={() => setPerfilViewMode('escolaridad')}>Escolaridad</button>
+              <button className={`btn-toggle ${perfilViewMode === 'edad' ? 'active' : ''}`} onClick={() => setPerfilViewMode('edad')}>Edad</button>
+              <button className={`btn-toggle ${perfilViewMode === 'genero' ? 'active' : ''}`} onClick={() => setPerfilViewMode('genero')}>Género</button>
+              <button className={`btn-toggle ${perfilViewMode === 'tipo' ? 'active' : ''}`} onClick={() => setPerfilViewMode('tipo')}>Tipo</button>
+            </div>
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => handleOpenIndicator('perfil-participante', PERFIL_GROUP_BY_MAP[perfilViewMode])}
+              sx={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#1E2875',
+                textTransform: 'none',
+                py: 0.25,
+                px: 1,
+                borderRadius: '6px',
+                '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+              }}
+            >
+              Ver detalles
+            </Button>
+          </Box>
+          <Box sx={{ minHeight: isMobile ? 260 : 220, width: '100%' }}>
             <PieChart
               series={[
                 {
@@ -1214,14 +1044,19 @@ export const DashboardEducacionContinua = () => {
                 }
               }}
             />
-          </DashboardChartCard>
+          </Box>
+        </DashboardSection>
 
+        {/* ----------------- PAR DE GRÁFICOS: Pictogramas ----------------- */}
+        <div className="charts-grid" style={{ marginTop: '12px' }}>
           {/* Card 8: Pictograma: Participantes Únicos */}
-          <DashboardChartCard
+          <DashboardMiniSection
             minHeight="380px"
             icon={<Users size={16} />}
             iconColor="#8b5cf6"
             title="Pictograma: Participantes Únicos"
+            isOpen={sectionsOpen.participantesUnicos}
+            onToggle={() => toggleSection('participantesUnicos')}
             actions={
               <Button
                 size="small"
@@ -1285,14 +1120,16 @@ export const DashboardEducacionContinua = () => {
             <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4', width: '100%' }}>
               Cada figura representa un 10% del total de participantes únicos ({uniqueParticipantsTotal})
             </div>
-          </DashboardChartCard>
+          </DashboardMiniSection>
 
           {/* Card 9: Pictograma: Frecuencia de Matrículas */}
-          <DashboardChartCard
+          <DashboardMiniSection
             minHeight="380px"
             icon={<RefreshCw size={16} />}
             iconColor="#ec4899"
             title="Pictograma: Frecuencia de Matrículas"
+            isOpen={sectionsOpen.recurrencia}
+            onToggle={() => toggleSection('recurrencia')}
             actions={
               <Button
                 size="small"
@@ -1356,21 +1193,226 @@ export const DashboardEducacionContinua = () => {
             <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500, borderTop: '1px solid #f1f5f9', paddingTop: '8px', textAlign: 'center', lineHeight: '1.4', width: '100%' }}>
               Cada figura representa un 10% del total de personas con recurrencia formativa
             </div>
-          </DashboardChartCard>
-
+          </DashboardMiniSection>
         </div>
 
       </Box>
 
-      {/* SECCIÓN DE FILTROS PERSISTENTES (DERECHA EN ESCRITORIO) */}
-      <DashboardPersistentFilterSidebar
-        variant="aside"
-        title="Filtros"
+      {/* ----------------- SIDEBAR DE FILTROS MODULAR ----------------- */}
+      <DashboardFilterSidebar
+        title="Filtros Educación Continua"
+        icon={<FilterIcon sx={{ color: '#1DC2A0', fontSize: 18 }} />}
+        iconColor="#1DC2A0"
+        collapsed={filtersCollapsed}
+        onToggleCollapse={() => setFiltersCollapsed(!filtersCollapsed)}
+        mobileOpen={mobileFiltersOpen}
+        onCloseMobile={() => setMobileFiltersOpen(false)}
         hasData={hasData}
         onReset={handleResetFilters}
+        resetLabel="Restablecer filtros"
       >
-        {filtersContent}
-      </DashboardPersistentFilterSidebar>
+        {/* Slider de Años */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.5px' }}>
+            Año
+          </Typography>
+          <Box sx={{ px: 1, mt: 0.5 }}>
+            <Slider
+              value={[parseInt(cohorteDesde), parseInt(cohorteHasta)]}
+              onChange={(e, val) => {
+                setCohorteDesde(String(val[0]));
+                setCohorteHasta(String(val[1]));
+              }}
+              min={2023}
+              max={2026}
+              step={1}
+              marks={[
+                { value: 2023, label: '2023' },
+                { value: 2024, label: '2024' },
+                { value: 2025, label: '2025' },
+                { value: 2026, label: '2026' }
+              ]}
+              valueLabelDisplay="auto"
+              sx={styles.ageSliderStyle}
+            />
+            <Typography variant="body2" sx={{ textAlign: 'center', mt: 1.5, fontWeight: 600, color: '#1E2875', fontSize: '13px' }}>
+              {cohorteDesde === cohorteHasta ? cohorteDesde : `${cohorteDesde} — ${cohorteHasta}`}
+            </Typography>
+
+            {/* Checkbox para Periodo Acumulado */}
+            {cohorteDesde !== cohorteHasta && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={periodoAcumulado}
+                      onChange={(e) => setPeriodoAcumulado(e.target.checked)}
+                      size="small"
+                      sx={{
+                        color: '#1E2875',
+                        '&.Mui-checked': {
+                          color: '#1DC2A0',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: '#475569' }}>
+                      Período acumulado
+                    </Typography>
+                  }
+                  sx={{ mx: 0 }}
+                />
+              </Box>
+            )}
+          </Box>
+        </Box>
+
+        {/* Acordeones de Filtros */}
+        {hasData && (
+          <>
+            {/* Temporalidad: Semestre y Mes */}
+            <Accordion
+              expanded={openTemporalidad}
+              onChange={(e, expanded) => setOpenTemporalidad(expanded)}
+              sx={{ boxShadow: 'none', border: 'none', mt: -0.5, margin: '0 !important', '&:before': { display: 'none' } }}
+            >
+              <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
+                <ChevronRightLucide style={{ transform: openTemporalidad ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569' }} size={16} />
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                  Temporalidad
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* Semestre */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Semestre
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                    {(dynamicSemestres.length > 0 ? dynamicSemestres : SEMESTRES_LIST).map((sem) => (
+                      <FilterChip
+                        key={sem}
+                        label={sem}
+                        selected={semestresSeleccionados.includes(sem)}
+                        onClick={() => toggleChip(semestresSeleccionados, setSemestresSeleccionados, sem)}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+
+                {/* Mes (Rango Desde - Hasta) */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Mes de inicio
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel id="mes-desde-label" sx={styles.selectLabelStyle}>Desde</InputLabel>
+                      <Select
+                        labelId="mes-desde-label"
+                        value={mesDesde}
+                        label="Desde"
+                        onChange={(e) => setMesDesde(e.target.value)}
+                        sx={styles.selectInputStyle}
+                      >
+                        {MESES_LIST.map((m) => (
+                          <MenuItem key={m} value={m} disabled={MESES_LIST.indexOf(m) > MESES_LIST.indexOf(mesHasta)}>
+                            {m}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <Typography sx={{ color: '#94A3B8', fontSize: '13px' }}>—</Typography>
+                    <FormControl fullWidth size="small">
+                      <InputLabel id="mes-hasta-label" sx={styles.selectLabelStyle}>Hasta</InputLabel>
+                      <Select
+                        labelId="mes-hasta-label"
+                        value={mesHasta}
+                        label="Hasta"
+                        onChange={(e) => setMesHasta(e.target.value)}
+                        sx={styles.selectInputStyle}
+                      >
+                        {MESES_LIST.map((m) => (
+                          <MenuItem key={m} value={m} disabled={MESES_LIST.indexOf(m) < MESES_LIST.indexOf(mesDesde)}>
+                            {m}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+
+            {/* Programas y Oferta Formativa */}
+            <Accordion
+              expanded={openOferta}
+              onChange={(e, expanded) => setOpenOferta(expanded)}
+              sx={{ boxShadow: 'none', border: 'none', margin: '0 !important', '&:before': { display: 'none' } }}
+            >
+              <AccordionSummary sx={{ p: 0, minHeight: '0 !important', margin: '0 !important', '& .MuiAccordionSummary-content': { my: 1, margin: '0 !important', display: 'flex', alignItems: 'center', gap: 1 } }}>
+                <ChevronRightLucide style={{ transform: openOferta ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms', color: '#475569' }} size={16} />
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'none', letterSpacing: '0.06em' }}>
+                  Oferta formativa
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* Área */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Área disciplinar
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                    {(dynamicAreas.length > 0 ? dynamicAreas : AREAS_LIST).map((area) => (
+                      <FilterChip
+                        key={area}
+                        label={area}
+                        selected={areaSeleccionada.includes(area)}
+                        onClick={() => toggleChip(areaSeleccionada, setAreaSeleccionada, area)}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+
+                {/* Tipo de programa */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Tipo de programa
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                    {(dynamicTipos.length > 0 ? dynamicTipos : TIPOS_LIST).map((tipo) => (
+                      <FilterChip
+                        key={tipo}
+                        label={tipo}
+                        selected={tipoSeleccionado.includes(tipo)}
+                        onClick={() => toggleChip(tipoSeleccionado, setTipoSeleccionado, tipo)}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+
+                {/* Modalidad */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Modalidad
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                    {(dynamicModalidades.length > 0 ? dynamicModalidades : MODALIDADES_LIST).map((mod) => (
+                      <FilterChip
+                        key={mod}
+                        label={mod}
+                        selected={modalidadSeleccionada.includes(mod)}
+                        onClick={() => toggleChip(modalidadSeleccionada, setModalidadSeleccionada, mod)}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+          </>
+        )}
+      </DashboardFilterSidebar>
 
       {/* ----------------- DRAWER LATERAL DE DETALLE DE INDICADOR ----------------- */}
       <Box 

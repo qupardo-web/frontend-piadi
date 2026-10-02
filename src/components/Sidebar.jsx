@@ -92,7 +92,24 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
     >
       <Box>
         {/* Logo y Cabecera del Sidebar */}
-        <Box sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box
+          onClick={() => {
+            if (mobileOpen) setMobileOpen(false);
+            navigate('/');
+          }}
+          sx={{
+            p: 3,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            cursor: 'pointer',
+            userSelect: 'none',
+            transition: 'opacity 0.2s ease',
+            '&:hover': {
+              opacity: 0.85,
+            },
+          }}
+        >
           <Box
             component="img"
             src={logoEcas}
@@ -279,14 +296,38 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
             },
           }}
         >
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerToggle}
-            sx={{ p: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <MenuIcon sx={{ fontSize: 36 }} />
-          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              onClick={handleDrawerToggle}
+              sx={{ p: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <MenuIcon sx={{ fontSize: 36 }} />
+            </IconButton>
+            <Box
+              onClick={() => navigate('/')}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                cursor: 'pointer',
+                userSelect: 'none',
+                transition: 'opacity 0.2s ease',
+                '&:hover': { opacity: 0.85 },
+              }}
+            >
+              <Box
+                component="img"
+                src={logoEcas}
+                alt="Logo ECAS"
+                sx={{ width: 24, height: 24, objectFit: 'contain' }}
+              />
+              <Typography sx={{ fontWeight: 700, fontSize: '16px', color: '#ffffff', letterSpacing: 0.5 }}>
+                PIADI
+              </Typography>
+            </Box>
+          </Box>
           {mobileRightAction && (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               {mobileRightAction}
