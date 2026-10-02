@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
-import { getPlantillaById } from '../../../services/piadiApi';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL, getPlantillaById } from '../../../services/piadiApi';
 const VCM_ROLE = 'Vinculación Con El Medio';
 const VCM_TEMPLATE_NAME = 'Vinculación Con El Medio';
 const INTERNAL_ERROR_MESSAGE = 'Error interno, contacte al administrador';
