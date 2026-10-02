@@ -187,23 +187,23 @@ export const MetaForm = () => {
                         bgcolor: '#ffffff !important',
                         backgroundColor: '#ffffff !important',
                         borderRadius: '8px',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                        border: '1.5px solid #000000',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                        border: '1px solid #E5E7EB',
                         mt: 0.5,
                         '& .MuiMenuItem-root': {
                           fontSize: '13.5px',
-                          color: '#000000 !important',
+                          color: '#111827 !important',
                           fontWeight: 500,
                           whiteSpace: 'normal',
                           wordBreak: 'break-word',
                           py: 1,
                           '&:hover': {
                             bgcolor: '#f3f4f6 !important',
-                            color: '#000000 !important',
+                            color: '#111827 !important',
                           },
                           '&.Mui-selected': {
                             bgcolor: '#e5e7eb !important',
-                            color: '#000000 !important',
+                            color: '#111827 !important',
                             fontWeight: 700,
                             '&:hover': {
                               bgcolor: '#d1d5db !important',
@@ -235,34 +235,36 @@ export const MetaForm = () => {
                     bgcolor: '#ffffff',
                     borderRadius: '8px',
                     fontSize: '14px',
-                    color: '#000000',
+                    color: '#111827',
                     height: '42px',
-                    border: errors.departamento ? '1px solid #dc2626' : '1px solid #000000',
+                    border: errors.departamento ? '1px solid #dc2626' : '1px solid #D1D5DB',
+                    transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
                     '& .MuiOutlinedInput-notchedOutline': {
                       border: 'none',
                     },
                     '&:hover': {
-                      borderColor: errors.departamento ? '#dc2626' : '#000000',
+                      borderColor: errors.departamento ? '#dc2626' : '#9CA3AF',
                     },
                     '&.Mui-focused': {
-                      boxShadow: errors.departamento ? '0 0 0 2px rgba(220, 38, 38, 0.2)' : '0 0 0 2px rgba(0, 0, 0, 0.2)',
+                      borderColor: errors.departamento ? '#dc2626' : '#0F4AFF',
+                      boxShadow: errors.departamento ? '0 0 0 2px rgba(220, 38, 38, 0.2)' : '0 0 0 2px rgba(15, 74, 255, 0.25)',
                     },
                     '& .MuiSelect-select': {
                       py: '10px',
                       px: '12px',
-                      color: '#000000 !important',
+                      color: '#111827 !important',
                       fontWeight: 500,
                     },
                     '& .MuiSvgIcon-root': {
-                      color: '#000000 !important',
+                      color: '#6B7280 !important',
                     },
                   }}
                 >
-                  <MenuItem value="" sx={{ color: '#000000 !important', bgcolor: '#ffffff', fontWeight: 500 }}>
+                  <MenuItem value="" sx={{ color: '#111827 !important', bgcolor: '#ffffff', fontWeight: 500 }}>
                     Selecciona una dirección
                   </MenuItem>
                   {departmentsList.map((dept) => (
-                    <MenuItem key={dept.key} value={dept.key} sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                    <MenuItem key={dept.key} value={dept.key} sx={{ color: '#111827 !important', bgcolor: '#ffffff' }}>
                       {dept.name}
                     </MenuItem>
                   ))}
@@ -291,23 +293,23 @@ export const MetaForm = () => {
                         bgcolor: '#ffffff !important',
                         backgroundColor: '#ffffff !important',
                         borderRadius: '8px',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                        border: '1.5px solid #000000',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                        border: '1px solid #E5E7EB',
                         mt: 0.5,
                         '& .MuiMenuItem-root': {
                           fontSize: '13.5px',
-                          color: '#000000 !important',
+                          color: '#111827 !important',
                           fontWeight: 500,
                           whiteSpace: 'normal',
                           wordBreak: 'break-word',
                           py: 1,
                           '&:hover': {
                             bgcolor: '#f3f4f6 !important',
-                            color: '#000000 !important',
+                            color: '#111827 !important',
                           },
                           '&.Mui-selected': {
                             bgcolor: '#e5e7eb !important',
-                            color: '#000000 !important',
+                            color: '#111827 !important',
                             fontWeight: 700,
                             '&:hover': {
                               bgcolor: '#d1d5db !important',
@@ -339,36 +341,38 @@ export const MetaForm = () => {
                     bgcolor: '#ffffff',
                     borderRadius: '8px',
                     fontSize: '14px',
-                    color: '#000000',
+                    color: '#111827',
                     height: '42px',
-                    border: '1px solid #000000',
+                    border: '1px solid #D1D5DB',
+                    transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
                     '& .MuiOutlinedInput-notchedOutline': {
                       border: 'none',
                     },
                     '&:hover': {
-                      borderColor: '#000000',
+                      borderColor: '#9CA3AF',
                     },
                     '&.Mui-focused': {
-                      boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.2)',
+                      borderColor: '#0F4AFF',
+                      boxShadow: '0 0 0 2px rgba(15, 74, 255, 0.25)',
                     },
                     '& .MuiSelect-select': {
                       py: '10px',
                       px: '12px',
-                      color: '#000000 !important',
+                      color: '#111827 !important',
                       fontWeight: 500,
                     },
                     '& .MuiSvgIcon-root': {
-                      color: '#000000 !important',
+                      color: '#6B7280 !important',
                     },
                   }}
                 >
-                  <MenuItem value="no-debe-superar" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                  <MenuItem value="no-debe-superar" sx={{ color: '#111827 !important', bgcolor: '#ffffff' }}>
                     No debe superar
                   </MenuItem>
-                  <MenuItem value="debe-alcanzar-o-superar" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                  <MenuItem value="debe-alcanzar-o-superar" sx={{ color: '#111827 !important', bgcolor: '#ffffff' }}>
                     Debe alcanzar o superar
                   </MenuItem>
-                  <MenuItem value="debe-mantenerse-en-rango" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                  <MenuItem value="debe-mantenerse-en-rango" sx={{ color: '#111827 !important', bgcolor: '#ffffff' }}>
                     Debe mantenerse en el rango
                   </MenuItem>
                 </Select>
