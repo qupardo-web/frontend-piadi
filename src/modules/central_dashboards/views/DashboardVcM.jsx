@@ -31,6 +31,11 @@ import {
   useMediaQuery,
   Switch,
   FormControlLabel,
+  Alert,
+  LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
 import {
   FilterAlt as FilterIcon,
@@ -44,6 +49,8 @@ import {
   Assignment as AssignmentIcon,
   Public as PublicIcon,
   ExpandMore as ExpandMoreIcon,
+  Help as HelpIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 
 // Lucide Icons
@@ -110,7 +117,12 @@ import {
   MESES_LIST,
   TIPOS_LIST,
   MODALIDADES_LIST,
-  AREAS_LIST
+  AREAS_LIST,
+  SEC1_GROUP_BY_MAP,
+  SEC2_GROUP_BY_MAP,
+  SEC4_GROUP_BY_MAP,
+  SEC5_GROUP_BY_MAP,
+  SEC6_GROUP_BY_MAP
 } from './DashboardVcM.hooks';
 
 const dashboardLightTheme = createTheme({
@@ -315,6 +327,22 @@ export const DashboardVcM = () => {
     apiActividadesRealizadasSeries,
     apiParticipacionesSeries,
     apiArticulacionesTPSeries,
+    drawerOpen,
+    currentIndicator,
+    drawerPeriod,
+    handleDrawerPeriodChange,
+    drawerGroupBy,
+    setDrawerGroupBy,
+    drawerYears,
+    displayRows,
+    drawerPeriodText,
+    drawerLoading,
+    drawerError,
+    handleOpenIndicator,
+    handleCloseDrawer,
+    openHelpDialog,
+    setOpenHelpDialog,
+    faqData,
   } = useDashboardVcM();
 
   const sectorsList = hasRealData && apiFilters?.filters?.sectores?.length
@@ -433,6 +461,9 @@ export const DashboardVcM = () => {
           border-radius: 8px !important;
           padding: 3px !important;
           border: none !important;
+          width: fit-content !important;
+          display: inline-flex !important;
+          align-self: flex-start !important;
         }
         .vcm-dashboard .custom-toggle-btn {
           background: transparent !important;
@@ -531,6 +562,7 @@ export const DashboardVcM = () => {
                 }
                 evolution={kpi.hasEvo ? kpi.evolution : null}
                 isPositive={kpi.isPositive}
+                onClick={() => handleOpenIndicator(kpi.key)}
               />
             );
           })}
@@ -549,9 +581,28 @@ export const DashboardVcM = () => {
           <Grid container spacing={3}>
             {/* Distribución por año */}
             <Grid item xs={12}>
-              <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875', mb: 1 }}>
-                Distribución por año
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
+                  Distribución por año
+                </Typography>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={() => handleOpenIndicator('convenios-activos', null)}
+                  sx={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#1E2875',
+                    textTransform: 'none',
+                    py: 0.25,
+                    px: 1,
+                    borderRadius: '6px',
+                    '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                  }}
+                >
+                  Ver detalles
+                </Button>
+              </Box>
               <Box sx={{ minHeight: 260, pb: 2, width: '100%' }}>
                 {getFilteredYears(datasetsSec1['Año']).length > 0 ? (
                   <BarChart
@@ -591,10 +642,29 @@ export const DashboardVcM = () => {
 
             {/* Convenios vigentes por categoría */}
             <Grid item xs={12}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 2, gap: 1 }}>
-                <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
-                  Convenios vigentes por categoría
-                </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
+                    Convenios vigentes por categoría
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => handleOpenIndicator('convenios-activos', SEC1_GROUP_BY_MAP[sec1Segment])}
+                    sx={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: '#1E2875',
+                      textTransform: 'none',
+                      py: 0.25,
+                      px: 1,
+                      borderRadius: '6px',
+                      '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                    }}
+                  >
+                    Ver detalles
+                  </Button>
+                </Box>
                 
                 <ToggleButtonGroup
                   value={sec1Segment}
@@ -747,9 +817,28 @@ export const DashboardVcM = () => {
           <Grid container spacing={3}>
                   {/* Distribución por año */}
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875', mb: 1 }}>
-                      Distribución por año
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
+                        Distribución por año
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="text"
+                        onClick={() => handleOpenIndicator('total-convenios', null)}
+                        sx={{
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#1E2875',
+                          textTransform: 'none',
+                          py: 0.25,
+                          px: 1,
+                          borderRadius: '6px',
+                          '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                        }}
+                      >
+                        Ver detalles
+                      </Button>
+                    </Box>
                     <Box sx={{ minHeight: 260, pb: 2, width: '100%' }}>
                       {getFilteredYears(datasetsSec2['Año']).length > 0 ? (
                         <BarChart
@@ -789,10 +878,29 @@ export const DashboardVcM = () => {
 
                   {/* Nuevos convenios por categoría */}
                   <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 2, gap: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
-                        Nuevos convenios por categoría
-                      </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
+                          Nuevos convenios por categoría
+                        </Typography>
+                        <Button
+                          size="small"
+                          variant="text"
+                          onClick={() => handleOpenIndicator('total-convenios', SEC2_GROUP_BY_MAP[sec2Segment])}
+                          sx={{
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: '#1E2875',
+                            textTransform: 'none',
+                            py: 0.25,
+                            px: 1,
+                            borderRadius: '6px',
+                            '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                          }}
+                        >
+                          Ver detalles
+                        </Button>
+                      </Box>
                       
                       <ToggleButtonGroup
                         value={sec2Segment}
@@ -938,6 +1046,30 @@ export const DashboardVcM = () => {
           noDataHeight={260}
         >
           <Grid container spacing={3} alignItems="center">
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
+                  Convenios por sector
+                </Typography>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={() => handleOpenIndicator('convenios-sector')}
+                  sx={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#1E2875',
+                    textTransform: 'none',
+                    py: 0.25,
+                    px: 1,
+                    borderRadius: '6px',
+                    '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                  }}
+                >
+                  Ver detalles
+                </Button>
+              </Box>
+            </Grid>
             {/* Donut Chart */}
             <Grid item xs={12} md={6}>
               <Box sx={{ minHeight: 270, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
@@ -1017,9 +1149,28 @@ export const DashboardVcM = () => {
           <Grid container spacing={3}>
                   {/* Distribución por año */}
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875', mb: 1 }}>
-                      Distribución por año
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
+                        Distribución por año
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="text"
+                        onClick={() => handleOpenIndicator('actividades-realizadas', null)}
+                        sx={{
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#1E2875',
+                          textTransform: 'none',
+                          py: 0.25,
+                          px: 1,
+                          borderRadius: '6px',
+                          '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                        }}
+                      >
+                        Ver detalles
+                      </Button>
+                    </Box>
                     <Box sx={{ minHeight: 260, pb: 2, width: '100%' }}>
                       {getFilteredYears(datasetsSec4['Año']).length > 0 ? (
                         <LineChart
@@ -1055,10 +1206,29 @@ export const DashboardVcM = () => {
 
                   {/* Actividades por categoría */}
                   <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 2, gap: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
-                        Actividades por categoría
-                      </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
+                          Actividades por categoría
+                        </Typography>
+                        <Button
+                          size="small"
+                          variant="text"
+                          onClick={() => handleOpenIndicator('actividades-realizadas', SEC4_GROUP_BY_MAP[sec4Segment])}
+                          sx={{
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: '#1E2875',
+                            textTransform: 'none',
+                            py: 0.25,
+                            px: 1,
+                            borderRadius: '6px',
+                            '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                          }}
+                        >
+                          Ver detalles
+                        </Button>
+                      </Box>
                       
                       <ToggleButtonGroup
                         value={sec4Segment}
@@ -1251,9 +1421,28 @@ export const DashboardVcM = () => {
           <Grid container spacing={3}>
                   {/* Distribución por año */}
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875', mb: 1 }}>
-                      Distribución por año (Interno vs Externo)
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
+                        Distribución por año (Interno vs Externo)
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="text"
+                        onClick={() => handleOpenIndicator('participaciones', null)}
+                        sx={{
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#1E2875',
+                          textTransform: 'none',
+                          py: 0.25,
+                          px: 1,
+                          borderRadius: '6px',
+                          '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                        }}
+                      >
+                        Ver detalles
+                      </Button>
+                    </Box>
                     <Box sx={{ minHeight: 260, pb: 2, width: '100%' }}>
                       {getFilteredYears(datasetsSec5['Año']).length > 0 ? (
                         <BarChart
@@ -1288,10 +1477,29 @@ export const DashboardVcM = () => {
 
                   {/* Participantes por categoría */}
                   <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 2, gap: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
-                        Participantes por categoría
-                      </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
+                          Participantes por categoría
+                        </Typography>
+                        <Button
+                          size="small"
+                          variant="text"
+                          onClick={() => handleOpenIndicator('participaciones', SEC5_GROUP_BY_MAP[sec5Segment])}
+                          sx={{
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: '#1E2875',
+                            textTransform: 'none',
+                            py: 0.25,
+                            px: 1,
+                            borderRadius: '6px',
+                            '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                          }}
+                        >
+                          Ver detalles
+                        </Button>
+                      </Box>
                       
                       <ToggleButtonGroup
                         value={sec5Segment}
@@ -1440,9 +1648,28 @@ export const DashboardVcM = () => {
           <Grid container spacing={3}>
                   {/* Distribución por año */}
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875', mb: 1 }}>
-                      Distribución por año
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
+                        Distribución por año
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="text"
+                        onClick={() => handleOpenIndicator('articulaciones-tp', null)}
+                        sx={{
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#1E2875',
+                          textTransform: 'none',
+                          py: 0.25,
+                          px: 1,
+                          borderRadius: '6px',
+                          '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                        }}
+                      >
+                        Ver detalles
+                      </Button>
+                    </Box>
                     <Box sx={{ minHeight: 260, pb: 2, width: '100%' }}>
                       {getFilteredYears(datasetsSec6['Año']).length > 0 ? (
                         <LineChart
@@ -1478,10 +1705,29 @@ export const DashboardVcM = () => {
 
                   {/* Articulaciones por categoría */}
                   <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 2, gap: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
-                        Articulaciones por categoría
-                      </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle2" sx={{ fontSize: '17px', fontWeight: 700, color: '#1E2875' }}>
+                          Articulaciones por categoría
+                        </Typography>
+                        <Button
+                          size="small"
+                          variant="text"
+                          onClick={() => handleOpenIndicator('articulaciones-tp', SEC6_GROUP_BY_MAP[sec6Segment])}
+                          sx={{
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: '#1E2875',
+                            textTransform: 'none',
+                            py: 0.25,
+                            px: 1,
+                            borderRadius: '6px',
+                            '&:hover': { bgcolor: 'rgba(30, 40, 117, 0.08)' }
+                          }}
+                        >
+                          Ver detalles
+                        </Button>
+                      </Box>
                       
                       <ToggleButtonGroup
                         value={sec6Segment}
@@ -1885,6 +2131,265 @@ export const DashboardVcM = () => {
           </>
         )}
       </DashboardFilterSidebar>
+
+      {/* ----------------- DRAWER LATERAL DE DETALLE DE INDICADOR ----------------- */}
+      <Box 
+        sx={styles.drawerOverlay(drawerOpen)} 
+        onClick={handleCloseDrawer} 
+        aria-hidden={!drawerOpen}
+      />
+      <Box 
+        component="aside"
+        role="dialog" 
+        aria-modal="true" 
+        aria-label="Detalle del indicador"
+        sx={styles.indicatorDrawer(drawerOpen)} 
+      >
+        <Box sx={styles.drawerHeader}>
+          <Box sx={styles.drawerTitleRow}>
+            <Typography sx={styles.drawerTitle}>
+              {currentIndicator.title}
+            </Typography>
+            <IconButton 
+              size="small" 
+              onClick={handleCloseDrawer} 
+              sx={{ 
+                color: '#64748B',
+                borderRadius: '6px',
+                '&:hover': { bgcolor: '#F1F5F9', color: '#1E293B' }
+              }}
+              aria-label="Cerrar detalle"
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </Box>
+
+        <Box sx={styles.drawerBody}>
+          {drawerLoading ? (
+            <Box sx={{ width: '100%', py: 4 }}>
+              <LinearProgress sx={{ bgcolor: '#E2E8F0', '& .MuiLinearProgress-bar': { bgcolor: '#E27800' } }} />
+            </Box>
+          ) : currentIndicator.isError ? (
+            <Box sx={{ mt: 2 }}>
+              <Alert severity="error" sx={{ borderRadius: '8px', fontSize: '13px', fontWeight: 500 }}>
+                {currentIndicator.errorMessage || 'Error al cargar los datos del indicador desde el servidor.'}
+              </Alert>
+            </Box>
+          ) : (
+            <>
+              {/* 1. Qué mide */}
+              {currentIndicator.desc && (
+                <Box>
+                  <Typography sx={styles.drawerDescLabel}>Qué mide</Typography>
+                  <Typography sx={styles.drawerDesc}>
+                    {currentIndicator.desc}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* 2. Métrica destacada */}
+              {currentIndicator.metric && (
+                <Box sx={styles.drawerMetricBox}>
+                  <Typography sx={styles.drawerMetricLabel}>
+                    {currentIndicator.metric.label}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
+                    <Typography sx={styles.drawerMetricValue}>
+                      {currentIndicator.metric.value !== null 
+                        ? (typeof currentIndicator.metric.value === 'number' 
+                            ? currentIndicator.metric.value.toLocaleString('es-CL') 
+                            : currentIndicator.metric.value)
+                        : 'Sin datos'}
+                    </Typography>
+                    {currentIndicator.trend && (
+                      <Box sx={styles.drawerMetaBadge(
+                        currentIndicator.trend.isNeutral 
+                          ? 'neutral' 
+                          : (currentIndicator.trend.isPositive !== false)
+                      )}>
+                        <Typography sx={{ fontSize: '12px', fontWeight: 600 }}>
+                          {currentIndicator.trend.rawText 
+                            ? currentIndicator.trend.rawText
+                            : currentIndicator.trend.isNeutral
+                                ? `Igual al año anterior${currentIndicator.trend.baseline ? ` (${currentIndicator.trend.baseline})` : ''}`
+                                : `${currentIndicator.trend.isPositive !== false 
+                                    ? `▲ ${currentIndicator.trend.formattedDelta || `+${currentIndicator.trend.delta}`}` 
+                                    : `▼ ${currentIndicator.trend.formattedDelta || currentIndicator.trend.delta}`
+                                  } ${currentIndicator.trend.baseline ? (
+                                    currentIndicator.trend.baseline.startsWith('del ') || 
+                                    currentIndicator.trend.baseline.startsWith('de ') || 
+                                    currentIndicator.trend.baseline.startsWith('total')
+                                      ? currentIndicator.trend.baseline
+                                      : `vs ${currentIndicator.trend.baseline}`
+                                  ) : ''}`}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              )}
+
+
+              {/* 3. Desglose de datos en tabla */}
+              {displayRows && displayRows.length > 0 ? (
+                <Box sx={{ mt: 0.5 }}>
+                  <Box sx={styles.drawerTableWrap}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', fontFamily: "'Inter', sans-serif" }}>
+                      <thead>
+                        <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 1 }}>
+                          {(currentIndicator.colLabels || ['Año', 'Valor']).map((col, idx) => (
+                            <th 
+                              key={idx} 
+                              style={{ 
+                                padding: '9px 14px', 
+                                textAlign: idx === (currentIndicator.colLabels || []).length - 1 ? 'right' : 'left', 
+                                color: '#64748B', 
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                letterSpacing: '0.06em',
+                                textTransform: 'uppercase',
+                                borderBottom: '1px solid #E2E8F0'
+                              }}
+                            >
+                              {col}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {displayRows.map((row, idx) => (
+                          <tr 
+                            key={idx} 
+                            style={{ 
+                              borderBottom: idx === displayRows.length - 1 ? 'none' : '1px solid #F1F5F9'
+                            }}
+                          >
+                            {row.map((cell, cIdx) => (
+                              <td 
+                                key={cIdx} 
+                                style={{ 
+                                  padding: '8px 14px', 
+                                  textAlign: cIdx === row.length - 1 ? 'right' : 'left', 
+                                  color: '#1E293B',
+                                  fontWeight: cIdx === row.length - 1 ? 600 : 400
+                                }}
+                              >
+                                {typeof cell === 'number' ? cell.toLocaleString('es-CL') : cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 160, color: '#64748b', fontSize: '13px', fontWeight: 500, border: '1px dashed #E2E8F0', borderRadius: '12px', bgcolor: '#F8FAFC', width: '100%', mt: 2 }}>
+                  Sin datos disponibles
+                </Box>
+              )}
+            </>
+          )}
+        </Box>
+
+        {/* Footer */}
+        <Box component="footer" sx={styles.drawerFooter}>
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <CalendarIcon sx={{ fontSize: 14, color: '#64748B' }} />
+            <Typography component="label" htmlFor="drawerPeriodSelect" sx={{ fontSize: '12px', color: '#64748B' }}>
+              Año
+            </Typography>
+            <select
+              id="drawerPeriodSelect"
+              aria-label="Seleccionar período"
+              value={drawerPeriod}
+              onChange={(e) => handleDrawerPeriodChange(e.target.value)}
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: '12px',
+                fontWeight: 500,
+                color: '#1E293B',
+                border: '1px solid #CBD5E1',
+                borderRadius: '6px',
+                padding: '5px 8px',
+                backgroundColor: '#FFFFFF',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {drawerYears.map((yr) => (
+                <option key={yr} value={String(yr)}>{yr}</option>
+              ))}
+            </select>
+          </Box>
+          <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
+            {drawerPeriodText}
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* BOTÓN FLOTANTE DE CENTRO DE AYUDA (?) */}
+      <IconButton
+        sx={styles.floatingHelpButton}
+        onClick={() => setOpenHelpDialog(true)}
+        aria-label="Centro de ayuda"
+      >
+        <HelpIcon sx={{ fontSize: '26px' }} />
+      </IconButton>
+
+      {/* MODAL DE CENTRO DE AYUDA */}
+      <Dialog
+        open={openHelpDialog}
+        onClose={() => setOpenHelpDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            p: 1,
+            bgcolor: '#FFFFFF',
+            color: '#212121',
+          },
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <HelpIcon sx={{ color: '#E27800' }} />
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E2875' }}>
+              Centro de Ayuda — Vinculación con el Medio
+            </Typography>
+          </Box>
+          <IconButton onClick={() => setOpenHelpDialog(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}>
+          {faqData.map((faq, index) => (
+            <Accordion
+              key={index}
+              sx={{
+                boxShadow: 'none',
+                border: '1px solid #E5E7EB',
+                borderRadius: '8px !important',
+                '&:before': { display: 'none' },
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E2875' }}>
+                  {faq.q}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Typography variant="body2" sx={{ color: '#4B5563', lineHeight: 1.6 }}>
+                  {faq.a}
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
+          ))}
+        </DialogContent>
+      </Dialog>
       </Box>
     </ThemeProvider>
   );

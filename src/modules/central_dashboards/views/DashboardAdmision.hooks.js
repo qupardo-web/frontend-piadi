@@ -891,6 +891,24 @@ export const useDashboardAdmision = () => {
       });
   }, [drawerOpen, currentIndicatorKey, drawerPeriod, drawerGroupBy]);
 
+  // Años disponibles para el selector del Drawer
+  const drawerYears = useMemo(() => {
+    const yearsSet = new Set(availableYears || []);
+    if (apiIndicatorDetail?.period?.from && apiIndicatorDetail?.period?.to) {
+      const { from, to } = apiIndicatorDetail.period;
+      for (let y = from; y <= to; y++) {
+        yearsSet.add(y);
+      }
+    }
+    if (minYear && maxYear) {
+      for (let y = minYear; y <= maxYear; y++) {
+        yearsSet.add(y);
+      }
+    }
+    const yrs = Array.from(yearsSet).filter(Number.isFinite).sort((a, b) => a - b);
+    return yrs.length > 0 ? yrs : [2023, 2024, 2025, 2026];
+  }, [apiIndicatorDetail, availableYears, minYear, maxYear]);
+
   // Indicador actual para el Drawer (PIADI-409)
   const currentIndicator = useMemo(() => {
     const baseDef = INDICATORS[currentIndicatorKey] || INDICATORS['matricula-total'];
@@ -931,12 +949,14 @@ export const useDashboardAdmision = () => {
       let trend = null;
       if (comparison && comparison.diff !== null && comparison.diff !== undefined) {
         const diffNum = comparison.diff;
-        const isPos = diffNum >= 0;
+        const isPos = diffNum > 0;
+        const isNeutral = diffNum === 0;
         trend = {
           delta: diffNum,
-          formattedDelta: isPos ? `+${diffNum.toLocaleString('es-CL')}` : diffNum.toLocaleString('es-CL'),
+          formattedDelta: isNeutral ? '0' : (isPos ? `+${diffNum.toLocaleString('es-CL')}` : diffNum.toLocaleString('es-CL')),
           baseline: String(comparison.previousYear),
-          isPositive: isPos
+          isPositive: isNeutral ? null : isPos,
+          isNeutral
         };
       }
 
@@ -950,7 +970,7 @@ export const useDashboardAdmision = () => {
         colLabels = ['Año', 'Estudiantes'];
       }
 
-      const rows = (table || []).map(row => {
+      let rows = (table || []).map(row => {
         let label = '';
         let value = 0;
         if (row.label !== undefined) { label = row.label; value = row.value; }
@@ -968,6 +988,17 @@ export const useDashboardAdmision = () => {
 
         return [label, value];
       });
+
+      // Si es una tabla anual (no desagregada por dimensión cualitativa), aseguramos que todos los años aparezcan con 0 si no tienen datos
+      const isAnnualTable = (!groupBy || groupBy === 'year') && (
+        rows.length === 0 || rows.every(r => /^\d{4}$/.test(String(r[0])))
+      );
+
+      if (isAnnualTable) {
+        const rowsMap = new Map(rows.map(r => [Number(r[0]), r[1]]));
+        const allYrs = Array.from(new Set([...drawerYears, ...rows.map(r => Number(r[0]))])).sort((a, b) => a - b);
+        rows = allYrs.map(yr => [String(yr), rowsMap.has(yr) ? rowsMap.get(yr) : 0]);
+      }
 
       // Identificar el elemento con mayor cantidad de estudiantes dentro de las filas
       let topItem = null;
@@ -1219,19 +1250,6 @@ export const useDashboardAdmision = () => {
     const filtered = currentIndicator.rows.filter(r => String(r[0]) === drawerPeriod);
     return filtered.length > 0 ? filtered : currentIndicator.rows;
   }, [currentIndicator, drawerPeriod, isSimpleYearRows, apiIndicatorDetail, currentIndicatorKey, drawerSemesterFilter, allYearsMatTotal, matTotalData]);
-
-  // Años disponibles para el selector del Drawer
-  const drawerYears = useMemo(() => {
-    if (apiIndicatorDetail?.period?.from && apiIndicatorDetail?.period?.to) {
-      const { from, to } = apiIndicatorDetail.period;
-      const yrs = [];
-      for (let y = from; y <= to; y++) {
-        yrs.push(y);
-      }
-      return yrs;
-    }
-    return availableYears;
-  }, [apiIndicatorDetail, availableYears]);
 
   // Texto descriptivo del período para el footer del drawer
   const drawerPeriodText = useMemo(() => {
