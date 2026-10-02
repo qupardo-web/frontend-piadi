@@ -109,7 +109,7 @@ export const DashboardSection = ({
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {rightAction && (
+          {hasData && rightAction && (
             <Box onClick={(e) => e.stopPropagation()}>{rightAction}</Box>
           )}
           <Box
@@ -156,7 +156,9 @@ export const DashboardSection = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: noDataHeight,
+                minHeight: noDataHeight,
+                height: '100%',
+                flexGrow: 1,
                 color: '#64748b',
                 fontSize: '13px',
                 fontWeight: 500,
@@ -164,6 +166,7 @@ export const DashboardSection = ({
                 borderRadius: '12px',
                 bgcolor: '#F8FAFC',
                 width: '100%',
+                boxSizing: 'border-box',
                 fontFamily: "'Inter', sans-serif",
               }}
             >

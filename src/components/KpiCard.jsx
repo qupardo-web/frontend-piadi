@@ -34,6 +34,20 @@ export const KpiCard = ({
   id,
 }) => {
   const isInteractive = Boolean(onClick);
+  const valueStr = value !== null && value !== undefined ? String(value) : '';
+  const len = valueStr.length;
+
+  // Tamaño de fuente adaptativo: se reduce según la cantidad de caracteres y el ancho de la pantalla
+  let dynamicFontSize;
+  if (len > 14) {
+    dynamicFontSize = { xs: '20px', sm: 'clamp(17px, 1.35vw, 22px)', md: 'clamp(18px, 1.4vw, 23px)' };
+  } else if (len > 10) {
+    dynamicFontSize = { xs: '22px', sm: 'clamp(19px, 1.55vw, 25px)', md: 'clamp(20px, 1.6vw, 26px)' };
+  } else if (len > 7) {
+    dynamicFontSize = { xs: '24px', sm: 'clamp(21px, 1.8vw, 28px)', md: 'clamp(22px, 1.85vw, 28px)' };
+  } else {
+    dynamicFontSize = { xs: '26px', sm: 'clamp(24px, 2.1vw, 30px)', md: 'clamp(25px, 2.2vw, 30px)' };
+  }
 
   return (
     <Card
@@ -51,6 +65,8 @@ export const KpiCard = ({
         justifyContent: 'space-between',
         height: '100%',
         width: '100%',
+        minWidth: 0,
+        overflow: 'hidden',
         flexGrow: 1,
         boxSizing: 'border-box',
         cursor: isInteractive ? 'pointer' : 'default',
@@ -108,7 +124,7 @@ export const KpiCard = ({
       </Box>
 
       {/* 2. Body: Value or Empty/Loading state */}
-      <Box sx={{ my: 'auto', py: 0.5 }}>
+      <Box sx={{ my: 'auto', py: 0.5, minWidth: 0, width: '100%', overflow: 'hidden' }}>
         {loading ? (
           <Typography
             variant="h4"
@@ -137,13 +153,19 @@ export const KpiCard = ({
         ) : (
           <Typography
             variant="h4"
+            title={valueStr || undefined}
             sx={{
               fontWeight: 700,
-              fontSize: '30px',
+              fontSize: dynamicFontSize,
               color: '#1E2875',
               fontFamily: "'Inter', sans-serif",
-              lineHeight: 1.1,
+              lineHeight: 1.15,
               letterSpacing: '-0.5px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              width: '100%',
+              minWidth: 0,
             }}
           >
             {value}

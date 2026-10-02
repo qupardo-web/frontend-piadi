@@ -139,7 +139,7 @@ export const DashboardMiniSection = ({
 
           {/* Acciones y Chevron */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {actions && (
+            {hasData && actions && (
               <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', alignItems: 'center' }}>
                 {actions}
               </Box>
@@ -194,7 +194,7 @@ export const DashboardMiniSection = ({
             },
             ...bodySx,
           }}
-          style={wrapperStyle}
+          style={hasData ? wrapperStyle : undefined}
         >
           {subtitle && (
             <Typography
@@ -218,7 +218,9 @@ export const DashboardMiniSection = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: noDataHeight,
+                minHeight: noDataHeight,
+                height: '100%',
+                flexGrow: 1,
                 color: '#64748b',
                 fontSize: '13px',
                 fontWeight: 500,
@@ -226,6 +228,7 @@ export const DashboardMiniSection = ({
                 borderRadius: '12px',
                 bgcolor: '#F8FAFC',
                 width: '100%',
+                boxSizing: 'border-box',
                 fontFamily: "'Inter', sans-serif",
               }}
             >

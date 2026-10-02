@@ -286,23 +286,23 @@ export const VisualizacionMetas = () => {
                         bgcolor: '#ffffff !important',
                         backgroundColor: '#ffffff !important',
                         borderRadius: '8px',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                        border: '1.5px solid #000000',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                        border: '1px solid #E5E7EB',
                         mt: 0.5,
                         '& .MuiMenuItem-root': {
                           fontSize: '13.5px',
-                          color: '#000000 !important',
+                          color: '#111827 !important',
                           fontWeight: 500,
                           whiteSpace: 'normal',
                           wordBreak: 'break-word',
                           py: 1,
                           '&:hover': {
                             bgcolor: '#f3f4f6 !important',
-                            color: '#000000 !important',
+                            color: '#111827 !important',
                           },
                           '&.Mui-selected': {
                             bgcolor: '#e5e7eb !important',
-                            color: '#000000 !important',
+                            color: '#111827 !important',
                             fontWeight: 700,
                             '&:hover': {
                               bgcolor: '#d1d5db !important',
@@ -334,34 +334,36 @@ export const VisualizacionMetas = () => {
                     bgcolor: '#ffffff',
                     borderRadius: '8px',
                     fontSize: '14px',
-                    color: '#000000',
+                    color: '#111827',
                     height: '38px',
-                    border: '1px solid #000000',
+                    border: '1px solid #D1D5DB',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
                     '& .MuiOutlinedInput-notchedOutline': {
                       border: 'none',
                     },
                     '&:hover': {
-                      borderColor: '#000000',
+                      borderColor: '#9CA3AF',
                     },
                     '&.Mui-focused': {
-                      boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.2)',
+                      borderColor: '#1E2875',
+                      boxShadow: '0 0 0 2px rgba(30, 40, 117, 0.15)',
                     },
                     '& .MuiSelect-select': {
                       py: '8px',
                       px: '12px',
-                      color: '#000000 !important',
+                      color: '#111827 !important',
                       fontWeight: 500,
                     },
                     '& .MuiSvgIcon-root': {
-                      color: '#000000 !important',
+                      color: '#6B7280 !important',
                     },
                   }}
                 >
-                  <MenuItem value="todas" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                  <MenuItem value="todas" sx={{ color: '#111827 !important', bgcolor: '#ffffff' }}>
                     Todas
                   </MenuItem>
                   {departmentsList.map((dept) => (
-                    <MenuItem key={dept.key} value={dept.key} sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                    <MenuItem key={dept.key} value={dept.key} sx={{ color: '#111827 !important', bgcolor: '#ffffff' }}>
                       {dept.name}
                     </MenuItem>
                   ))}
@@ -389,23 +391,23 @@ export const VisualizacionMetas = () => {
                         bgcolor: '#ffffff !important',
                         backgroundColor: '#ffffff !important',
                         borderRadius: '8px',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                        border: '1.5px solid #000000',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                        border: '1px solid #E5E7EB',
                         mt: 0.5,
                         '& .MuiMenuItem-root': {
                           fontSize: '13.5px',
-                          color: '#000000 !important',
+                          color: '#111827 !important',
                           fontWeight: 500,
                           whiteSpace: 'normal',
                           wordBreak: 'break-word',
                           py: 1,
                           '&:hover': {
                             bgcolor: '#f3f4f6 !important',
-                            color: '#000000 !important',
+                            color: '#111827 !important',
                           },
                           '&.Mui-selected': {
                             bgcolor: '#e5e7eb !important',
-                            color: '#000000 !important',
+                            color: '#111827 !important',
                             fontWeight: 700,
                             '&:hover': {
                               bgcolor: '#d1d5db !important',
@@ -437,39 +439,41 @@ export const VisualizacionMetas = () => {
                     bgcolor: '#ffffff',
                     borderRadius: '8px',
                     fontSize: '14px',
-                    color: '#000000',
+                    color: '#111827',
                     height: '38px',
-                    border: '1px solid #000000',
+                    border: '1px solid #D1D5DB',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
                     '& .MuiOutlinedInput-notchedOutline': {
                       border: 'none',
                     },
                     '&:hover': {
-                      borderColor: '#000000',
+                      borderColor: '#9CA3AF',
                     },
                     '&.Mui-focused': {
-                      boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.2)',
+                      borderColor: '#1E2875',
+                      boxShadow: '0 0 0 2px rgba(30, 40, 117, 0.15)',
                     },
                     '& .MuiSelect-select': {
                       py: '8px',
                       px: '12px',
-                      color: '#000000 !important',
+                      color: '#111827 !important',
                       fontWeight: 500,
                     },
                     '& .MuiSvgIcon-root': {
-                      color: '#000000 !important',
+                      color: '#6B7280 !important',
                     },
                   }}
                 >
-                  <MenuItem value="todos" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                  <MenuItem value="todos" sx={{ color: '#111827 !important', bgcolor: '#ffffff' }}>
                     Todos
                   </MenuItem>
-                  <MenuItem value="en-curso" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                  <MenuItem value="en-curso" sx={{ color: '#111827 !important', bgcolor: '#ffffff' }}>
                     En progreso
                   </MenuItem>
-                  <MenuItem value="completada" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                  <MenuItem value="completada" sx={{ color: '#111827 !important', bgcolor: '#ffffff' }}>
                     Completada
                   </MenuItem>
-                  <MenuItem value="alerta" sx={{ color: '#000000 !important', bgcolor: '#ffffff' }}>
+                  <MenuItem value="alerta" sx={{ color: '#111827 !important', bgcolor: '#ffffff' }}>
                     Requiere atención
                   </MenuItem>
                 </Select>

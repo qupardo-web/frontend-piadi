@@ -18,6 +18,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   LinearProgress,
+  Divider,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -111,9 +112,7 @@ export const LandingPage = () => {
           subtitle="Aquí encontrarás un resumen de tus metas y actividades institucionales."
           icon={<HomeIcon />}
           iconColor="#FFFFFF"
-          breadcrumbs={[
-            { label: 'Inicio', path: null },
-          ]}
+          breadcrumbs={false}
         />
 
         {/* Pestañas de Navegación Secundarias */}

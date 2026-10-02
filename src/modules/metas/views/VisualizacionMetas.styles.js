@@ -424,16 +424,22 @@ export const styles = {
   },
 
   filterInput: {
-    padding: '9px 12px',
+    padding: '8px 12px',
     border: '1px solid #d1d5db',
-    borderRadius: 2,
+    borderRadius: '8px',
     fontSize: '14px',
     color: '#111827',
     bgcolor: '#ffffff',
+    height: '38px',
+    boxSizing: 'border-box',
     outline: 'none',
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+    '&:hover': {
+      borderColor: '#9ca3af',
+    },
     '&:focus': {
-      borderColor: '#1a71f6',
-      boxShadow: '0 0 0 2px rgba(26, 113, 246, 0.25)',
+      borderColor: '#1E2875',
+      boxShadow: '0 0 0 2px rgba(30, 40, 117, 0.15)',
     },
   },
 
