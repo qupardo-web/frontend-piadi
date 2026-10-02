@@ -638,7 +638,7 @@ export const DashboardEducacionContinua = () => {
           iconColor="#1E2875"
           isOpen={sectionsOpen.oferta}
           onToggle={() => toggleSection('oferta')}
-          hasData={ofertaChartData.labels.length > 0}
+          hasData={Boolean(ofertaChartData?.labels?.length > 0 && ofertaChartData?.series?.some(s => s.data?.some(v => Number(v) > 0)))}
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
             <div className="card-toggle-group">
@@ -723,7 +723,7 @@ export const DashboardEducacionContinua = () => {
                 Ver detalles
               </Button>
             }
-            hasData={Boolean(effectiveDictadosSeries && effectiveDictadosSeries.length > 0)}
+            hasData={Boolean(effectiveDictadosSeries?.some(d => Number(d.planificados) > 0 || Number(d.dictados) > 0))}
           >
             <Box sx={{ width: '100%', minHeight: isMobile ? 240 : 270 }}>
               <BarChart
@@ -778,7 +778,7 @@ export const DashboardEducacionContinua = () => {
                 Ver detalles
               </Button>
             }
-            hasData={Boolean(effectiveEjecucionSeries && effectiveEjecucionSeries.length > 0)}
+            hasData={Boolean(effectiveEjecucionSeries?.some(d => Number(d.tasa) > 0))}
           >
             <Box sx={{ width: '100%', minHeight: isMobile ? 240 : 270 }}>
               <LineChart
@@ -812,7 +812,7 @@ export const DashboardEducacionContinua = () => {
           iconColor="#10B981"
           isOpen={sectionsOpen.ingresos}
           onToggle={() => toggleSection('ingresos')}
-          hasData={ingresosChartData.labels.length > 0}
+          hasData={Boolean(ingresosChartData?.labels?.length > 0 && ingresosChartData?.series?.some(s => s.data?.some(v => Number(v) > 0)))}
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
             <div className="card-toggle-group">
@@ -870,7 +870,7 @@ export const DashboardEducacionContinua = () => {
           iconColor="#8B5CF6"
           isOpen={sectionsOpen.matricula}
           onToggle={() => toggleSection('matricula')}
-          hasData={matriculaChartData.labels.length > 0}
+          hasData={Boolean(matriculaChartData?.labels?.length > 0 && matriculaChartData?.series?.some(s => s.data?.some(v => Number(v) > 0)))}
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
             <div className="card-toggle-group">
@@ -929,7 +929,7 @@ export const DashboardEducacionContinua = () => {
           iconColor="#A855F7"
           isOpen={sectionsOpen.aprobacion}
           onToggle={() => toggleSection('aprobacion')}
-          hasData={aprobacionProgramasData.length > 0}
+          hasData={Boolean(aprobacionProgramasData?.length > 0 && aprobacionProgramasData.some(d => Number(d.tasa) > 0))}
         >
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
             <Button
@@ -994,7 +994,7 @@ export const DashboardEducacionContinua = () => {
           iconColor="#F59E0B"
           isOpen={sectionsOpen.perfil}
           onToggle={() => toggleSection('perfil')}
-          hasData={Boolean(perfilParticipantesData && perfilParticipantesData.length > 0)}
+          hasData={Boolean(perfilParticipantesData && perfilParticipantesData.length > 0 && perfilParticipantesData.some(d => Number(d.value) > 0))}
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
             <div className="card-toggle-group" style={{ maxWidth: '380px' }}>
@@ -1077,7 +1077,7 @@ export const DashboardEducacionContinua = () => {
               </Button>
             }
             wrapperStyle={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}
-            hasData={uniqueParticipantsAgeDist.length > 0}
+            hasData={Boolean(uniqueParticipantsTotal > 0 && uniqueParticipantsAgeDist?.some(d => Number(d.count) > 0))}
           >
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1, gap: '20px', padding: '12px 0', width: '100%' }}>
               {uniqueParticipantsAgeDist.map(d => {
@@ -1150,7 +1150,7 @@ export const DashboardEducacionContinua = () => {
               </Button>
             }
             wrapperStyle={{ display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '12px', justifyContent: 'space-between' }}
-            hasData={recurrenceFreqDist.length > 0}
+            hasData={Boolean(recurrenceFreqDist?.length > 0 && recurrenceFreqDist.some(d => Number(d.count) > 0))}
           >
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', flexGrow: 1, gap: '24px', padding: '20px 0', width: '100%' }}>
               {recurrenceFreqDist.map(d => {
@@ -1284,23 +1284,6 @@ export const DashboardEducacionContinua = () => {
                 </Typography>
               </AccordionSummary>
               <AccordionDetails sx={{ p: 0, pt: 1.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {/* Semestre */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Semestre
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                    {(dynamicSemestres.length > 0 ? dynamicSemestres : SEMESTRES_LIST).map((sem) => (
-                      <FilterChip
-                        key={sem}
-                        label={sem}
-                        selected={semestresSeleccionados.includes(sem)}
-                        onClick={() => toggleChip(semestresSeleccionados, setSemestresSeleccionados, sem)}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-
                 {/* Mes (Rango Desde - Hasta) */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                   <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -1340,6 +1323,23 @@ export const DashboardEducacionContinua = () => {
                         ))}
                       </Select>
                     </FormControl>
+                  </Box>
+                </Box>
+
+                {/* Semestre */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#9E9E9E', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Semestre
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                    {(dynamicSemestres.length > 0 ? dynamicSemestres : SEMESTRES_LIST).map((sem) => (
+                      <FilterChip
+                        key={sem}
+                        label={sem}
+                        selected={semestresSeleccionados.includes(sem)}
+                        onClick={() => toggleChip(semestresSeleccionados, setSemestresSeleccionados, sem)}
+                      />
+                    ))}
                   </Box>
                 </Box>
               </AccordionDetails>
