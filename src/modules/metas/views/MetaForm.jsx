@@ -15,6 +15,7 @@ import {
   Alert,
   Select,
   MenuItem,
+  Tooltip,
 } from '@mui/material';
 import {
   Adjust as TargetIcon,
@@ -55,6 +56,8 @@ export const MetaForm = () => {
     errors,
     showSaveAlert,
     setShowSaveAlert,
+    metricLimitAlert,
+    setMetricLimitAlert,
     metricModalOpen,
     setMetricModalOpen,
     previewModalOpen,
@@ -459,23 +462,57 @@ export const MetaForm = () => {
                 </Box>
 
                 {/* Add Metric Trigger Button */}
-                <Box
-                  component="button"
-                  type="button"
-                  onClick={handleOpenAddMetric}
-                  sx={styles.btnAnadirMetrica}
+                <Tooltip 
+                  title={totalAporte >= 100 ? "La suma de aportes ya alcanza el 100%. No es posible añadir más métricas." : ""}
+                  arrow
+                  placement="top"
                 >
-                  <AddIcon sx={{ fontSize: 16 }} />
-                  Añadir métrica
-                </Box>
+                  <span>
+                    <Box
+                      component="button"
+                      type="button"
+                      onClick={handleOpenAddMetric}
+                      disabled={totalAporte >= 100}
+                      sx={styles.btnAnadirMetrica}
+                    >
+                      <AddIcon sx={{ fontSize: 16 }} />
+                      Añadir métrica
+                    </Box>
+                  </span>
+                </Tooltip>
               </Box>
 
-              {/* Metrics Warning */}
-              {metricas.length === 0 && (
+              {/* Alerta de 100% alcanzado al intentar añadir métrica */}
+              {metricLimitAlert && (
+                <Alert 
+                  severity="warning" 
+                  onClose={() => setMetricLimitAlert('')}
+                  sx={{ mb: 2, borderRadius: 2, fontSize: '13px' }}
+                >
+                  {metricLimitAlert}
+                </Alert>
+              )}
+
+              {/* Metrics Warning / Maxed Notice */}
+              {metricas.length === 0 ? (
                 <Box sx={styles.metricasWarn}>
                   <InfoIcon sx={{ fontSize: 16 }} />
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     Agrega al menos una métrica y asegura que sumen 100% (Actual: {totalAporte}%)
+                  </Typography>
+                </Box>
+              ) : totalAporte >= 100 ? (
+                <Box sx={styles.metricasMaxed}>
+                  <CheckIcon sx={{ fontSize: 16, color: '#16a34a' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    Se ha cubierto el 100% del aporte ponderado de la meta. Para agregar una nueva métrica, primero reduce o edita el porcentaje de las existentes.
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={styles.metricasWarn}>
+                  <InfoIcon sx={{ fontSize: 16 }} />
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    Aún falta asignar un {100 - totalAporte}% para completar el 100% requerido (Actual: {totalAporte}%).
                   </Typography>
                 </Box>
               )}

@@ -44,6 +44,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ExpandMore as ExpandMoreIcon,
   Download as DownloadIcon,
+  DeleteOutline as DeleteOutlineIcon,
 } from '@mui/icons-material';
 
 const TABLE_LABELS = {
@@ -88,6 +89,7 @@ export const CargaDatos = () => {
     toggleAdmisionSheet,
     handleTemplateSelect,
     handleFileChange,
+    handleRemoveFile,
     handleDragOver,
     handleDragLeave,
     handleDownloadTemplate,
@@ -655,13 +657,25 @@ export const CargaDatos = () => {
                   <UploadIcon sx={[styles.dropZoneIcon, selectedFile && { color: '#10B981' }]} />
                   
                   {selectedFile ? (
-                    <Box>
-                      <Typography sx={styles.dropZoneTextPrimary} style={{ color: '#10B981' }}>
-                        Archivo seleccionado: {selectedFile.name}
-                      </Typography>
-                      <Typography sx={styles.dropZoneTextSecondary}>
-                        Tamaño: {(selectedFile.size / 1024).toFixed(1)} KB (Listo para cargar)
-                      </Typography>
+                    <Box sx={styles.selectedFileContainer} onClick={(e) => e.stopPropagation()}>
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Typography sx={styles.dropZoneTextPrimary} style={{ color: '#047857' }}>
+                          Archivo seleccionado: {selectedFile.name}
+                        </Typography>
+                        <Typography sx={styles.dropZoneTextSecondary}>
+                          Tamaño: {(selectedFile.size / 1024).toFixed(1)} KB (Listo para cargar)
+                        </Typography>
+                      </Box>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={handleRemoveFile}
+                        disabled={uploading}
+                        sx={styles.fileRemoveButton}
+                        startIcon={<DeleteOutlineIcon sx={{ fontSize: 16 }} />}
+                      >
+                        Quitar archivo
+                      </Button>
                     </Box>
                   ) : (
                     <>

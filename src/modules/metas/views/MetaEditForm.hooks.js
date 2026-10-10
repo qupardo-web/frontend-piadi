@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { getDepartments, getDepartmentKpis, updateMeta, getMetaById } from '../../../services/piadiApi';
 import { isRectoria } from '../metaAccess';
+import { deriveAnio, derivePeriodo } from '../metaDateUtils';
 
 export const useMetaEditForm = () => {
   const { id } = useParams();
@@ -42,6 +43,7 @@ export const useMetaEditForm = () => {
     limite: false,
   });
   const [showSaveAlert, setShowSaveAlert] = useState(false);
+  const [metricLimitAlert, setMetricLimitAlert] = useState('');
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [successDesc, setSuccessDesc] = useState('');
@@ -160,6 +162,13 @@ export const useMetaEditForm = () => {
     return metricas.reduce((acc, curr) => acc + Number(curr.aporte), 0);
   }, [metricas]);
 
+  // Limpiar aviso de límite de métricas cuando el total baje de 100%
+  useEffect(() => {
+    if (totalAporte < 100 && metricLimitAlert) {
+      setMetricLimitAlert('');
+    }
+  }, [totalAporte, metricLimitAlert]);
+
   // Filter metrics pool for search
   const filteredMetricsPool = useMemo(() => {
     const pool = kpisList.map(k => k.name);
@@ -174,6 +183,11 @@ export const useMetaEditForm = () => {
 
   // Add/Edit Metric Modal Actions
   const handleOpenAddMetric = () => {
+    if (totalAporte >= 100) {
+      setMetricLimitAlert('La suma de aportes ya alcanza el 100%. Para añadir otra métrica, reduce o edita el porcentaje de las existentes.');
+      return;
+    }
+    setMetricLimitAlert('');
     setEditMetricIndex(null);
     setMetricSearch('');
     setMetricNombre('');
@@ -305,10 +319,13 @@ export const useMetaEditForm = () => {
   const handleSaveMeta = async () => {
     if (!validateForm()) return;
     try {
+      const derivedAnio = deriveAnio(inicio);
+      const derivedPeriodo = derivePeriodo(inicio, limite);
+
       const payload = {
         departmentId: departamento || null,
-        anio: 2026,
-        periodo: 'Anual',
+        anio: derivedAnio,
+        periodo: derivedPeriodo,
         nombre: nombre,
         inicio: inicio || null,
         limite: limite || null,
@@ -377,6 +394,8 @@ export const useMetaEditForm = () => {
     errors,
     showSaveAlert,
     setShowSaveAlert,
+    metricLimitAlert,
+    setMetricLimitAlert,
     showSuccessAlert,
     setShowSuccessAlert,
     successMsg,

@@ -303,6 +303,19 @@ export const useCargaDatos = () => {
     }
   };
 
+  const handleRemoveFile = (e) => {
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
+    setSelectedFile(null);
+    setUploadError('');
+    setUploadErrorDetails([]);
+    const inputElement = document.getElementById('dialog-file-input');
+    if (inputElement) {
+      inputElement.value = '';
+    }
+  };
+
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragActive(true);
@@ -520,6 +533,7 @@ export const useCargaDatos = () => {
     handleDrawerToggle,
     handleTemplateSelect,
     handleFileChange,
+    handleRemoveFile,
     handleDragOver,
     handleDragLeave,
     handleDownloadTemplate,

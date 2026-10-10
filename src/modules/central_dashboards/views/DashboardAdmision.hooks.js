@@ -242,6 +242,7 @@ export const useDashboardAdmision = () => {
   const [apiCarRegionBreakdown, setApiCarRegionBreakdown] = useState(null);
   const [apiCarColegioBreakdown, setApiCarColegioBreakdown] = useState(null);
   const [apiCarViaBreakdown, setApiCarViaBreakdown] = useState(null);
+  const [apiLatestCarViaBreakdown, setApiLatestCarViaBreakdown] = useState(null);
   const [apiCarBecasBreakdown, setApiCarBecasBreakdown] = useState(null);
   const [apiCarSexoBreakdown, setApiCarSexoBreakdown] = useState(null);
   const [apiCarEdadBreakdown, setApiCarEdadBreakdown] = useState(null);
@@ -362,6 +363,9 @@ export const useDashboardAdmision = () => {
       fetchBreakdown('beneficios_becas', 'beneficios'),
       fetchBreakdown('distribucion_sexo', 'sexo'),
       fetchBreakdown('rango_etario', 'rangoEtario'),
+      desde === hasta 
+        ? Promise.resolve(null)
+        : getIndicatorBreakdown('via_acceso', { ...baseBreakdownParams, year: String(hasta), groupBy: 'viaAcceso' }).catch(() => null),
     ])
       .then(([
         summary,
@@ -378,7 +382,8 @@ export const useDashboardAdmision = () => {
         carVia,
         carBecas,
         carSexo,
-        carEdad
+        carEdad,
+        latestCarVia
       ]) => {
         setApiSummary(summary?.data || null);
         setApiPrevSummary(prevSummary?.data || null);
@@ -392,6 +397,7 @@ export const useDashboardAdmision = () => {
         setApiCarRegionBreakdown(carRegion?.data || null);
         setApiCarColegioBreakdown(carColegio?.data || null);
         setApiCarViaBreakdown(carVia?.data || null);
+        setApiLatestCarViaBreakdown(latestCarVia?.data || null);
         setApiCarBecasBreakdown(carBecas?.data || null);
         setApiCarSexoBreakdown(carSexo?.data || null);
         setApiCarEdadBreakdown(carEdad?.data || null);
@@ -692,6 +698,16 @@ export const useDashboardAdmision = () => {
       .sort((a, b) => b.value - a.value);
   }, [hasRealData, apiCarViaBreakdown]);
 
+  // Vía de acceso del último año (para la KPI Card cuando periodoAcumulado es false)
+  const latestCarViaData = useMemo(() => {
+    const rawItems = apiLatestCarViaBreakdown?.items || apiCarViaBreakdown?.items;
+    if (!hasRealData || !rawItems) return [];
+    return rawItems
+      .filter(item => item.value > 0)
+      .map(item => ({ label: item.label, value: item.value }))
+      .sort((a, b) => b.value - a.value);
+  }, [hasRealData, apiLatestCarViaBreakdown, apiCarViaBreakdown]);
+
   // 11. Beneficios y becas
   const carBecasData = useMemo(() => {
     if (!hasRealData || !apiCarBecasBreakdown?.items) return [];
@@ -805,9 +821,13 @@ export const useDashboardAdmision = () => {
       nuevosEvo = null;
     }
 
-    // 3. Vía de acceso principal
-    const topVia = carViaData.length > 0 ? carViaData[0] : null;
-    const totalVia = carViaData.reduce((acc, v) => acc + v.value, 0);
+    // 3. Vía de acceso principal (por defecto muestra el año más reciente y solo acumula si se activa periodoAcumulado)
+    const activeViaList = (periodoAcumulado && yDesde !== yHasta) 
+      ? carViaData 
+      : (latestCarViaData.length > 0 ? latestCarViaData : carViaData);
+
+    const topVia = activeViaList.length > 0 ? activeViaList[0] : null;
+    const totalVia = activeViaList.reduce((acc, v) => acc + v.value, 0);
     const pctTopVia = (topVia && totalVia > 0) ? ((topVia.value / totalVia) * 100).toFixed(1) : null;
     const viaTitle = 'Vía de acceso principal';
 
@@ -836,7 +856,7 @@ export const useDashboardAdmision = () => {
         isPositive: true
       }
     };
-  }, [hasRealData, matTotalData, matNuevosData, carViaData, yearRange, periodoAcumulado, availableYears]);
+  }, [hasRealData, matTotalData, matNuevosData, carViaData, latestCarViaData, yearRange, periodoAcumulado, availableYears]);
 
   // Drawer handlers
   const handleOpenIndicator = useCallback((key) => {
