@@ -516,6 +516,20 @@ export const styles = {
     mb: 2,
   },
 
+  metricasMaxed: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    bgcolor: '#eff6ff',
+    border: '1px solid #bfdbfe',
+    color: '#1d4ed8',
+    borderRadius: 2,
+    p: 1.5,
+    fontSize: '13px',
+    fontWeight: 500,
+    mb: 2,
+  },
+
   emptyState: {
     display: 'flex',
     flexDirection: 'column',
