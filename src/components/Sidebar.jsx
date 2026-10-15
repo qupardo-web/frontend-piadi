@@ -51,7 +51,7 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
     { text: 'Inicio', icon: <HomeIcon />, path: '/' },
     { text: 'Dashboards', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Metas', icon: <TargetIcon />, path: '/metas' },
-    // { text: 'Reportes', icon: <ReportesIcon />, path: '/reportes' }, // Oculto temporalmente para próximo sprint
+    { text: 'Reportes', icon: <ReportesIcon />, path: '/reportes' },
     { text: 'Carga de datos', icon: <CargaIcon />, path: '/carga-datos' },
     { text: 'Auditoría', icon: <AuditoriaIcon />, path: '/auditoria' },
   ].filter((item) => {
@@ -271,6 +271,7 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
     <>
       {/* 1. AppBar Móvil */}
       <AppBar
+        className="no-print"
         position="fixed"
         sx={{
           display: { xs: 'flex', md: 'none' },
@@ -338,6 +339,7 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
 
       {/* 2. Sidebar Persistente (Escritorio) */}
       <Box
+        className="no-print"
         sx={{
           width: 260,
           bgcolor: '#1E2875',

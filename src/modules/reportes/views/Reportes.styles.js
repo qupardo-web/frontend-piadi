@@ -160,6 +160,25 @@ export const styles = {
     top: 24,
     boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
   },
+  deptFilterCard: (isSelected, color = '#1E2875') => ({
+    border: `2px solid ${isSelected ? color : '#E2E8F0'}`,
+    bgcolor: isSelected ? `${color}0A` : '#FFFFFF',
+    borderRadius: '12px',
+    p: 1.5,
+    cursor: 'pointer',
+    transition: 'border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    minHeight: 88,
+    boxShadow: isSelected ? `0 4px 12px ${color}25` : '0 1px 2px rgba(15, 23, 42, 0.04)',
+    transform: isSelected ? 'translateY(-2px)' : 'none',
+    '&:hover': {
+      borderColor: isSelected ? color : '#CBD5E1',
+      bgcolor: isSelected ? `${color}0F` : '#F8FAFC',
+      transform: 'translateY(-2px)',
+    },
+  }),
   // Format Card Selector
   formatCard: (isSelected) => ({
     flex: 1,
