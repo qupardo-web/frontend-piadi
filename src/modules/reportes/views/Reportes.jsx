@@ -11,8 +11,6 @@ import {
   Select,
   MenuItem,
   Checkbox,
-  Switch,
-  FormControlLabel,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -23,6 +21,7 @@ import {
   Snackbar,
   Alert,
   Divider,
+  GlobalStyles,
   Table,
   TableBody,
   TableCell,
@@ -56,6 +55,13 @@ import {
   Close as CloseIcon,
   Check as CheckIcon,
   School as AdmisionIcon,
+  MenuBook as CurricularIcon,
+  Lightbulb as InnovacionIcon,
+  AutoStories as ContinuaIcon,
+  Handshake as VcmIcon,
+  Apps as AllIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 
 import { Header, Sidebar } from '../../../components';
@@ -63,10 +69,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {
   useReportes,
   AREA_COLORS,
-  CATALOGO,
-  DESAGREGACIONES,
-  FILTROS_AREA,
-  SAMPLE_INDICATOR_DATA,
+  formatOptionLabel,
 } from './Reportes.hooks';
 import { styles } from './Reportes.styles';
 import logoEcas from '../../../assets/logo_ECAS.svg';
@@ -143,13 +146,258 @@ const reportesLightTheme = createTheme({
   },
 });
 
+const DepartmentFilterCarousel = React.memo(({
+  builderCatalogo,
+  selectedDepCard,
+  setSelectedDepCard,
+  isDepartmentRestricted,
+  userDept,
+  builderInds,
+  AREA_COLORS,
+}) => {
+  const carouselRef = React.useRef(null);
+  const scrollTimeoutRef = React.useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
+  const [canScrollRight, setCanScrollRight] = React.useState(false);
+
+  const checkScroll = React.useCallback(() => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const nextCanLeft = scrollLeft > 6;
+    const nextCanRight = Math.ceil(scrollLeft + clientWidth) < scrollWidth - 6;
+    setCanScrollLeft(nextCanLeft);
+    setCanScrollRight(nextCanRight);
+  }, []);
+
+  React.useEffect(() => {
+    const el = carouselRef.current;
+    if (!el) return;
+
+    checkScroll();
+
+    // scrollend dispara de forma nativa solo cuando la animación ha terminado
+    const handleScrollEnd = () => checkScroll();
+    const handleScrollDebounced = () => {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(checkScroll, 120);
+    };
+
+    el.addEventListener('scrollend', handleScrollEnd, { passive: true });
+    el.addEventListener('scroll', handleScrollDebounced, { passive: true });
+    window.addEventListener('resize', handleScrollDebounced);
+
+    return () => {
+      clearTimeout(scrollTimeoutRef.current);
+      el.removeEventListener('scrollend', handleScrollEnd);
+      el.removeEventListener('scroll', handleScrollDebounced);
+      window.removeEventListener('resize', handleScrollDebounced);
+    };
+  }, [checkScroll, builderCatalogo, isDepartmentRestricted]);
+
+  const handleScroll = (direction) => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const cardStep = 195;
+    const scrollAmount = Math.max(cardStep, Math.floor(el.clientWidth * 0.65));
+    el.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth',
+    });
+  };
+
+  const totalIndicatorsCount = React.useMemo(() => {
+    return builderCatalogo.reduce((acc, g) => acc + g.items.length, 0);
+  }, [builderCatalogo]);
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5, width: '100%' }}>
+      {!isDepartmentRestricted && (
+        <IconButton
+          size="small"
+          onClick={() => handleScroll('left')}
+          disabled={!canScrollLeft}
+          aria-label="Desplazar a la izquierda"
+          sx={{
+            bgcolor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            color: canScrollLeft ? '#1E2875' : '#CBD5E1',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.08)',
+            flexShrink: 0,
+            width: 34,
+            height: 34,
+            transition: 'border-color 0.15s ease, background-color 0.15s ease',
+            '&:hover': {
+              bgcolor: canScrollLeft ? '#F8FAFC' : '#FFFFFF',
+              borderColor: canScrollLeft ? '#CBD5E1' : '#E2E8F0',
+            },
+            '&.Mui-disabled': {
+              bgcolor: '#F8FAFC',
+              color: '#CBD5E1',
+              borderColor: '#E2E8F0',
+              opacity: 0.5,
+            },
+          }}
+        >
+          <ChevronLeftIcon fontSize="small" />
+        </IconButton>
+      )}
+
+      <Box
+        ref={carouselRef}
+        sx={{
+          display: 'flex',
+          gap: 2,
+          overflowX: 'auto',
+          scrollBehavior: 'smooth',
+          scrollSnapType: 'x mandatory',
+          flex: 1,
+          py: 1,
+          px: 0.5,
+          minWidth: 0,
+          willChange: 'scroll-position',
+          transform: 'translateZ(0)',
+          WebkitOverflowScrolling: 'touch',
+          '&::-webkit-scrollbar': { display: 'none' },
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
+        {/* Card: Todos (solo visible si no está restringido por departamento) */}
+        {!isDepartmentRestricted && (
+          <Card
+            onClick={() => setSelectedDepCard('all')}
+            sx={{
+              ...styles.deptFilterCard(selectedDepCard === 'all', '#1E2875'),
+              flex: '0 0 175px',
+              minWidth: 175,
+              maxWidth: 175,
+              boxSizing: 'border-box',
+              scrollSnapAlign: 'start',
+              userSelect: 'none',
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: selectedDepCard === 'all' ? '#1E2875' : '#F1F5F9', color: selectedDepCard === 'all' ? '#FFFFFF' : '#1E2875', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <AllIcon sx={{ fontSize: 18 }} />
+              </Box>
+              {builderInds.length > 0 && (
+                <Box sx={{ bgcolor: '#10B981', color: '#FFFFFF', fontSize: '10px', fontWeight: 700, px: 0.8, py: 0.2, borderRadius: '10px' }}>
+                  {builderInds.length} sel.
+                </Box>
+              )}
+            </Box>
+            <Box sx={{ mt: 0.5 }}>
+              <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: '#1E2875', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Todas
+              </Typography>
+              <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
+                {totalIndicatorsCount} indicad.
+              </Typography>
+            </Box>
+          </Card>
+        )}
+
+        {/* Cards por departamento */}
+        {builderCatalogo.map((group) => {
+          const isSelected = selectedDepCard === group.dep || selectedDepCard === group.key || (isDepartmentRestricted && userDept);
+          const color = AREA_COLORS[group.dep] || '#1E2875';
+          const selectedInDep = group.items.filter((item) => builderInds.includes(item.id)).length;
+
+          let depIcon = <AdmisionIcon sx={{ fontSize: 18 }} />;
+          if (group.dep.includes('Curricular')) depIcon = <CurricularIcon sx={{ fontSize: 18 }} />;
+          else if (group.dep.includes('Innovación')) depIcon = <InnovacionIcon sx={{ fontSize: 18 }} />;
+          else if (group.dep.includes('Continua')) depIcon = <ContinuaIcon sx={{ fontSize: 18 }} />;
+          else if (group.dep.includes('Vinculación')) depIcon = <VcmIcon sx={{ fontSize: 18 }} />;
+
+          return (
+            <Card
+              key={group.key || group.dep}
+              title={group.dep}
+              onClick={() => setSelectedDepCard(group.dep)}
+              sx={{
+                ...styles.deptFilterCard(isSelected, color),
+                flex: isDepartmentRestricted ? '0 0 240px' : '0 0 175px',
+                minWidth: isDepartmentRestricted ? 240 : 175,
+                maxWidth: isDepartmentRestricted ? 280 : 175,
+                boxSizing: 'border-box',
+                scrollSnapAlign: 'start',
+                userSelect: 'none',
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: isSelected ? color : `${color}15`, color: isSelected ? '#FFFFFF' : color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {depIcon}
+                </Box>
+                {selectedInDep > 0 && (
+                  <Box sx={{ bgcolor: '#10B981', color: '#FFFFFF', fontSize: '10px', fontWeight: 700, px: 0.8, py: 0.2, borderRadius: '10px' }}>
+                    {selectedInDep} sel.
+                  </Box>
+                )}
+              </Box>
+              <Box sx={{ mt: 0.5 }}>
+                <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: '#1E2875', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {group.dep}
+                </Typography>
+                <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
+                  {group.items.length} indicad.
+                </Typography>
+              </Box>
+            </Card>
+          );
+        })}
+      </Box>
+
+      {!isDepartmentRestricted && (
+        <IconButton
+          size="small"
+          onClick={() => handleScroll('right')}
+          disabled={!canScrollRight}
+          aria-label="Desplazar a la derecha"
+          sx={{
+            bgcolor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            color: canScrollRight ? '#1E2875' : '#CBD5E1',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.08)',
+            flexShrink: 0,
+            width: 34,
+            height: 34,
+            transition: 'border-color 0.15s ease, background-color 0.15s ease',
+            '&:hover': {
+              bgcolor: canScrollRight ? '#F8FAFC' : '#FFFFFF',
+              borderColor: canScrollRight ? '#CBD5E1' : '#E2E8F0',
+            },
+            '&.Mui-disabled': {
+              bgcolor: '#F8FAFC',
+              color: '#CBD5E1',
+              borderColor: '#E2E8F0',
+              opacity: 0.5,
+            },
+          }}
+        >
+          <ChevronRightIcon fontSize="small" />
+        </IconButton>
+      )}
+    </Box>
+  );
+});
+
 export const Reportes = () => {
   const {
     navigate,
     user,
     viewMode,
-    currentRole,
-    setCurrentRole,
+    isAdmin,
+    isRector,
+    isCalidad,
+    userDept,
+    isDepartmentRestricted,
+    canCreateReport,
+    canCreatePredefinido,
+    loading,
+    catalogo,
+    builderCatalogo,
+    areasList,
     searchQuery,
     setSearchQuery,
     filtroDepartamento,
@@ -191,6 +439,8 @@ export const Reportes = () => {
     setBuilder,
     indicatorSearch,
     setIndicatorSearch,
+    selectedDepCard,
+    setSelectedDepCard,
     handleOpenNewBuilder,
     handleUseAsBase,
     handleEditReport,
@@ -200,6 +450,7 @@ export const Reportes = () => {
     handleOpenHistorial,
     handleBackToList,
     currentPreviewReport,
+    previewDataByIndicator,
     isGenerating,
     progressValue,
     progressText,
@@ -214,6 +465,9 @@ export const Reportes = () => {
     totalHistPages,
     filteredHistorial,
     getIndicatorInfo,
+    getDesagsForIndicator,
+    getFiltersForArea,
+    availableYears,
     areaName,
     formatDate,
   } = useReportes();
@@ -221,8 +475,69 @@ export const Reportes = () => {
   // Active kebab report
   const selectedKebabReport = misReportes.find((r) => r.id === kebabTargetId);
 
+
   return (
     <ThemeProvider theme={reportesLightTheme}>
+      <GlobalStyles
+        styles={{
+          '@media print': {
+            '@page': {
+              size: 'A4 portrait',
+              margin: '12mm 15mm 15mm 15mm',
+            },
+            'html, body': {
+              background: '#FFFFFF !important',
+              backgroundColor: '#FFFFFF !important',
+              color: '#1E293B !important',
+              width: '100% !important',
+              height: 'auto !important',
+              margin: '0 !important',
+              padding: '0 !important',
+              overflow: 'visible !important',
+              fontFamily: "'Inter', sans-serif !important",
+            },
+            /* Ocultar elementos no imprimibles */
+            'aside, nav, .sidebar-root, [role="navigation"], header, .MuiAppBar-root, .no-print': {
+              display: 'none !important',
+            },
+            '.MuiSnackbar-root, .MuiDialog-root': {
+              display: 'none !important',
+            },
+            /* Contenedor principal expandido al 100% sin scrollbars ni fondos grises */
+            'main, #root, #root > div': {
+              width: '100% !important',
+              maxWidth: '100% !important',
+              padding: '0 !important',
+              margin: '0 !important',
+              background: 'transparent !important',
+              overflow: 'visible !important',
+            },
+            /* Hoja A4 */
+            '.doc-page-print': {
+              width: '100% !important',
+              maxWidth: '100% !important',
+              minHeight: 'auto !important',
+              margin: '0 !important',
+              padding: '0 !important',
+              boxShadow: 'none !important',
+              border: 'none !important',
+              background: '#FFFFFF !important',
+              color: '#1E293B !important',
+            },
+            /* Preservar colores exactos en la impresión */
+            '*': {
+              WebkitPrintColorAdjust: 'exact !important',
+              printColorAdjust: 'exact !important',
+              colorAdjust: 'exact !important',
+            },
+            /* Evitar cortes indeseados dentro de un bloque o indicador */
+            '.print-avoid-break': {
+              pageBreakInside: 'avoid !important',
+              breakInside: 'avoid !important',
+            },
+          },
+        }}
+      />
       <Box sx={styles.mainLayout}>
         {/* Sidebar institucional */}
         <Sidebar activeMenu="Reportes" />
@@ -245,44 +560,56 @@ export const Reportes = () => {
               ]}
               rightAction={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Select
-                    size="small"
-                    value={currentRole}
-                    onChange={(e) => {
-                      setCurrentRole(e.target.value);
-                      showToast(`Rol: ${e.target.value === 'admin' ? 'Administrador' : e.target.value === 'jefe' ? 'Jefe de depto' : 'Usuario de área'}`);
-                    }}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      borderRadius: '8px',
-                      fontSize: '12.5px',
-                      minWidth: 140,
-                      height: 38,
-                      border: '1px solid #CBD5E1',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                    }}
-                  >
-                    <MenuItem value="admin">Rol: Admin</MenuItem>
-                    <MenuItem value="jefe">Rol: Jefe de depto</MenuItem>
-                    <MenuItem value="area">Rol: Usuario de área</MenuItem>
-                  </Select>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={handleOpenNewBuilder}
-                    sx={{
-                      bgcolor: '#1E2875',
-                      color: '#FFFFFF',
-                      borderRadius: '8px',
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      px: 2.5,
-                      height: 38,
-                      '&:hover': { bgcolor: '#131a52' },
-                    }}
-                  >
-                    Crear reporte
-                  </Button>
+                  {isDepartmentRestricted && userDept && (
+                    <Box
+                      sx={{
+                        px: 1.8,
+                        py: 0.6,
+                        bgcolor: 'rgba(30, 40, 117, 0.08)',
+                        color: '#1E2875',
+                        borderRadius: '8px',
+                        fontSize: '12.5px',
+                        fontWeight: 600,
+                        border: '1px solid #C7D2FE',
+                      }}
+                    >
+                      Departamento: {userDept.name}
+                    </Box>
+                  )}
+                  {canCreateReport ? (
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      onClick={handleOpenNewBuilder}
+                      sx={{
+                        bgcolor: '#1E2875',
+                        color: '#FFFFFF',
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        px: 2.5,
+                        height: 38,
+                        '&:hover': { bgcolor: '#131a52' },
+                      }}
+                    >
+                      Crear reporte
+                    </Button>
+                  ) : (
+                    <Box
+                      sx={{
+                        px: 2,
+                        py: 0.8,
+                        bgcolor: '#F1F5F9',
+                        color: '#64748B',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        border: '1px solid #E2E8F0',
+                      }}
+                    >
+                      Solo lectura (Calidad)
+                    </Box>
+                  )}
                 </Box>
               }
             />
@@ -336,23 +663,27 @@ export const Reportes = () => {
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6} md={2.5}>
                       <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, mb: 0.5, display: 'block' }}>
-                        Departamento
+                        Departamento {isDepartmentRestricted ? '(Asignado por rol)' : ''}
                       </Typography>
                       <Select
                         size="small"
                         fullWidth
                         value={filtroDepartamento}
                         onChange={(e) => setFiltroDepartamento(e.target.value)}
-                        sx={{ bgcolor: '#FFFFFF', borderRadius: '8px' }}
+                        disabled={isDepartmentRestricted}
+                        sx={{ bgcolor: isDepartmentRestricted ? '#F8FAFC' : '#FFFFFF', borderRadius: '8px' }}
                       >
-                        <MenuItem value="todas">Todos</MenuItem>
-                        <MenuItem value="Admisión">Admisión</MenuItem>
-                        <MenuItem value="Desarrollo Curricular">Desarrollo Curricular</MenuItem>
-                        <MenuItem value="Innovación">Innovación</MenuItem>
-                        <MenuItem value="Educación Continua">Educación Continua</MenuItem>
-                        <MenuItem value="Vinculación">Vinculación con el Medio</MenuItem>
-                        <MenuItem value="Relaciones Estudiantiles">Relaciones Estudiantiles</MenuItem>
-                        <MenuItem value="institucional">Institucional</MenuItem>
+                        {isDepartmentRestricted && userDept ? (
+                          <MenuItem value={userDept.name}>{userDept.name}</MenuItem>
+                        ) : [
+                          <MenuItem key="todas" value="todas">Todos</MenuItem>,
+                          <MenuItem key="Admisión" value="Admisión">Admisión</MenuItem>,
+                          <MenuItem key="Desarrollo Curricular" value="Desarrollo Curricular">Desarrollo Curricular</MenuItem>,
+                          <MenuItem key="Innovación" value="Innovación">Innovación</MenuItem>,
+                          <MenuItem key="Educación Continua" value="Educación Continua">Educación Continua</MenuItem>,
+                          <MenuItem key="Vinculación con el Medio" value="Vinculación">Vinculación con el Medio</MenuItem>,
+                          <MenuItem key="Relaciones Estudiantiles" value="Relaciones Estudiantiles">Relaciones Estudiantiles</MenuItem>,
+                        ]}
                       </Select>
                     </Grid>
 
@@ -589,7 +920,13 @@ export const Reportes = () => {
                                 fullWidth
                                 variant="contained"
                                 size="small"
-                                onClick={() => handleStartGenerate(r)}
+                                onClick={() => {
+                                  if (r.formato === 'excel' || r.formato === 'xlsx') {
+                                    handleDownloadDoc(r);
+                                  } else {
+                                    handleStartGenerate(r);
+                                  }
+                                }}
                                 sx={{
                                   bgcolor: '#1E2875',
                                   color: '#FFFFFF',
@@ -599,7 +936,7 @@ export const Reportes = () => {
                                   '&:hover': { bgcolor: '#131a52' },
                                 }}
                               >
-                                Generar
+                                Descargar
                               </Button>
 
                               <IconButton
@@ -844,41 +1181,91 @@ export const Reportes = () => {
 
                     <Box sx={{ mb: 2.5 }}>
                       <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, mb: 0.5, display: 'block' }}>
-                        Área / Departamento *
+                        Área / Departamento * {isDepartmentRestricted ? '(Fijo por rol)' : ''}
                       </Typography>
                       <Select
                         fullWidth
                         size="small"
                         value={builder.area}
                         onChange={(e) => handleAreaChange(e.target.value)}
-                        sx={{ bgcolor: '#FFFFFF', borderRadius: '8px' }}
+                        disabled={isDepartmentRestricted}
+                        sx={{ bgcolor: isDepartmentRestricted ? '#F8FAFC' : '#FFFFFF', borderRadius: '8px' }}
                       >
-                        <MenuItem value="Admisión">Admisión</MenuItem>
-                        <MenuItem value="Desarrollo Curricular">Desarrollo Curricular</MenuItem>
-                        <MenuItem value="Innovación">Innovación</MenuItem>
-                        <MenuItem value="Educación Continua">Educación Continua</MenuItem>
-                        <MenuItem value="Vinculación">Vinculación con el Medio</MenuItem>
-                        <MenuItem value="Relaciones Estudiantiles">Relaciones Estudiantiles</MenuItem>
-                        <MenuItem value="institucional">Institucional (Global)</MenuItem>
+                        {isDepartmentRestricted && userDept ? (
+                          <MenuItem value={userDept.name}>{userDept.name}</MenuItem>
+                        ) : [
+                          <MenuItem key="Admisión" value="Admisión">Admisión</MenuItem>,
+                          <MenuItem key="Desarrollo Curricular" value="Desarrollo Curricular">Desarrollo Curricular</MenuItem>,
+                          <MenuItem key="Innovación" value="Innovación">Innovación</MenuItem>,
+                          <MenuItem key="Educación Continua" value="Educación Continua">Educación Continua</MenuItem>,
+                          <MenuItem key="Vinculación con el Medio" value="Vinculación con el Medio">Vinculación con el Medio</MenuItem>,
+                        ]}
                       </Select>
                       <Typography variant="caption" sx={{ color: '#64748B', mt: 0.5, display: 'block' }}>
-                        Puedes seleccionar cualquier área institucional según tus permisos.
+                        {isDepartmentRestricted && userDept
+                          ? `Asignado automáticamente a tu departamento: ${userDept.name}.`
+                          : 'Puedes seleccionar cualquier área institucional según tus permisos.'}
                       </Typography>
                     </Box>
+
+                    {isRector && (
+                      <Box sx={{ mb: 2.5 }}>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, mb: 0.5, display: 'block' }}>
+                          Tipo de reporte
+                        </Typography>
+                        <Select
+                          fullWidth
+                          size="small"
+                          value={builder.tipo || 'PERSONALIZADO'}
+                          onChange={(e) => setBuilder({ ...builder, tipo: e.target.value })}
+                          sx={{ bgcolor: '#FFFFFF', borderRadius: '8px' }}
+                        >
+                          <MenuItem value="PERSONALIZADO">Reporte personalizado (Mis reportes)</MenuItem>
+                          <MenuItem value="PREDEFINIDO">Plantilla predefinida institucional (Visible para todos)</MenuItem>
+                        </Select>
+                        <Typography variant="caption" sx={{ color: '#64748B', mt: 0.5, display: 'block' }}>
+                          Como Rectoría, puedes publicar plantillas predefinidas oficiales para la institución.
+                        </Typography>
+                      </Box>
+                    )}
                   </Card>
                 )}
 
                 {/* PASO 2: INDICADORES */}
                 {builder.step === 2 && (
                   <Card sx={styles.builderCard}>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E2875', mb: 2 }}>
-                      Selecciona indicadores
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E2875' }}>
+                        Selecciona indicadores
+                      </Typography>
+                      {builder.inds.length > 0 && (
+                        <Box sx={{ bgcolor: '#EEF2FF', color: '#1E2875', px: 1.5, py: 0.4, borderRadius: '20px', fontSize: '12px', fontWeight: 700, border: '1px solid #C7D2FE' }}>
+                          {builder.inds.length} {builder.inds.length === 1 ? 'indicador seleccionado' : 'indicadores seleccionados'}
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* Cards de Departamentos (Carrusel Optimizado) */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
+                        Filtrar por departamento:
+                      </Typography>
+                    </Box>
+
+                    <DepartmentFilterCarousel
+                      builderCatalogo={builderCatalogo}
+                      selectedDepCard={selectedDepCard}
+                      setSelectedDepCard={setSelectedDepCard}
+                      isDepartmentRestricted={isDepartmentRestricted}
+                      userDept={userDept}
+                      builderInds={builder.inds}
+                      AREA_COLORS={AREA_COLORS}
+                    />
 
                     <TextField
                       fullWidth
                       size="small"
-                      placeholder="Buscar indicador por nombre o descripción…"
+                      placeholder={`Buscar indicador por nombre o descripción${selectedDepCard !== 'all' ? ` en ${selectedDepCard}` : ''}…`}
                       value={indicatorSearch}
                       onChange={(e) => setIndicatorSearch(e.target.value)}
                       InputProps={{
@@ -888,13 +1275,18 @@ export const Reportes = () => {
                     />
 
                     <Box sx={{ maxHeight: 460, overflowY: 'auto', pr: 1 }}>
-                      {CATALOGO.map((group) => {
-                        const filteredGroupItems = group.items.filter((item) => {
-                          const q = indicatorSearch.toLowerCase();
-                          return !q || item.name.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q);
-                        });
+                      {builderCatalogo
+                        .filter((group) => {
+                          if (selectedDepCard === 'all') return true;
+                          return group.dep === selectedDepCard || group.key === selectedDepCard;
+                        })
+                        .map((group) => {
+                          const filteredGroupItems = group.items.filter((item) => {
+                            const q = indicatorSearch.toLowerCase();
+                            return !q || item.name.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q);
+                          });
 
-                        if (filteredGroupItems.length === 0) return null;
+                          if (filteredGroupItems.length === 0) return null;
 
                         return (
                           <Box key={group.dep} sx={{ mb: 2.5 }}>
@@ -913,7 +1305,7 @@ export const Reportes = () => {
 
                             {filteredGroupItems.map((item) => {
                               const isChecked = builder.inds.includes(item.id);
-                              const desags = DESAGREGACIONES[item.id] || [];
+                              const desags = item.desags || getDesagsForIndicator(item.id) || [];
 
                               return (
                                 <Box
@@ -932,16 +1324,19 @@ export const Reportes = () => {
                                       size="small"
                                       checked={isChecked}
                                       onChange={(e) => {
+                                        const prefix = `${item.id}|`;
                                         if (e.target.checked) {
+                                          const defaultOption = item.defaultGroupBy ? [] : (desags.length > 0 ? [`${item.id}|${desags[0]}`] : []);
                                           setBuilder({
                                             ...builder,
                                             inds: [...builder.inds, item.id],
+                                            desag: [...builder.desag.filter((x) => !x.startsWith(prefix)), ...defaultOption],
                                           });
                                         } else {
                                           setBuilder({
                                             ...builder,
                                             inds: builder.inds.filter((x) => x !== item.id),
-                                            desag: builder.desag.filter((x) => !x.startsWith(`${item.id}|`)),
+                                            desag: builder.desag.filter((x) => !x.startsWith(prefix)),
                                           });
                                         }
                                       }}
@@ -949,16 +1344,19 @@ export const Reportes = () => {
                                     />
                                     <Box
                                       onClick={() => {
+                                        const prefix = `${item.id}|`;
                                         if (isChecked) {
                                           setBuilder({
                                             ...builder,
                                             inds: builder.inds.filter((x) => x !== item.id),
-                                            desag: builder.desag.filter((x) => !x.startsWith(`${item.id}|`)),
+                                            desag: builder.desag.filter((x) => !x.startsWith(prefix)),
                                           });
                                         } else {
+                                          const defaultOption = item.defaultGroupBy ? [] : (desags.length > 0 ? [`${item.id}|${desags[0]}`] : []);
                                           setBuilder({
                                             ...builder,
                                             inds: [...builder.inds, item.id],
+                                            desag: [...builder.desag.filter((x) => !x.startsWith(prefix)), ...defaultOption],
                                           });
                                         }
                                       }}
@@ -999,6 +1397,7 @@ export const Reportes = () => {
                                               size="small"
                                               disabled={!isChecked}
                                               onClick={() => {
+                                                const prefix = `${item.id}|`;
                                                 if (isSelected) {
                                                   setBuilder({
                                                     ...builder,
@@ -1006,9 +1405,9 @@ export const Reportes = () => {
                                                   });
                                                 } else {
                                                   setBuilder({
-                                                    ...builder,
-                                                    desag: [...builder.desag, key],
-                                                  });
+                                                      ...builder,
+                                                      desag: [...builder.desag, key],
+                                                    });
                                                 }
                                               }}
                                               sx={{
@@ -1039,6 +1438,19 @@ export const Reportes = () => {
                           </Box>
                         );
                       })}
+
+                      {builderCatalogo
+                        .filter((group) => selectedDepCard === 'all' || group.dep === selectedDepCard || group.key === selectedDepCard)
+                        .every((group) => group.items.filter((item) => {
+                          const q = indicatorSearch.toLowerCase();
+                          return !q || item.name.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q);
+                        }).length === 0) && (
+                        <Box sx={{ py: 4, textAlign: 'center', color: '#64748B' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            No se encontraron indicadores en {selectedDepCard === 'all' ? 'los departamentos' : selectedDepCard} para tu búsqueda.
+                          </Typography>
+                        </Box>
+                      )}
                     </Box>
                   </Card>
                 )}
@@ -1062,10 +1474,9 @@ export const Reportes = () => {
                           onChange={(e) => setBuilder({ ...builder, annoMin: e.target.value })}
                           sx={{ bgcolor: '#FFFFFF', borderRadius: '8px' }}
                         >
-                          <MenuItem value="2023">2023</MenuItem>
-                          <MenuItem value="2024">2024</MenuItem>
-                          <MenuItem value="2025">2025</MenuItem>
-                          <MenuItem value="2026">2026</MenuItem>
+                          {(availableYears || ['2023', '2024', '2025', '2026']).map((y) => (
+                            <MenuItem key={y} value={y}>{y}</MenuItem>
+                          ))}
                         </Select>
                         <Typography sx={{ color: '#64748B' }}>a</Typography>
                         <Select
@@ -1075,10 +1486,9 @@ export const Reportes = () => {
                           onChange={(e) => setBuilder({ ...builder, annoMax: e.target.value })}
                           sx={{ bgcolor: '#FFFFFF', borderRadius: '8px' }}
                         >
-                          <MenuItem value="2023">2023</MenuItem>
-                          <MenuItem value="2024">2024</MenuItem>
-                          <MenuItem value="2025">2025</MenuItem>
-                          <MenuItem value="2026">2026</MenuItem>
+                          {(availableYears || ['2023', '2024', '2025', '2026']).map((y) => (
+                            <MenuItem key={y} value={y}>{y}</MenuItem>
+                          ))}
                         </Select>
                       </Box>
                     </Box>
@@ -1089,96 +1499,115 @@ export const Reportes = () => {
                     </Typography>
 
                     {(() => {
-                      const areasToRender =
-                        builder.area === 'institucional'
-                          ? ['Admisión', 'Desarrollo Curricular', 'Innovación', 'Educación Continua', 'Vinculación', 'Relaciones Estudiantiles']
-                          : [builder.area];
+                      const areasToRender = [builder.area];
 
-                      return areasToRender.map((areaKey) => {
-                        const cfg = FILTROS_AREA[areaKey];
-                        if (!cfg) return null;
+                      const renderedAreas = areasToRender
+                        .map((areaKey) => {
+                          const cfg = getFiltersForArea(areaKey);
+                          if (!cfg || !cfg.filtros || cfg.filtros.length === 0) return null;
 
+                          return (
+                            <Box
+                              key={areaKey}
+                              sx={{
+                                p: 2,
+                                mb: 2,
+                                borderRadius: '10px',
+                                border: '1px solid #E2E8F0',
+                                bgcolor: '#FAFBFC',
+                              }}
+                            >
+                              <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1E2875', mb: 1.5 }}>
+                                {areaName(areaKey)}
+                              </Typography>
+
+                              {cfg.filtros.map(([filtroName, options]) => (
+                                <Accordion
+                                  key={filtroName}
+                                  disableGutters
+                                  elevation={0}
+                                  sx={{
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '8px !important',
+                                    mb: 1,
+                                    '&:before': { display: 'none' },
+                                  }}
+                                >
+                                  <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#64748B' }} />}>
+                                    <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                                      {filtroName}
+                                    </Typography>
+                                  </AccordionSummary>
+                                  <AccordionDetails sx={{ pt: 0 }}>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                                      {options.map((opt) => {
+                                        const key = `${areaKey}|${filtroName}|${opt}`;
+                                        const isSelected = builder.filtrosSeleccionados.includes(key);
+
+                                        return (
+                                          <Button
+                                            key={opt}
+                                            size="small"
+                                            onClick={() => {
+                                              if (isSelected) {
+                                                setBuilder({
+                                                  ...builder,
+                                                  filtrosSeleccionados: builder.filtrosSeleccionados.filter((x) => x !== key),
+                                                });
+                                              } else {
+                                                setBuilder({
+                                                  ...builder,
+                                                  filtrosSeleccionados: [...builder.filtrosSeleccionados, key],
+                                                });
+                                              }
+                                            }}
+                                            sx={{
+                                              textTransform: 'none',
+                                              borderRadius: '999px',
+                                              px: 1.5,
+                                              py: 0.3,
+                                              fontSize: '12px',
+                                              fontWeight: 500,
+                                              bgcolor: isSelected ? '#1E2875' : '#F1F5F9',
+                                              color: isSelected ? '#FFFFFF' : '#475569',
+                                              border: `1px solid ${isSelected ? '#1E2875' : '#E2E8F0'}`,
+                                              '&:hover': {
+                                                bgcolor: isSelected ? '#131a52' : '#E2E8F0',
+                                              },
+                                            }}
+                                          >
+                                            {formatOptionLabel(opt)}
+                                          </Button>
+                                        );
+                                      })}
+                                    </Box>
+                                  </AccordionDetails>
+                                </Accordion>
+                              ))}
+                            </Box>
+                          );
+                        })
+                        .filter(Boolean);
+
+                      if (renderedAreas.length === 0) {
                         return (
                           <Box
-                            key={areaKey}
                             sx={{
-                              p: 2,
-                              mb: 2,
-                              borderRadius: '10px',
-                              border: '1px solid #E2E8F0',
-                              bgcolor: '#FAFBFC',
+                              p: 2.5,
+                              borderRadius: '8px',
+                              border: '1px dashed #CBD5E1',
+                              bgcolor: '#F8FAFC',
+                              textAlign: 'center',
                             }}
                           >
-                            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1E2875', mb: 1.5 }}>
-                              {areaKey}
+                            <Typography variant="body2" sx={{ color: '#64748B' }}>
+                              No hay filtros temáticos adicionales registrados en la base de datos para esta área.
                             </Typography>
-
-                            {cfg.filtros.map(([filtroName, options]) => (
-                              <Accordion
-                                key={filtroName}
-                                disableGutters
-                                elevation={0}
-                                sx={{
-                                  border: '1px solid #E2E8F0',
-                                  borderRadius: '8px !important',
-                                  mb: 1,
-                                  '&:before': { display: 'none' },
-                                }}
-                              >
-                                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#64748B' }} />}>
-                                  <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                                    {filtroName}
-                                  </Typography>
-                                </AccordionSummary>
-                                <AccordionDetails sx={{ pt: 0 }}>
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                                    {options.map((opt) => {
-                                      const key = `${areaKey}|${filtroName}|${opt}`;
-                                      const isSelected = builder.filtrosSeleccionados.includes(key);
-
-                                      return (
-                                        <Button
-                                          key={opt}
-                                          size="small"
-                                          onClick={() => {
-                                            if (isSelected) {
-                                              setBuilder({
-                                                ...builder,
-                                                filtrosSeleccionados: builder.filtrosSeleccionados.filter((x) => x !== key),
-                                              });
-                                            } else {
-                                              setBuilder({
-                                                ...builder,
-                                                filtrosSeleccionados: [...builder.filtrosSeleccionados, key],
-                                              });
-                                            }
-                                          }}
-                                          sx={{
-                                            textTransform: 'none',
-                                            borderRadius: '999px',
-                                            px: 1.5,
-                                            py: 0.3,
-                                            fontSize: '12px',
-                                            fontWeight: 500,
-                                            bgcolor: isSelected ? '#1E2875' : '#F1F5F9',
-                                            color: isSelected ? '#FFFFFF' : '#475569',
-                                            border: `1px solid ${isSelected ? '#1E2875' : '#E2E8F0'}`,
-                                            '&:hover': {
-                                              bgcolor: isSelected ? '#131a52' : '#E2E8F0',
-                                            },
-                                          }}
-                                        >
-                                          {opt}
-                                        </Button>
-                                      );
-                                    })}
-                                  </Box>
-                                </AccordionDetails>
-                              </Accordion>
-                            ))}
                           </Box>
                         );
-                      });
+                      }
+
+                      return renderedAreas;
                     })()}
                   </Card>
                 )}
@@ -1213,69 +1642,36 @@ export const Reportes = () => {
                           PDF Documental
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#64748B' }}>
-                          Informe visual formateado A4
+                          Documento institucional A4 con tablas de detalle
                         </Typography>
                       </Box>
                     </Box>
 
-                    {builder.formato === 'pdf' && (
+                    {builder.formato === 'pdf' ? (
                       <Box
                         sx={{
+                          pt: 1.5,
+                          borderTop: '1px solid #F1F5F9',
                           fontSize: '12.5px',
-                          color: '#B45309',
-                          bgcolor: '#FEF3C7',
-                          border: '1px solid #FDE68A',
-                          borderRadius: '8px',
-                          p: 1.5,
-                          mb: 2,
-                          lineHeight: 1.4,
+                          color: '#64748B',
+                          lineHeight: 1.5,
                         }}
                       >
-                        La vista previa solo está disponible en formato Excel. En PDF el reporte se descargará directamente.
+                        El informe PDF Documental generará un documento oficial institucional en formato A4 con diseño ejecutivo optimizado para lectura e impresión, conteniendo la ficha ejecutiva y tablas numéricas completas de desglose para cada indicador seleccionado.
+                      </Box>
+                    ) : (
+                      <Box
+                        sx={{
+                          pt: 1.5,
+                          borderTop: '1px solid #F1F5F9',
+                          fontSize: '12.5px',
+                          color: '#64748B',
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        El libro Excel (.xlsx) incluirá automáticamente una hoja de resumen general y hojas dedicadas con las matrices de datos numéricos estructurados para cada indicador seleccionado.
                       </Box>
                     )}
-
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1, borderTop: '1px solid #F1F5F9' }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={builder.graficos}
-                            onChange={(e) => setBuilder({ ...builder, graficos: e.target.checked })}
-                            sx={{ '& .Mui-checked': { color: '#1E2875' }, '& .Mui-checked + .MuiSwitch-track': { bgcolor: '#1E2875' } }}
-                          />
-                        }
-                        label={
-                          <Box>
-                            <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#1E2875' }}>
-                              Incluir gráficos visuales
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: '#64748B' }}>
-                              Añade barras y tendencias por cada indicador
-                            </Typography>
-                          </Box>
-                        }
-                      />
-
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={builder.tablas}
-                            onChange={(e) => setBuilder({ ...builder, tablas: e.target.checked })}
-                            sx={{ '& .Mui-checked': { color: '#1E2875' }, '& .Mui-checked + .MuiSwitch-track': { bgcolor: '#1E2875' } }}
-                          />
-                        }
-                        label={
-                          <Box>
-                            <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#1E2875' }}>
-                              Incluir tablas de detalle
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: '#64748B' }}>
-                              Agrega las matrices numéricas por año y categoría
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                    </Box>
                   </Card>
                 )}
 
@@ -1311,7 +1707,12 @@ export const Reportes = () => {
                           showToast('Selecciona al menos un indicador', 'warning');
                           return;
                         }
-                        setBuilder({ ...builder, step: builder.step + 1 });
+                        const nextStep = builder.step + 1;
+                        setBuilder({
+                          ...builder,
+                          step: nextStep,
+                          maxStep: Math.max(builder.maxStep || 1, nextStep),
+                        });
                       }}
                       sx={{ bgcolor: '#1E2875', color: '#FFFFFF', textTransform: 'none', borderRadius: '8px' }}
                     >
@@ -1376,21 +1777,29 @@ export const Reportes = () => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="caption" sx={{ color: '#64748B' }}>Período</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E2875' }}>
-                        {builder.annoMin} — {builder.annoMax}
+                        {(builder.maxStep || builder.step) >= 3 ? `${builder.annoMin} — ${builder.annoMax}` : '—'}
                       </Typography>
                     </Box>
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="caption" sx={{ color: '#64748B' }}>Formato</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E2875' }}>
-                        {builder.formato === 'excel' ? 'Excel (.xlsx)' : 'PDF Documento'}
+                        {(builder.maxStep || builder.step) >= 4 ? (builder.formato === 'excel' ? 'Excel (.xlsx)' : 'PDF Documento') : '—'}
                       </Typography>
                     </Box>
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="caption" sx={{ color: '#64748B' }}>Indicadores</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#1DC2A0' }}>
-                        {builder.inds.length} seleccionados
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 700,
+                          color: (builder.maxStep || builder.step) >= 2 && builder.inds.length > 0 ? '#1DC2A0' : '#64748B'
+                        }}
+                      >
+                        {(builder.maxStep || builder.step) >= 2
+                          ? `${builder.inds.length} seleccionados`
+                          : '—'}
                       </Typography>
                     </Box>
                   </Box>
@@ -1402,7 +1811,11 @@ export const Reportes = () => {
                   </Typography>
 
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 220, overflowY: 'auto' }}>
-                    {builder.inds.length === 0 ? (
+                    {(builder.maxStep || builder.step) < 2 ? (
+                      <Typography variant="caption" sx={{ color: '#94A3B8', fontStyle: 'italic' }}>
+                        —
+                      </Typography>
+                    ) : builder.inds.length === 0 ? (
                       <Typography variant="caption" sx={{ color: '#94A3B8', fontStyle: 'italic' }}>
                         Aún no has seleccionado ningún indicador.
                       </Typography>
@@ -1418,9 +1831,11 @@ export const Reportes = () => {
                             <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#1E2875' }}>
                               {info.name}
                             </Typography>
-                            <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
-                              1) Por año {activeDesags.length > 0 ? `· 2) Por ${activeDesags.join(', ').toLowerCase()}` : ''}
-                            </Typography>
+                            {activeDesags.length > 0 && (
+                              <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
+                                Desglose: {activeDesags.join(', ')}
+                              </Typography>
+                            )}
                           </Box>
                         );
                       })
@@ -1437,52 +1852,60 @@ export const Reportes = () => {
             ========================================================================= */}
         {viewMode === 'preview' && (
           <>
-            <Header
-              title="Vista Previa de Reporte"
-              subtitle="Previsualización y exportación del documento generado"
-              icon={<ReportesIcon />}
-              iconColor="#FFFFFF"
-              breadcrumbs={[
-                { label: 'Inicio', path: '/' },
-                { label: 'Reportes', path: '/reportes', onClick: handleBackToList },
-                { label: 'Vista previa', path: null },
-              ]}
-              rightAction={
-                <Box sx={{ display: 'flex', gap: 1.5 }}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<BackIcon />}
-                    onClick={handleBackToList}
-                    sx={{ color: '#1E2875', borderColor: '#CBD5E1', borderRadius: '8px', textTransform: 'none' }}
-                  >
-                    Volver
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<PrintIcon />}
-                    onClick={() => window.print()}
-                    sx={{ color: '#1E2875', borderColor: '#CBD5E1', borderRadius: '8px', textTransform: 'none' }}
-                  >
-                    Imprimir
-                  </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={<DownloadIcon />}
-                    onClick={handleDownloadDoc}
-                    sx={{
-                      bgcolor: '#1E2875',
-                      color: '#FFFFFF',
-                      borderRadius: '8px',
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      '&:hover': { bgcolor: '#131a52' },
-                    }}
-                  >
-                    Descargar {currentPreviewReport?.formato?.toUpperCase() || 'PDF'}
-                  </Button>
-                </Box>
-              }
-            />
+            <Box className="no-print">
+              <Header
+                title="Vista Previa de Reporte"
+                subtitle="Previsualización y exportación del documento generado"
+                icon={<ReportesIcon />}
+                iconColor="#FFFFFF"
+                breadcrumbs={[
+                  { label: 'Inicio', path: '/' },
+                  { label: 'Reportes', path: '/reportes', onClick: handleBackToList },
+                  { label: 'Vista previa', path: null },
+                ]}
+                rightAction={
+                  <Box sx={{ display: 'flex', gap: 1.5 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<BackIcon />}
+                      onClick={handleBackToList}
+                      sx={{ color: '#1E2875', borderColor: '#CBD5E1', borderRadius: '8px', textTransform: 'none' }}
+                    >
+                      Volver
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<PrintIcon />}
+                      onClick={() => window.print()}
+                      sx={{ color: '#1E2875', borderColor: '#CBD5E1', borderRadius: '8px', textTransform: 'none' }}
+                    >
+                      Imprimir
+                    </Button>
+                    <Button
+                      variant="contained"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => {
+                        if (currentPreviewReport?.formato === 'pdf' || !currentPreviewReport?.formato) {
+                          window.print();
+                        } else {
+                          handleDownloadDoc();
+                        }
+                      }}
+                      sx={{
+                        bgcolor: '#1E2875',
+                        color: '#FFFFFF',
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        '&:hover': { bgcolor: '#131a52' },
+                      }}
+                    >
+                      Descargar PDF
+                    </Button>
+                  </Box>
+                }
+              />
+            </Box>
 
             {/* Simulación de Generación con Barra de Progreso */}
             {isGenerating ? (
@@ -1502,7 +1925,7 @@ export const Reportes = () => {
             ) : (
               /* Hoja A4 de Documento */
               <Box sx={{ py: 2 }}>
-                <Paper sx={styles.docPage} elevation={4}>
+                <Paper className="doc-page-print" sx={styles.docPage} elevation={4}>
                   {/* Encabezado del Documento */}
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 2.5, borderBottom: '2px solid #1E2875', mb: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -1555,18 +1978,16 @@ export const Reportes = () => {
                   {/* Secciones por cada indicador */}
                   {(currentPreviewReport?.inds || []).map((id, idx) => {
                     const info = getIndicatorInfo(id);
-                    const sample = SAMPLE_INDICATOR_DATA[id] || {
-                      val: '100',
+                    const indicatorData = previewDataByIndicator[id] || {
+                      val: 'Sin datos',
                       desc: info.desc,
-                      table: [['2023', 80], ['2024', 90], ['2025', 95], ['2026', 100]],
-                      chart: [80, 90, 95, 100],
-                      labels: ['2023', '2024', '2025', '2026'],
+                      table: [],
+                      chart: [],
+                      labels: [],
                     };
 
-                    const maxVal = Math.max(...sample.chart, 1);
-
                     return (
-                      <Box key={id} sx={{ mb: 4, pt: 2.5, borderTop: '1px solid #E2E8F0' }}>
+                      <Box key={id} className="print-avoid-break" sx={{ mb: 4, pt: 2.5, borderTop: '1px solid #E2E8F0' }}>
                         <Typography sx={{ fontWeight: 700, fontSize: '16px', color: '#1E2875', mb: 0.5 }}>
                           {idx + 1}. {info.name}
                         </Typography>
@@ -1577,7 +1998,7 @@ export const Reportes = () => {
                         {/* Valor Destacado */}
                         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 1.5 }}>
                           <Typography sx={{ fontSize: '26px', fontWeight: 800, color: '#1E2875' }}>
-                            {sample.val}
+                            {indicatorData.val}
                           </Typography>
                           <Typography sx={{ fontSize: '12.5px', color: '#64748B' }}>
                             (cierre {currentPreviewReport?.annoMax || '2026'})
@@ -1585,78 +2006,73 @@ export const Reportes = () => {
                         </Box>
 
                         <Typography sx={{ fontSize: '13px', color: '#475569', mb: 2 }}>
-                          {sample.desc} Los datos corresponden al seguimiento del período {currentPreviewReport?.annoMin || '2023'} al {currentPreviewReport?.annoMax || '2026'}.
+                          {indicatorData.desc} Los datos corresponden al seguimiento del período {currentPreviewReport?.annoMin || '2023'} al {currentPreviewReport?.annoMax || '2026'}.
                         </Typography>
 
-                        {/* Gráfico de Barras Documental */}
-                        <Box sx={{ p: 2, bgcolor: '#FAFBFC', borderRadius: '8px', border: '1px solid #EDF0F4', mb: 2.5 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: '#1E2875', display: 'block', mb: 1.5 }}>
-                            Evolución Anual
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'flex-end', height: 120, gap: 3, px: 2, pt: 1 }}>
-                            {sample.chart.map((val, cIdx) => {
-                              const pctHeight = Math.max(10, Math.round((val / maxVal) * 100));
-                              return (
-                                <Box
-                                  key={cIdx}
-                                  sx={{
-                                    flex: 1,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    gap: 0.5,
-                                    height: '100%',
-                                    justifyContent: 'flex-end',
-                                  }}
-                                >
-                                  <Typography sx={{ fontSize: '11px', fontWeight: 600, color: '#1E2875' }}>
-                                    {val.toLocaleString('es-CL')}
-                                  </Typography>
-                                  <Box
-                                    sx={{
-                                      width: '100%',
-                                      maxWidth: 42,
-                                      height: `${pctHeight}%`,
-                                      bgcolor: '#1E2875',
-                                      borderRadius: '4px 4px 0 0',
-                                    }}
-                                  />
-                                  <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
-                                    {sample.labels[cIdx]}
-                                  </Typography>
-                                </Box>
-                              );
-                            })}
-                          </Box>
-                        </Box>
-
                         {/* Tabla de Datos */}
-                        <TableContainer sx={{ border: '1px solid #E2E8F0', borderRadius: '6px' }}>
-                          <Table size="small">
-                            <TableHead sx={{ bgcolor: '#F1F5F9' }}>
-                              <TableRow>
-                                <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875' }}>Período / Desglose</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875' }}>Valor</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {sample.table.map(([label, val], rIdx) => (
-                                <TableRow key={rIdx} sx={{ '&:nth-of-type(even)': { bgcolor: '#F8FAFC' } }}>
-                                  <TableCell sx={{ fontSize: '12.5px' }}>{label}</TableCell>
-                                  <TableCell align="right" sx={{ fontSize: '12.5px', fontWeight: 600 }}>
-                                    {val.toLocaleString('es-CL')}
+                        {indicatorData.isMatrix && indicatorData.matrixRows.length > 0 ? (
+                          <TableContainer sx={{ border: '1px solid #E2E8F0', borderRadius: '6px', overflow: 'hidden' }}>
+                            <Table size="small">
+                              <TableHead sx={{ bgcolor: '#F1F5F9' }}>
+                                <TableRow>
+                                  <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875', py: 1 }}>
+                                    {indicatorData.dimensionName ? `Desglose (${indicatorData.dimensionName})` : 'Desglose'}
+                                  </TableCell>
+                                  {indicatorData.matrixYears.map((yr) => (
+                                    <TableCell key={yr} align="right" sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875', py: 1 }}>
+                                      {yr}
+                                    </TableCell>
+                                  ))}
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {indicatorData.matrixRows.map((row, rIdx) => (
+                                  <TableRow key={rIdx} sx={{ '&:nth-of-type(even)': { bgcolor: '#F8FAFC' } }}>
+                                    <TableCell sx={{ fontSize: '12.5px', fontWeight: 500, color: '#1E293B', py: 0.8 }}>
+                                      {row.label}
+                                    </TableCell>
+                                    {row.values.map((v, vIdx) => (
+                                      <TableCell key={vIdx} align="right" sx={{ fontSize: '12.5px', fontWeight: 600, py: 0.8 }}>
+                                        {v.toLocaleString('es-CL')}
+                                      </TableCell>
+                                    ))}
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        ) : indicatorData.table.length > 0 ? (
+                          <TableContainer sx={{ border: '1px solid #E2E8F0', borderRadius: '6px', overflow: 'hidden' }}>
+                            <Table size="small">
+                              <TableHead sx={{ bgcolor: '#F1F5F9' }}>
+                                <TableRow>
+                                  <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875', py: 1 }}>
+                                    {indicatorData.dimensionName ? `Desglose (${indicatorData.dimensionName})` : 'Período / Desglose'}
+                                  </TableCell>
+                                  <TableCell align="right" sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875', py: 1 }}>
+                                    Valor
                                   </TableCell>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
+                              </TableHead>
+                              <TableBody>
+                                {indicatorData.table.map(([label, val], rIdx) => (
+                                  <TableRow key={rIdx} sx={{ '&:nth-of-type(even)': { bgcolor: '#F8FAFC' } }}>
+                                    <TableCell sx={{ fontSize: '12.5px', py: 0.8 }}>{label}</TableCell>
+                                    <TableCell align="right" sx={{ fontSize: '12.5px', fontWeight: 600, py: 0.8 }}>
+                                      {val.toLocaleString('es-CL')}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        ) : null}
                       </Box>
                     );
                   })}
 
                   {/* Pie de Página del Documento */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 3, mt: 4, borderTop: '1px solid #E2E8F0', fontSize: '11px', color: '#94A3B8' }}>
+                  <Box className="print-avoid-break" sx={{ display: 'flex', justifyContent: 'space-between', pt: 3, mt: 4, borderTop: '1px solid #E2E8F0', fontSize: '11px', color: '#94A3B8' }}>
                     <span>PIADI ECAS — Sistema de Inteligencia y Gestión de Datos</span>
                     <span>Documento Oficial Institucional</span>
                   </Box>
@@ -1795,7 +2211,7 @@ export const Reportes = () => {
                               variant="outlined"
                               size="small"
                               startIcon={<DownloadIcon sx={{ fontSize: '16px !important' }} />}
-                              onClick={() => showToast(`Descargando archivo de ${h.reporteName}...`)}
+                              onClick={() => handleDownloadDoc({ id: h.reporteId, name: h.reporteName })}
                               sx={{
                                 color: '#1E2875',
                                 borderColor: '#CBD5E1',
@@ -1862,7 +2278,7 @@ export const Reportes = () => {
       </Box>
 
       {/* Botón Flotante de Ayuda (?) */}
-      <IconButton sx={styles.floatingHelpButton} onClick={() => setOpenHelpDialog(true)}>
+      <IconButton className="no-print" sx={styles.floatingHelpButton} onClick={() => setOpenHelpDialog(true)}>
         <HelpIcon />
       </IconButton>
 

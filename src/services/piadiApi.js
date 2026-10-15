@@ -13,9 +13,21 @@ function buildParams(params = {}) {
   return '?' + new URLSearchParams(Object.fromEntries(entries)).toString();
 }
 
+async function parseErrorMessage(res) {
+  try {
+    const errJson = await res.json();
+    return errJson?.error?.message || errJson?.message || `HTTP ${res.status}`;
+  } catch {
+    return `HTTP ${res.status}`;
+  }
+}
+
 async function apiFetch(path) {
   const res = await fetch(`${API_URL}${path}`, { headers: getAuthHeaders() });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    const msg = await parseErrorMessage(res);
+    throw new Error(msg);
+  }
   return res.json();
 }
 
@@ -46,6 +58,9 @@ export const getIndicatorBreakdown = (key, params) =>
 export const getIndicatorDetail = (key, params) =>
   apiFetch(`/api/indicators/${key}/detail${buildParams(params)}`);
 
+export const getIndicatorDetailView = (key, params) =>
+  apiFetch(`/api/indicators/${key}/detail/view${buildParams(params)}`);
+
 async function apiMutate(path, method, body) {
   const res = await fetch(`${API_URL}${path}`, {
     method,
@@ -55,7 +70,10 @@ async function apiMutate(path, method, body) {
     },
     body: body ? JSON.stringify(body) : undefined
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    const msg = await parseErrorMessage(res);
+    throw new Error(msg);
+  }
   if (res.status === 204) return { success: true };
   return res.json();
 }
@@ -68,3 +86,53 @@ export const deleteMeta = (id) => apiMutate(`/api/metas/${id}`, 'DELETE');
 
 export const getPlantillas = () => apiFetch('/api/plantillas');
 export const getPlantillaById = (id) => apiFetch(`/api/plantillas/${id}`);
+
+// Módulo de Reportes (PIADI-418 / PIADI-425)
+export const getReportes = (params) => apiFetch(`/api/reportes${buildParams(params)}`);
+export const getReporteById = (id) => apiFetch(`/api/reportes/${id}`);
+export const createReporte = (body) => apiMutate('/api/reportes', 'POST', body);
+export const updateReporte = (id, body) => apiMutate(`/api/reportes/${id}`, 'PUT', body);
+export const deleteReporte = (id) => apiMutate(`/api/reportes/${id}`, 'DELETE');
+export const getReporteEjecuciones = (id) => apiFetch(`/api/reportes/${id}/ejecuciones`);
+export const getReporteAreas = () => apiFetch('/api/reportes/areas');
+export const getReporteTipos = () => apiFetch('/api/reportes/tipos');
+export const getReporteFormatos = () => apiFetch('/api/reportes/formatos');
+
+export const descargarReporte = async (id, fallbackName = 'reporte.xlsx') => {
+  const token = sessionStorage.getItem('auth_token');
+  const res = await fetch(`${API_URL}/api/reportes/${id}/descargar`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+
+  if (!res.ok) {
+    let errMessage = `Error ${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.error?.message) errMessage = errJson.error.message;
+    } catch {
+      // ignore
+    }
+    throw new Error(errMessage);
+  }
+
+  let filename = fallbackName;
+  const disposition = res.headers.get('content-disposition');
+  if (disposition && disposition.indexOf('attachment') !== -1) {
+    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+    const matches = filenameRegex.exec(disposition);
+    if (matches != null && matches[1]) {
+      filename = matches[1].replace(/['"]/g, '');
+    }
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+  return { success: true, filename };
+};
