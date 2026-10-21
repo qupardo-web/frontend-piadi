@@ -22,10 +22,20 @@ export const useCentralDashboards = () => {
         });
         const result = await response.json();
         if (result.success && Array.isArray(result.data)) {
+          const targetKeys = ['educacion_continua', 'vinculacion_medio', 'innovacion', 'admision', 'desarrollo_curricular'];
           const filtered = result.data.filter(d => 
-            d.departmentId === 'educacion_continua' || d.departmentId === 'vinculacion_medio' || d.departmentId === 'innovacion' || d.departmentId === 'admision' ||
-            d.key === 'educacion_continua' || d.key === 'vinculacion_medio' || d.key === 'innovacion' || d.key === 'admision'
+            targetKeys.includes(d.departmentId) || targetKeys.includes(d.key)
           );
+          // Si el backend aún no retorna desarrollo_curricular en la base de datos local, aseguramos su presencia
+          const hasDC = filtered.some(d => d.key === 'desarrollo_curricular' || d.departmentId === 'desarrollo_curricular');
+          if (!hasDC) {
+            filtered.push({
+              key: 'desarrollo_curricular',
+              departmentId: 'desarrollo_curricular',
+              name: 'Dirección de Desarrollo Curricular',
+              description: 'Rendimiento académico, tasas de aprobación, asignaturas críticas, prácticas y titulación.',
+            });
+          }
           setDepartments(filtered);
         } else {
           throw new Error('No se pudieron obtener los departamentos del servidor');
@@ -33,6 +43,14 @@ export const useCentralDashboards = () => {
       } catch (err) {
         console.error('Error fetching departments:', err);
         setError(err.message);
+        // Fallback seguro de departamentos para modo offline
+        setDepartments([
+          { key: 'admision', name: 'Dirección de Admisión y Registro Académico', description: 'Monitoreo de matrículas, retención y caracterización estudiantil.' },
+          { key: 'educacion_continua', name: 'Educación Continua', description: 'Capacitaciones, diplomados y cursos de formación continua.' },
+          { key: 'vinculacion_medio', name: 'Dirección de Vinculación con el Medio', description: 'Convenios, actividades y participación con el entorno.' },
+          { key: 'innovacion', name: 'Innovación e Investigación', description: 'Proyectos de innovación, financiamiento y desarrollo docente.' },
+          { key: 'desarrollo_curricular', name: 'Dirección de Desarrollo Curricular', description: 'Rendimiento académico, tasas de aprobación, asignaturas críticas, prácticas y titulación.' }
+        ]);
       } finally {
         setLoading(false);
       }
@@ -83,6 +101,8 @@ export const useCentralDashboards = () => {
       navigate('/dashboard-innovacion');
     } else if (id === 'admision') {
       navigate('/dashboard-admision');
+    } else if (id === 'desarrollo_curricular') {
+      navigate('/dashboard-desarrollo-curricular');
     } else {
       navigate('/dashboard-crud');
     }
