@@ -3,6 +3,7 @@ export { DashboardEducacionContinua } from './views/DashboardEducacionContinua';
 export { DashboardVcM } from './views/DashboardVcM';
 export { DashboardInnovacion } from './views/DashboardInnovacion';
 export { DashboardAdmision } from './views/DashboardAdmision';
+export { DashboardDesarrolloCurricular } from './views/DashboardDesarrolloCurricular';
 
 
 
