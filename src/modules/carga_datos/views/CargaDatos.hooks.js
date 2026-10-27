@@ -32,12 +32,22 @@ export const isAdmisionTemplate = (template) => {
   return name.includes('admisión') || name.includes('admision') || roleName === 'admisión' || roleName === 'admision';
 };
 
+export const isDesarrolloCurricularTemplate = (template) => {
+  const name = normalizeName(template?.name);
+  const roleName = normalizeName(template?.role?.name);
+  return name === 'desarrollo curricular' || roleName === 'desarrollo curricular';
+};
+
 export const canViewTemplate = (template, userOrRole) => {
   const userRole = typeof userOrRole === 'string' ? userOrRole : userOrRole?.role;
   const roleGroup = typeof userOrRole === 'object' ? userOrRole?.roleGroup : null;
 
   if (isAdmisionTemplate(template)) {
     return userRole === 'Admisión' || userRole === 'Rector' || roleGroup === 'Rectoria';
+  }
+
+  if (isDesarrolloCurricularTemplate(template)) {
+    return userRole === 'Desarrollo Curricular' || userRole === 'Rector' || roleGroup === 'Rectoria';
   }
 
   if (isVcmTemplate(template)) {
