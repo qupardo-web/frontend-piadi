@@ -181,6 +181,73 @@ export const THEMATIC_FILTER_PARAM_MAP = {
   'Tipo de proyecto': 'tipo',
 };
 
+// Diccionario estático de respaldo para mapear etiquetas de dimensiones con sus claves técnicas
+export const STATIC_DIMENSION_LABELS_MAP = {
+  'Año': 'year',
+  'Ano': 'year',
+  'year': 'year',
+  'Período': 'periodo',
+  'Periodo': 'periodo',
+  'periodo': 'periodo',
+  'Sexo': 'sexo',
+  'sexo': 'sexo',
+  'Rango Etario': 'rangoEtario',
+  'rangoEtario': 'rangoEtario',
+  'Edad': 'edad',
+  'edad': 'edad',
+  'Región': 'region',
+  'Region': 'region',
+  'region': 'region',
+  'Comuna': 'comuna',
+  'comuna': 'comuna',
+  'Tipo de Colegio': 'tipoColegio',
+  'Tipo de colegio': 'tipoColegio',
+  'tipoColegio': 'tipoColegio',
+  'Vía de Acceso': 'viaAcceso',
+  'Vía de acceso': 'viaAcceso',
+  'viaAcceso': 'viaAcceso',
+  'Nivel Socioeconómico': 'nivelSocioeconomico',
+  'Nivel socioeconómico': 'nivelSocioeconomico',
+  'Nivel socioeconómico (NSE)': 'nivelSocioeconomico',
+  'nivelSocioeconomico': 'nivelSocioeconomico',
+  'Situación Familiar': 'situacionFamiliar',
+  'Situación familiar': 'situacionFamiliar',
+  'situacionFamiliar': 'situacionFamiliar',
+  'Beneficios': 'beneficios',
+  'beneficios': 'beneficios',
+  'Asignatura': 'asignatura',
+  'asignatura': 'asignatura',
+  'Tipo de Programa': 'tipoPrograma',
+  'tipoPrograma': 'tipoPrograma',
+  'Modalidad': 'modalidad',
+  'modalidad': 'modalidad',
+  'Área Temática': 'areaTematica',
+  'areaTematica': 'areaTematica',
+  'Área Vinculada': 'areaVinculada',
+  'areaVinculada': 'areaVinculada',
+  'Sector': 'sector',
+  'sector': 'sector',
+  'Régimen': 'regimen',
+  'regimen': 'regimen',
+  'Estado': 'estado',
+  'estado': 'estado',
+  'Fuente de Financiamiento': 'fuenteFinanciamiento',
+  'fuenteFinanciamiento': 'fuenteFinanciamiento',
+};
+
+export const resolveDimensionKey = (label, dynamicMap = {}) => {
+  if (!label) return '';
+  return dynamicMap[label] || STATIC_DIMENSION_LABELS_MAP[label] || STATIC_DIMENSION_LABELS_MAP[label.trim()] || label;
+};
+
+export const resolveDimensionLabel = (dimKey, dynamicMap = {}) => {
+  if (!dimKey) return '';
+  const foundDynamic = Object.keys(dynamicMap).find((k) => dynamicMap[k] === dimKey);
+  if (foundDynamic) return foundDynamic;
+  const foundStatic = Object.keys(STATIC_DIMENSION_LABELS_MAP).find((k) => STATIC_DIMENSION_LABELS_MAP[k] === dimKey);
+  return foundStatic || dimKey;
+};
+
 // Función para formatear visualmente opciones en mayúsculas a formato título legible
 export const formatOptionLabel = (val) => {
   if (!val || typeof val !== 'string') return String(val ?? '');
@@ -530,8 +597,8 @@ export const useReportes = () => {
     maxStep: 1,
     nombre: '',
     desc: '',
-    area: 'Admisión',
-    tipo: 'PERSONALIZADO',
+    area: '',
+    tipo: '',
     inds: [],
     annoMin: '2023',
     annoMax: '2026',
@@ -697,13 +764,8 @@ export const useReportes = () => {
                   const labels = detail?.dimensionLabels || {};
                   defaultGroupBy = detail?.groupBy || detail?.defaultGroupBy || (k.key === 'matricula_por_asignatura' ? 'asignatura' : null);
 
-                  // Ocultar chip redundante de la dimensión por defecto si existe
-                  const visibleAllowed = defaultGroupBy
-                    ? allowed.filter((dim) => dim !== defaultGroupBy)
-                    : allowed;
-
-                  // Mapear cada dimensión permitida por el backend a su etiqueta legible
-                  desags = visibleAllowed.map((dim) => {
+                  // Mantener todas las dimensiones permitidas (incluyendo la base)
+                  desags = allowed.map((dim) => {
                     const label = labels[dim] || dim;
                     dynamicKeyMap[label] = dim;
                     return label;
@@ -755,8 +817,12 @@ export const useReportes = () => {
           const initialDesags = (prev.inds || [])
             .map((k) => {
               const itemInfo = getIndicatorInfo(k);
-              if (itemInfo?.defaultGroupBy) return null;
               const opts = dynamicDesags[k] || [];
+              if (itemInfo?.defaultGroupBy) {
+                // Preseleccionar la dimensión base
+                const baseLabel = resolveDimensionLabel(itemInfo.defaultGroupBy, dynamicKeyMap);
+                if (baseLabel) return `${k}|${baseLabel}`;
+              }
               return opts.length > 0 ? `${k}|${opts[0]}` : null;
             })
             .filter(Boolean);
@@ -910,7 +976,8 @@ export const useReportes = () => {
   const handleOpenNewBuilder = () => {
     const initialArea = isDepartmentRestricted && userDept
       ? userDept.name
-      : (user?.departmentId ? AREA_KEY_TO_NAME[user.departmentId] || 'Admisión' : 'Admisión');
+      : '';
+    const initialTipo = isRector ? '' : 'PERSONALIZADO';
 
     setBuilder({
       step: 1,
@@ -918,7 +985,7 @@ export const useReportes = () => {
       nombre: '',
       desc: '',
       area: initialArea,
-      tipo: 'PERSONALIZADO',
+      tipo: initialTipo,
       inds: [],
       annoMin: '2023',
       annoMax: '2026',
@@ -947,11 +1014,16 @@ export const useReportes = () => {
 
     const inds = [...(reportOrPredef.inds || reportOrPredef.indicadores || [])];
     let desags = reportOrPredef.desag ? [...reportOrPredef.desag] : [];
-    // Asegurar que cada indicador sin defaultGroupBy tenga al menos la primera opción preseleccionada
+    // Asegurar que cada indicador tenga al menos su dimensión base o primera opción preseleccionada
     inds.forEach((k) => {
       const itemInfo = getIndicatorInfo(k);
-      if (!itemInfo?.defaultGroupBy && !desags.some((d) => d.startsWith(`${k}|`))) {
-        const opts = getDesagsForIndicator(k);
+      const opts = getDesagsForIndicator(k);
+      if (itemInfo?.defaultGroupBy) {
+        const baseLabel = resolveDimensionLabel(itemInfo.defaultGroupBy, dimensionNameToKey);
+        if (baseLabel && !desags.some((d) => d === `${k}|${baseLabel}`)) {
+          desags.push(`${k}|${baseLabel}`);
+        }
+      } else if (!desags.some((d) => d.startsWith(`${k}|`))) {
         if (opts.length > 0) desags.push(`${k}|${opts[0]}`);
       }
     });
@@ -991,11 +1063,16 @@ export const useReportes = () => {
 
     const inds = [...(report.inds || report.indicadores || [])];
     let desags = report.desag ? [...report.desag] : [];
-    // Asegurar que cada indicador sin defaultGroupBy tenga al menos la primera opción preseleccionada
+    // Asegurar que cada indicador tenga al menos su dimensión base o primera opción preseleccionada
     inds.forEach((k) => {
       const itemInfo = getIndicatorInfo(k);
-      if (!itemInfo?.defaultGroupBy && !desags.some((d) => d.startsWith(`${k}|`))) {
-        const opts = getDesagsForIndicator(k);
+      const opts = getDesagsForIndicator(k);
+      if (itemInfo?.defaultGroupBy) {
+        const baseLabel = resolveDimensionLabel(itemInfo.defaultGroupBy, dimensionNameToKey);
+        if (baseLabel && !desags.some((d) => d === `${k}|${baseLabel}`)) {
+          desags.push(`${k}|${baseLabel}`);
+        }
+      } else if (!desags.some((d) => d.startsWith(`${k}|`))) {
         if (opts.length > 0) desags.push(`${k}|${opts[0]}`);
       }
     });
@@ -1092,10 +1169,86 @@ export const useReportes = () => {
     }
 
     const unit = rawDetail.unit ? ` ${rawDetail.unit}` : '';
-    const val = rawDetail.formattedTotal ? `${rawDetail.formattedTotal}${unit}` : `${rawDetail.total ?? 0}${unit}`;
+    let val = rawDetail.formattedTotal ? `${rawDetail.formattedTotal}${unit}` : `${rawDetail.total ?? 0}${unit}`;
+    let valSuffix = null;
     const desc = rawDetail.description || fallbackInfo?.desc || '';
 
-    // 1. Desglose Matricial Temporal por Categoría (ej: Asignatura x Años)
+    // Detectar si el indicador es categórico o su desglose principal es cualitativo (no temporal)
+    const isCategorical = Boolean(
+      (rawDetail.rowDimension && rawDetail.rowDimension !== 'year' && rawDetail.rowDimension !== 'periodo') ||
+      (rawDetail.groupBy && rawDetail.groupBy !== 'year' && rawDetail.groupBy !== 'periodo') ||
+      (fallbackInfo?.defaultGroupBy && fallbackInfo.defaultGroupBy !== 'year')
+    );
+
+    // 1. Matriz Bidimensional devuelta por el Backend (splitBy)
+    if (rawDetail.isBidimensional && Array.isArray(rawDetail.matrix)) {
+      const formatSexoIfMatch = (v) => {
+        if (!v) return v;
+        const str = String(v).trim().toUpperCase();
+        if (str === 'F') return 'Femenino';
+        if (str === 'M') return 'Masculino';
+        if (str === 'O') return 'Otros';
+        return v;
+      };
+
+      const rawColLabels = rawDetail.columnLabels || {};
+      const columns = Array.isArray(rawDetail.columns) ? rawDetail.columns : [];
+
+      // Mapear etiquetas de columna adaptando sexo ('F' -> 'Femenino', 'M' -> 'Masculino', 'O' -> 'Otros')
+      const colLabels = {};
+      columns.forEach((colKey) => {
+        colLabels[colKey] = formatSexoIfMatch(rawColLabels[colKey] || colKey);
+      });
+
+      const matrix = rawDetail.matrix.map((row) => ({
+        ...row,
+        row: formatSexoIfMatch(row.row),
+      }));
+
+      if (isCategorical && matrix.length > 0) {
+        let maxRowLabel = null;
+        let maxVal = -Infinity;
+        for (const row of matrix) {
+          const rowTotal = typeof row.total === 'number' ? row.total : Number(row.total) || 0;
+          if (rowTotal > maxVal) {
+            maxVal = rowTotal;
+            maxRowLabel = row.row;
+          }
+        }
+        if (maxRowLabel && maxVal > 0) {
+          val = maxRowLabel;
+          // Solo mostrar '(mayor concentración)' si existe más de una variable en el desglose
+          if (matrix.length > 1) {
+            valSuffix = '(mayor concentración)';
+          }
+        }
+      }
+
+      return {
+        val: formatSexoIfMatch(val),
+        valSuffix,
+        desc,
+        table: [],
+        chart: [],
+        labels: [],
+        disaggregated: true,
+        dimensionName: rawDetail.dimensionLabels?.[rawDetail.rowDimension] || rawDetail.dimensionLabels?.[rawDetail.groupBy] || rawDetail.rowDimension || rawDetail.groupBy,
+        isBidimensional: true,
+        bidimensionalData: {
+          rowDimension: rawDetail.rowDimension,
+          colDimension: rawDetail.colDimension,
+          columns,
+          columnLabels: colLabels,
+          matrix,
+          totals: rawDetail.totals || {},
+        },
+        isMatrix: false,
+        matrixYears: [],
+        matrixRows: [],
+      };
+    }
+
+    // 2. Desglose Matricial Temporal por Categoría (ej: Asignatura x Años fallback)
     // Solo se activa si el usuario seleccionó explícitamente el chip de Año junto con la dimensión temática
     let isMatrix = false;
     let matrixYears = [];
@@ -1136,11 +1289,40 @@ export const useReportes = () => {
     }
 
     // 2. Tabla Plana Convencional (fallback o indicadores no matriciales)
+    const formatSexoIfMatch = (v) => {
+      if (!v) return v;
+      const str = String(v).trim().toUpperCase();
+      if (str === 'F') return 'Femenino';
+      if (str === 'M') return 'Masculino';
+      if (str === 'O') return 'Otros';
+      return v;
+    };
+
     const tableRows = (rawDetail.table || rawDetail.series || []).map((row) => {
-      const label = String(row.label ?? row.year ?? row.category ?? row.periodo ?? 'Total');
+      let label = String(row.label ?? row.year ?? row.category ?? row.periodo ?? 'Total');
+      label = formatSexoIfMatch(label);
       const value = typeof row.value === 'number' ? row.value : Number(row.value) || 0;
       return [label, value];
     });
+
+    const nonTotalRows = tableRows.filter(([label]) => label !== 'Total');
+    if (isCategorical && nonTotalRows.length > 0) {
+      let maxRowLabel = null;
+      let maxVal = -Infinity;
+      for (const [label, value] of nonTotalRows) {
+        if (value > maxVal) {
+          maxVal = value;
+          maxRowLabel = label;
+        }
+      }
+      if (maxRowLabel && maxVal > 0) {
+        val = maxRowLabel;
+        // Solo mostrar '(mayor concentración)' si existe más de una categoría en la tabla
+        if (nonTotalRows.length > 1) {
+          valSuffix = '(mayor concentración)';
+        }
+      }
+    }
 
     const chart = tableRows.map(([, v]) => v);
     const labels = tableRows.map(([l]) => l);
@@ -1151,6 +1333,7 @@ export const useReportes = () => {
 
     return {
       val,
+      valSuffix,
       desc,
       table: tableRows,
       chart,
@@ -1220,7 +1403,7 @@ export const useReportes = () => {
             .filter((x) => x.startsWith(activePrefix))
             .map((x) => x.split('|')[1]);
 
-          const chosenDimKeys = chosenDesagLabels.map((l) => dimensionNameToKey[l] || l);
+          const chosenDimKeys = chosenDesagLabels.map((l) => resolveDimensionKey(l, dimensionNameToKey));
           const hasYearSelected = chosenDimKeys.some(
             (k) => k === 'year' || k?.toLowerCase() === 'año' || k?.toLowerCase() === 'ano'
           );
@@ -1232,7 +1415,31 @@ export const useReportes = () => {
           const indicatorDefaultDim = itemInfo.defaultGroupBy || (key === 'matricula_por_asignatura' ? 'asignatura' : null);
           const effectiveThematicDim = thematicGroupBy || indicatorDefaultDim || null;
 
-          let queryGroupBy = effectiveThematicDim || (hasYearSelected ? 'year' : undefined);
+          // Si el indicador tiene dimensión base:
+          // La dimensión base va en groupBy (filas)
+          // Cualquier otra dimensión seleccionada por el usuario (temporal o temática) va en splitBy (columnas)
+          let queryGroupBy = undefined;
+          let querySplitBy = undefined;
+
+          if (indicatorDefaultDim) {
+            queryGroupBy = indicatorDefaultDim;
+            // Buscar si hay otra dimensión seleccionada distinta de la dimensión base
+            const secondaryDimKey = chosenDimKeys.find((k) => k !== indicatorDefaultDim);
+            if (secondaryDimKey) {
+              querySplitBy = secondaryDimKey === 'año' || secondaryDimKey === 'ano' ? 'year' : secondaryDimKey;
+            }
+          } else {
+            // Indicador sin dimensión base fija
+            if (thematicGroupBy && hasYearSelected) {
+              queryGroupBy = thematicGroupBy;
+              querySplitBy = 'year';
+            } else if (chosenDimKeys.length >= 2) {
+              queryGroupBy = chosenDimKeys[0];
+              querySplitBy = chosenDimKeys[1] === 'año' || chosenDimKeys[1] === 'ano' ? 'year' : chosenDimKeys[1];
+            } else {
+              queryGroupBy = thematicGroupBy || (hasYearSelected ? 'year' : undefined);
+            }
+          }
 
           // Extraer filtros temáticos seleccionados
           const parsedSelectedFilters = {};
@@ -1256,6 +1463,7 @@ export const useReportes = () => {
             fromYear: baseFiltros.fromYear || report.annoMin || 2023,
             toYear: baseFiltros.toYear || report.annoMax || 2026,
             ...(queryGroupBy ? { groupBy: queryGroupBy } : {}),
+            ...(querySplitBy ? { splitBy: querySplitBy } : {}),
             ...parsedSelectedFilters,
           };
 
@@ -1382,6 +1590,9 @@ export const useReportes = () => {
       await fetchReportes();
 
       if (andGenerate && saved) {
+        if (!saved.filtrosSeleccionados || saved.filtrosSeleccionados.length === 0) {
+          saved.filtrosSeleccionados = builder.filtrosSeleccionados || [];
+        }
         if (saved.formato === 'excel' || saved.formato === 'xlsx') {
           setViewMode('lista');
           handleDownloadDoc(saved);
@@ -1410,6 +1621,58 @@ export const useReportes = () => {
 
   const handleBackToList = () => {
     setViewMode('lista');
+  };
+
+  const handleBackFromPreview = () => {
+    if (currentPreviewReport) {
+      const rep = currentPreviewReport;
+      const inds = [...(rep.inds || rep.indicadores || [])];
+      let desags = rep.desag ? [...rep.desag] : [];
+      inds.forEach((k) => {
+        const itemInfo = getIndicatorInfo(k);
+        const opts = getDesagsForIndicator(k);
+        if (itemInfo?.defaultGroupBy) {
+          const baseLabel = resolveDimensionLabel(itemInfo.defaultGroupBy, dimensionNameToKey);
+          if (baseLabel && !desags.some((d) => d === `${k}|${baseLabel}`)) {
+            desags.push(`${k}|${baseLabel}`);
+          }
+        } else if (!desags.some((d) => d.startsWith(`${k}|`))) {
+          if (opts.length > 0) desags.push(`${k}|${opts[0]}`);
+        }
+      });
+
+      const chosenArea = isDepartmentRestricted && userDept
+        ? userDept.name
+        : (rep.area || 'Admisión');
+
+      setBuilder({
+        step: 4,
+        maxStep: 4,
+        nombre: rep.name || rep.nombre || '',
+        desc: rep.desc || rep.descripcion || '',
+        area: chosenArea,
+        tipo: rep.tipo || 'PERSONALIZADO',
+        inds,
+        annoMin: rep.annoMin || (rep.filtros?.fromYear ? String(rep.filtros.fromYear) : '2023'),
+        annoMax: rep.annoMax || (rep.filtros?.toYear ? String(rep.filtros.toYear) : '2026'),
+        formato: rep.formato || (rep.filtros?.formato ? String(rep.filtros.formato).toLowerCase() : 'pdf'),
+        graficos: false,
+        tablas: rep.tablas !== undefined ? rep.tablas : true,
+        desag: desags,
+        filtrosSeleccionados: rep.filtrosSeleccionados
+          ? [...rep.filtrosSeleccionados]
+          : (rep.filtros?.filtrosSeleccionados ? [...rep.filtros.filtrosSeleccionados] : []),
+        editId: rep.id || null,
+      });
+      setViewMode('constructor');
+    } else {
+      setBuilder((prev) => ({
+        ...prev,
+        step: 4,
+        maxStep: 4,
+      }));
+      setViewMode('constructor');
+    }
   };
 
   return {
@@ -1480,6 +1743,7 @@ export const useReportes = () => {
     handleSaveBuilder,
     handleOpenHistorial,
     handleBackToList,
+    handleBackFromPreview,
     currentPreviewReport,
     previewDataByIndicator,
     isGenerating,
@@ -1501,6 +1765,7 @@ export const useReportes = () => {
     departmentFiltersMap,
     availableYears,
     getFiltersForArea,
+    dimensionNameToKey,
     areaName,
     formatDate,
   };
