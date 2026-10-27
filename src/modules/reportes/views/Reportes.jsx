@@ -70,6 +70,9 @@ import {
   useReportes,
   AREA_COLORS,
   formatOptionLabel,
+  resolveDimensionKey,
+  resolveDimensionLabel,
+  THEMATIC_FILTER_PARAM_MAP,
 } from './Reportes.hooks';
 import { styles } from './Reportes.styles';
 import logoEcas from '../../../assets/logo_ECAS.svg';
@@ -449,6 +452,7 @@ export const Reportes = () => {
     handleSaveBuilder,
     handleOpenHistorial,
     handleBackToList,
+    handleBackFromPreview,
     currentPreviewReport,
     previewDataByIndicator,
     isGenerating,
@@ -468,6 +472,7 @@ export const Reportes = () => {
     getDesagsForIndicator,
     getFiltersForArea,
     availableYears,
+    dimensionNameToKey,
     areaName,
     formatDate,
   } = useReportes();
@@ -1186,11 +1191,21 @@ export const Reportes = () => {
                       <Select
                         fullWidth
                         size="small"
-                        value={builder.area}
+                        displayEmpty
+                        value={builder.area || ''}
                         onChange={(e) => handleAreaChange(e.target.value)}
                         disabled={isDepartmentRestricted}
+                        renderValue={(selected) => {
+                          if (!selected) {
+                            return <span style={{ color: '#94A3B8' }}>Elija una opción</span>;
+                          }
+                          return selected;
+                        }}
                         sx={{ bgcolor: isDepartmentRestricted ? '#F8FAFC' : '#FFFFFF', borderRadius: '8px' }}
                       >
+                        <MenuItem value="" disabled sx={{ color: '#94A3B8' }}>
+                          Elija una opción
+                        </MenuItem>
                         {isDepartmentRestricted && userDept ? (
                           <MenuItem value={userDept.name}>{userDept.name}</MenuItem>
                         ) : [
@@ -1211,15 +1226,27 @@ export const Reportes = () => {
                     {isRector && (
                       <Box sx={{ mb: 2.5 }}>
                         <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, mb: 0.5, display: 'block' }}>
-                          Tipo de reporte
+                          Tipo de reporte *
                         </Typography>
                         <Select
                           fullWidth
                           size="small"
-                          value={builder.tipo || 'PERSONALIZADO'}
+                          displayEmpty
+                          value={builder.tipo || ''}
                           onChange={(e) => setBuilder({ ...builder, tipo: e.target.value })}
+                          renderValue={(selected) => {
+                            if (!selected) {
+                              return <span style={{ color: '#94A3B8' }}>Elija una opción</span>;
+                            }
+                            if (selected === 'PERSONALIZADO') return 'Reporte personalizado (Mis reportes)';
+                            if (selected === 'PREDEFINIDO') return 'Plantilla predefinida institucional (Visible para todos)';
+                            return selected;
+                          }}
                           sx={{ bgcolor: '#FFFFFF', borderRadius: '8px' }}
                         >
+                          <MenuItem value="" disabled sx={{ color: '#94A3B8' }}>
+                            Elija una opción
+                          </MenuItem>
                           <MenuItem value="PERSONALIZADO">Reporte personalizado (Mis reportes)</MenuItem>
                           <MenuItem value="PREDEFINIDO">Plantilla predefinida institucional (Visible para todos)</MenuItem>
                         </Select>
@@ -1326,7 +1353,17 @@ export const Reportes = () => {
                                       onChange={(e) => {
                                         const prefix = `${item.id}|`;
                                         if (e.target.checked) {
-                                          const defaultOption = item.defaultGroupBy ? [] : (desags.length > 0 ? [`${item.id}|${desags[0]}`] : []);
+                                          let defaultOption = [];
+                                          if (item.defaultGroupBy) {
+                                            const baseLabel = resolveDimensionLabel(item.defaultGroupBy, dimensionNameToKey);
+                                            if (baseLabel) {
+                                              defaultOption = [`${item.id}|${baseLabel}`];
+                                            } else if (desags.length > 0) {
+                                              defaultOption = [`${item.id}|${desags[0]}`];
+                                            }
+                                          } else if (desags.length > 0) {
+                                            defaultOption = [`${item.id}|${desags[0]}`];
+                                          }
                                           setBuilder({
                                             ...builder,
                                             inds: [...builder.inds, item.id],
@@ -1352,7 +1389,17 @@ export const Reportes = () => {
                                             desag: builder.desag.filter((x) => !x.startsWith(prefix)),
                                           });
                                         } else {
-                                          const defaultOption = item.defaultGroupBy ? [] : (desags.length > 0 ? [`${item.id}|${desags[0]}`] : []);
+                                          let defaultOption = [];
+                                          if (item.defaultGroupBy) {
+                                            const baseLabel = resolveDimensionLabel(item.defaultGroupBy, dimensionNameToKey);
+                                            if (baseLabel) {
+                                              defaultOption = [`${item.id}|${baseLabel}`];
+                                            } else if (desags.length > 0) {
+                                              defaultOption = [`${item.id}|${desags[0]}`];
+                                            }
+                                          } else if (desags.length > 0) {
+                                            defaultOption = [`${item.id}|${desags[0]}`];
+                                          }
                                           setBuilder({
                                             ...builder,
                                             inds: [...builder.inds, item.id],
@@ -1372,66 +1419,165 @@ export const Reportes = () => {
                                   </Box>
 
                                   {/* Chips de desagregación */}
-                                  {desags.length > 0 && (
-                                    <Box
-                                      sx={{
-                                        mt: 1.2,
-                                        ml: 3.8,
-                                        p: 1.2,
-                                        bgcolor: '#F8FAFC',
-                                        borderRadius: '8px',
-                                        border: '1px solid #EDF0F4',
-                                      }}
-                                    >
-                                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#64748B', display: 'block', mb: 0.8 }}>
-                                        Desagregar por:
-                                      </Typography>
-                                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                                        {desags.map((d) => {
-                                          const key = `${item.id}|${d}`;
-                                          const isSelected = builder.desag.includes(key);
+                                  {/* Chips de desagregación divididos en Temporal y Categoría */}
+                                  {desags.length > 0 && (() => {
+                                    const isTemporal = (name) => {
+                                      const norm = String(name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                                      return norm === 'ano' || norm === 'periodo';
+                                    };
 
-                                          return (
-                                            <Button
-                                              key={d}
-                                              size="small"
-                                              disabled={!isChecked}
-                                              onClick={() => {
-                                                const prefix = `${item.id}|`;
-                                                if (isSelected) {
-                                                  setBuilder({
-                                                    ...builder,
-                                                    desag: builder.desag.filter((x) => x !== key),
-                                                  });
-                                                } else {
-                                                  setBuilder({
-                                                      ...builder,
-                                                      desag: [...builder.desag, key],
-                                                    });
+                                    const temporalDesags = desags.filter(isTemporal);
+                                    const categoricDesags = desags.filter((d) => !isTemporal(d));
+
+                                    const renderChip = (d) => {
+                                      const key = `${item.id}|${d}`;
+                                      const dimKey = resolveDimensionKey(d, dimensionNameToKey);
+                                      const isBaseDim = Boolean(item.defaultGroupBy && dimKey === item.defaultGroupBy);
+                                      const isSelected = isChecked && (builder.desag.includes(key) || isBaseDim);
+
+                                      return (
+                                        <Button
+                                          key={d}
+                                          size="small"
+                                          disabled={!isChecked}
+                                          onClick={() => {
+                                            if (!isChecked || isBaseDim) return;
+                                            if (isSelected) {
+                                              setBuilder({
+                                                ...builder,
+                                                desag: builder.desag.filter((x) => x !== key),
+                                              });
+                                            } else {
+                                              // Regla de máximo 2 dimensiones (1 secundaria adicional):
+                                              // Si el indicador tiene dimensión base, solo puede haber 1 chip adicional
+                                              // Si el indicador no tiene dimensión base, puede tener hasta 2 chips
+                                              const prefix = `${item.id}|`;
+                                              const otherSelectedChipsOfThisItem = builder.desag.filter((x) => {
+                                                if (!x.startsWith(prefix) || x === key) return false;
+                                                const chipDim = x.split('|')[1];
+                                                const chipDimKey = resolveDimensionKey(chipDim, dimensionNameToKey);
+                                                return !(item.defaultGroupBy && chipDimKey === item.defaultGroupBy);
+                                              });
+
+                                              if (item.defaultGroupBy) {
+                                                // Reemplaza cualquier otro chip secundario para mantener Base + 1 elegida
+                                                const cleanedDesags = builder.desag.filter((x) => !otherSelectedChipsOfThisItem.includes(x));
+                                                setBuilder({
+                                                  ...builder,
+                                                  desag: [...cleanedDesags, key],
+                                                });
+                                              } else {
+                                                // Si no tiene dimensión base fija, permitir hasta 2 chips secundarios
+                                                let baseList = builder.desag;
+                                                if (otherSelectedChipsOfThisItem.length >= 2) {
+                                                  const chipToReplace = otherSelectedChipsOfThisItem[otherSelectedChipsOfThisItem.length - 1];
+                                                  baseList = baseList.filter((x) => x !== chipToReplace);
                                                 }
-                                              }}
+                                                setBuilder({
+                                                  ...builder,
+                                                  desag: [...baseList, key],
+                                                });
+                                              }
+                                            }
+                                          }}
+                                          sx={{
+                                            textTransform: 'none',
+                                            borderRadius: '999px',
+                                            px: 1.5,
+                                            py: 0.2,
+                                            fontSize: '11.5px',
+                                            fontWeight: 600,
+                                            bgcolor: isSelected
+                                              ? (isBaseDim ? '#94A3B8' : '#1E2875')
+                                              : '#FFFFFF',
+                                            color: isSelected
+                                              ? '#FFFFFF'
+                                              : '#334155',
+                                            border: `1px solid ${
+                                              isSelected
+                                                ? (isBaseDim ? '#94A3B8' : '#1E2875')
+                                                : '#CBD5E1'
+                                            }`,
+                                            cursor: isBaseDim ? 'default' : 'pointer',
+                                            userSelect: 'none',
+                                            '&:hover': {
+                                              bgcolor: isSelected
+                                                ? (isBaseDim ? '#94A3B8' : '#131a52')
+                                                : '#F1F5F9',
+                                            },
+                                          }}
+                                        >
+                                          {d}
+                                        </Button>
+                                      );
+                                    };
+
+                                    return (
+                                      <Box
+                                        sx={{
+                                          mt: 1.2,
+                                          ml: 3.8,
+                                          p: 1.4,
+                                          bgcolor: '#F8FAFC',
+                                          borderRadius: '8px',
+                                          border: '1px solid #EDF0F4',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: 1.2,
+                                        }}
+                                      >
+                                        {/* Grupo 1: Temporal */}
+                                        {temporalDesags.length > 0 && (
+                                          <Box>
+                                            <Typography
+                                              variant="caption"
                                               sx={{
-                                                textTransform: 'none',
-                                                borderRadius: '999px',
-                                                px: 1.5,
-                                                py: 0.2,
-                                                fontSize: '11.5px',
-                                                fontWeight: 600,
-                                                bgcolor: isSelected ? '#1E2875' : '#FFFFFF',
-                                                color: isSelected ? '#FFFFFF' : '#334155',
-                                                border: `1px solid ${isSelected ? '#1E2875' : '#CBD5E1'}`,
-                                                '&:hover': {
-                                                  bgcolor: isSelected ? '#131a52' : '#F1F5F9',
-                                                },
+                                                fontWeight: 700,
+                                                color: '#64748B',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 0.5,
+                                                mb: 0.8,
+                                                fontSize: '11px',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.04em',
                                               }}
                                             >
-                                              {d}
-                                            </Button>
-                                          );
-                                        })}
+                                              Temporal
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                                              {temporalDesags.map(renderChip)}
+                                            </Box>
+                                          </Box>
+                                        )}
+
+                                        {/* Grupo 2: Caracterización / Categorías */}
+                                        {categoricDesags.length > 0 && (
+                                          <Box>
+                                            <Typography
+                                              variant="caption"
+                                              sx={{
+                                                fontWeight: 700,
+                                                color: '#64748B',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 0.5,
+                                                mb: 0.8,
+                                                fontSize: '11px',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.04em',
+                                              }}
+                                            >
+                                              {temporalDesags.length > 0 ? 'Categoría / Caracterización' : 'Desagregar por'}
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                                              {categoricDesags.map(renderChip)}
+                                            </Box>
+                                          </Box>
+                                        )}
                                       </Box>
-                                    </Box>
-                                  )}
+                                    );
+                                  })()}
                                 </Box>
                               );
                             })}
@@ -1499,12 +1645,46 @@ export const Reportes = () => {
                     </Typography>
 
                     {(() => {
+                      // Determinar los parámetros de filtro temático que corresponden estrictamente a los indicadores seleccionados
+                      const activeFilterParamKeys = new Set();
+                      (builder.inds || []).forEach((indId) => {
+                        const info = getIndicatorInfo(indId);
+                        const baseDim = info?.defaultGroupBy || (indId === 'matricula_por_asignatura' ? 'asignatura' : null);
+                        if (baseDim) {
+                          activeFilterParamKeys.add(baseDim);
+                        }
+                        if (indId === 'nivel_socioeconomico') activeFilterParamKeys.add('nivelSocioeconomico');
+                        if (indId === 'tipo_colegio') activeFilterParamKeys.add('tipoColegio');
+                        if (indId === 'via_acceso') activeFilterParamKeys.add('viaAcceso');
+                        if (indId === 'situacion_familiar') activeFilterParamKeys.add('situacionFamiliar');
+                        if (indId === 'beneficios_becas' || indId === 'beneficios') activeFilterParamKeys.add('beneficios');
+                        if (indId === 'matricula_por_estado_academico' || indId === 'estado_academico') activeFilterParamKeys.add('estadoAcademico');
+                        if (indId.includes('estado')) activeFilterParamKeys.add('estado');
+                        if (indId.includes('fuente')) activeFilterParamKeys.add('fuenteFinanciamiento');
+                        if (indId.includes('modalidad')) activeFilterParamKeys.add('modalidad');
+                        if (indId.includes('sector')) activeFilterParamKeys.add('sector');
+                        if (indId.includes('regimen')) activeFilterParamKeys.add('regimen');
+                        if (indId.includes('area')) {
+                          activeFilterParamKeys.add('area');
+                          activeFilterParamKeys.add('areaVinculada');
+                        }
+                        if (indId.includes('tipo')) activeFilterParamKeys.add('tipo');
+                      });
+
                       const areasToRender = [builder.area];
 
                       const renderedAreas = areasToRender
                         .map((areaKey) => {
                           const cfg = getFiltersForArea(areaKey);
                           if (!cfg || !cfg.filtros || cfg.filtros.length === 0) return null;
+
+                          // Filtrar para mostrar únicamente el filtro temático respectivo al indicador elegido
+                          const visibleFiltros = cfg.filtros.filter(([filtroName]) => {
+                            const paramKey = THEMATIC_FILTER_PARAM_MAP[filtroName];
+                            return activeFilterParamKeys.has(paramKey);
+                          });
+
+                          if (visibleFiltros.length === 0) return null;
 
                           return (
                             <Box
@@ -1521,7 +1701,7 @@ export const Reportes = () => {
                                 {areaName(areaKey)}
                               </Typography>
 
-                              {cfg.filtros.map(([filtroName, options]) => (
+                              {visibleFiltros.map(([filtroName, options]) => (
                                 <Accordion
                                   key={filtroName}
                                   disableGutters
@@ -1601,7 +1781,7 @@ export const Reportes = () => {
                             }}
                           >
                             <Typography variant="body2" sx={{ color: '#64748B' }}>
-                              No hay filtros temáticos adicionales registrados en la base de datos para esta área.
+                              No hay filtros temáticos adicionales aplicables a los indicadores seleccionados.
                             </Typography>
                           </Box>
                         );
@@ -1695,30 +1875,52 @@ export const Reportes = () => {
                     </Button>
                   )}
 
-                  {builder.step < 4 ? (
-                    <Button
-                      variant="contained"
-                      onClick={() => {
-                        if (builder.step === 1 && !builder.nombre.trim()) {
-                          showToast('Ingresa un nombre para el reporte', 'warning');
-                          return;
-                        }
-                        if (builder.step === 2 && builder.inds.length === 0) {
-                          showToast('Selecciona al menos un indicador', 'warning');
-                          return;
-                        }
-                        const nextStep = builder.step + 1;
-                        setBuilder({
-                          ...builder,
-                          step: nextStep,
-                          maxStep: Math.max(builder.maxStep || 1, nextStep),
-                        });
-                      }}
-                      sx={{ bgcolor: '#1E2875', color: '#FFFFFF', textTransform: 'none', borderRadius: '8px' }}
-                    >
-                      Siguiente
-                    </Button>
-                  ) : (
+                  {builder.step < 4 ? (() => {
+                    const isNextDisabled = (() => {
+                      if (builder.step === 1) {
+                        if (!builder.nombre || !builder.nombre.trim()) return true;
+                        if (!builder.area || !builder.area.trim()) return true;
+                        if (isRector && (!builder.tipo || !builder.tipo.trim())) return true;
+                        return false;
+                      }
+                      if (builder.step === 2) {
+                        return builder.inds.length === 0;
+                      }
+                      if (builder.step === 3) {
+                        if (!builder.annoMin || !builder.annoMax) return true;
+                        if (Number(builder.annoMin) > Number(builder.annoMax)) return true;
+                        return false;
+                      }
+                      return false;
+                    })();
+
+                    return (
+                      <Button
+                        variant="contained"
+                        disabled={isNextDisabled}
+                        onClick={() => {
+                          const nextStep = builder.step + 1;
+                          setBuilder({
+                            ...builder,
+                            step: nextStep,
+                            maxStep: Math.max(builder.maxStep || 1, nextStep),
+                          });
+                        }}
+                        sx={{
+                          bgcolor: '#1E2875',
+                          color: '#FFFFFF',
+                          textTransform: 'none',
+                          borderRadius: '8px',
+                          '&.Mui-disabled': {
+                            bgcolor: '#E2E8F0',
+                            color: '#94A3B8',
+                          },
+                        }}
+                      >
+                        Siguiente
+                      </Button>
+                    );
+                  })() : (
                     <>
                       <Button
                         variant="outlined"
@@ -1806,6 +2008,64 @@ export const Reportes = () => {
 
                   <Divider sx={{ my: 2 }} />
 
+                  {builder.filtrosSeleccionados && builder.filtrosSeleccionados.length > 0 && (() => {
+                    const groupedFilters = {};
+                    builder.filtrosSeleccionados.forEach((item) => {
+                      const parts = item.split('|');
+                      if (parts.length >= 3) {
+                        const [areaKey, filtroName, opt] = parts;
+                        if (!groupedFilters[filtroName]) {
+                          groupedFilters[filtroName] = {
+                            area: areaName(areaKey),
+                            opts: [],
+                          };
+                        }
+                        groupedFilters[filtroName].opts.push(formatOptionLabel(opt));
+                      }
+                    });
+
+                    return (
+                      <>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, display: 'block', mb: 1 }}>
+                          Filtros temáticos aplicados:
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 180, overflowY: 'auto', mb: 2 }}>
+                          {Object.entries(groupedFilters).map(([filtroName, data]) => (
+                            <Box key={filtroName} sx={{ p: 1, bgcolor: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#1E2875' }}>
+                                  {filtroName}
+                                </Typography>
+                                <Typography sx={{ fontSize: '10.5px', fontWeight: 600, color: '#64748B' }}>
+                                  {data.area}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {data.opts.map((opt) => (
+                                  <Box
+                                    key={opt}
+                                    sx={{
+                                      px: 1,
+                                      py: 0.2,
+                                      bgcolor: 'rgba(30, 40, 117, 0.08)',
+                                      borderRadius: '999px',
+                                      fontSize: '11px',
+                                      fontWeight: 600,
+                                      color: '#1E2875',
+                                    }}
+                                  >
+                                    {opt}
+                                  </Box>
+                                ))}
+                              </Box>
+                            </Box>
+                          ))}
+                        </Box>
+                        <Divider sx={{ my: 2 }} />
+                      </>
+                    );
+                  })()}
+
                   <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, display: 'block', mb: 1 }}>
                     Indicadores incluidos:
                   </Typography>
@@ -1868,7 +2128,7 @@ export const Reportes = () => {
                     <Button
                       variant="outlined"
                       startIcon={<BackIcon />}
-                      onClick={handleBackToList}
+                      onClick={handleBackFromPreview}
                       sx={{ color: '#1E2875', borderColor: '#CBD5E1', borderRadius: '8px', textTransform: 'none' }}
                     >
                       Volver
@@ -1958,6 +2218,67 @@ export const Reportes = () => {
                     <span><strong>Generado el:</strong> {new Date().toLocaleDateString('es-CL')}</span>
                   </Box>
 
+                  {/* Filtros temáticos involucrados en el reporte */}
+                  {(() => {
+                    const sel = currentPreviewReport?.filtrosSeleccionados || currentPreviewReport?.filtros?.filtrosSeleccionados || [];
+                    if (!sel || sel.length === 0) return null;
+
+                    const groupedFilters = {};
+                    sel.forEach((item) => {
+                      const parts = item.split('|');
+                      if (parts.length >= 3) {
+                        const [areaKey, filtroName, opt] = parts;
+                        if (!groupedFilters[filtroName]) {
+                          groupedFilters[filtroName] = {
+                            area: areaName(areaKey),
+                            opts: [],
+                          };
+                        }
+                        groupedFilters[filtroName].opts.push(formatOptionLabel(opt));
+                      }
+                    });
+
+                    const entries = Object.entries(groupedFilters);
+                    if (entries.length === 0) return null;
+
+                    return (
+                      <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0', mb: 3.5 }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: '12.5px', color: '#1E2875', mb: 1, display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                          <FilterIcon sx={{ fontSize: 16, color: '#1E2875' }} />
+                          Filtros temáticos aplicados:
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {entries.map(([filtroName, data]) => (
+                            <Box
+                              key={filtroName}
+                              sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 0.75,
+                                fontSize: '12px',
+                                bgcolor: '#FFFFFF',
+                                px: 1.25,
+                                py: 0.5,
+                                borderRadius: '6px',
+                                border: '1px solid #CBD5E1',
+                              }}
+                            >
+                              <Typography component="span" sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875' }}>
+                                {filtroName}:
+                              </Typography>
+                              <Typography component="span" sx={{ fontWeight: 600, fontSize: '12px', color: '#0F172A' }}>
+                                {data.opts.join(', ')}
+                              </Typography>
+                              <Typography component="span" sx={{ fontSize: '11px', color: '#64748B', ml: 0.25 }}>
+                                ({data.area})
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    );
+                  })()}
+
                   {/* Tabla de Contenidos (Índice) */}
                   <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0', mb: 3.5 }}>
                     <Typography sx={{ fontWeight: 700, fontSize: '13px', color: '#1E2875', mb: 1 }}>
@@ -1996,10 +2317,15 @@ export const Reportes = () => {
                         </Typography>
 
                         {/* Valor Destacado */}
-                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 1.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 1.5, flexWrap: 'wrap' }}>
                           <Typography sx={{ fontSize: '26px', fontWeight: 800, color: '#1E2875' }}>
                             {indicatorData.val}
                           </Typography>
+                          {indicatorData.valSuffix && (
+                            <Typography sx={{ fontSize: '15px', fontWeight: 600, color: '#64748B' }}>
+                              {indicatorData.valSuffix}
+                            </Typography>
+                          )}
                           <Typography sx={{ fontSize: '12.5px', color: '#64748B' }}>
                             (cierre {currentPreviewReport?.annoMax || '2026'})
                           </Typography>
@@ -2010,7 +2336,66 @@ export const Reportes = () => {
                         </Typography>
 
                         {/* Tabla de Datos */}
-                        {indicatorData.isMatrix && indicatorData.matrixRows.length > 0 ? (
+                        {indicatorData.isBidimensional && indicatorData.bidimensionalData ? (
+                          <TableContainer sx={{ border: '1px solid #E2E8F0', borderRadius: '6px', overflow: 'hidden' }}>
+                            <Table size="small">
+                              <TableHead sx={{ bgcolor: '#F1F5F9' }}>
+                                <TableRow>
+                                  <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875', py: 1 }}>
+                                    {indicatorData.dimensionName ? `Desglose (${indicatorData.dimensionName})` : 'Desglose'}
+                                  </TableCell>
+                                  {(indicatorData.bidimensionalData.columns || []).map((colKey) => {
+                                    const rawColTitle = indicatorData.bidimensionalData.columnLabels?.[colKey] || colKey;
+                                    const colUpper = String(rawColTitle).trim().toUpperCase();
+                                    const colTitle = colUpper === 'F' ? 'Femenino' : colUpper === 'M' ? 'Masculino' : colUpper === 'O' ? 'Otros' : rawColTitle;
+                                    return (
+                                      <TableCell key={colKey} align="right" sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875', py: 1 }}>
+                                        {colTitle}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {(indicatorData.bidimensionalData.matrix || []).map((row, rIdx) => {
+                                  const rowUpper = String(row.row).trim().toUpperCase();
+                                  const rowLabel = rowUpper === 'F' ? 'Femenino' : rowUpper === 'M' ? 'Masculino' : rowUpper === 'O' ? 'Otros' : row.row;
+                                  return (
+                                    <TableRow key={rIdx} sx={{ '&:nth-of-type(even)': { bgcolor: '#F8FAFC' } }}>
+                                      <TableCell sx={{ fontSize: '12.5px', fontWeight: 500, color: '#1E293B', py: 0.8 }}>
+                                        {rowLabel}
+                                      </TableCell>
+                                      {(indicatorData.bidimensionalData.columns || []).map((colKey) => {
+                                        const cellVal = row.values?.[colKey];
+                                        return (
+                                          <TableCell key={colKey} align="right" sx={{ fontSize: '12.5px', fontWeight: 600, py: 0.8 }}>
+                                            {cellVal != null ? cellVal.toLocaleString('es-CL') : '—'}
+                                          </TableCell>
+                                        );
+                                      })}
+                                    </TableRow>
+                                  );
+                                })}
+                                {/* Fila de Totales Marginales */}
+                                {indicatorData.bidimensionalData.totals && (
+                                  <TableRow sx={{ bgcolor: '#F1F5F9', borderTop: '2px solid #CBD5E1' }}>
+                                    <TableCell sx={{ fontSize: '12.5px', fontWeight: 800, color: '#1E2875', py: 1 }}>
+                                      Total
+                                    </TableCell>
+                                    {(indicatorData.bidimensionalData.columns || []).map((colKey) => {
+                                      const colTotal = indicatorData.bidimensionalData.totals.columns?.[colKey] ?? indicatorData.bidimensionalData.totals[colKey];
+                                      return (
+                                        <TableCell key={colKey} align="right" sx={{ fontSize: '12.5px', fontWeight: 800, py: 1, color: '#1E2875' }}>
+                                          {colTotal != null ? colTotal.toLocaleString('es-CL') : '—'}
+                                        </TableCell>
+                                      );
+                                    })}
+                                  </TableRow>
+                                )}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        ) : indicatorData.isMatrix && indicatorData.matrixRows.length > 0 ? (
                           <TableContainer sx={{ border: '1px solid #E2E8F0', borderRadius: '6px', overflow: 'hidden' }}>
                             <Table size="small">
                               <TableHead sx={{ bgcolor: '#F1F5F9' }}>
@@ -2026,18 +2411,22 @@ export const Reportes = () => {
                                 </TableRow>
                               </TableHead>
                               <TableBody>
-                                {indicatorData.matrixRows.map((row, rIdx) => (
-                                  <TableRow key={rIdx} sx={{ '&:nth-of-type(even)': { bgcolor: '#F8FAFC' } }}>
-                                    <TableCell sx={{ fontSize: '12.5px', fontWeight: 500, color: '#1E293B', py: 0.8 }}>
-                                      {row.label}
-                                    </TableCell>
-                                    {row.values.map((v, vIdx) => (
-                                      <TableCell key={vIdx} align="right" sx={{ fontSize: '12.5px', fontWeight: 600, py: 0.8 }}>
-                                        {v.toLocaleString('es-CL')}
+                                {indicatorData.matrixRows.map((row, rIdx) => {
+                                  const matrixUpper = String(row.label).trim().toUpperCase();
+                                  const matrixLabel = matrixUpper === 'F' ? 'Femenino' : matrixUpper === 'M' ? 'Masculino' : matrixUpper === 'O' ? 'Otros' : row.label;
+                                  return (
+                                    <TableRow key={rIdx} sx={{ '&:nth-of-type(even)': { bgcolor: '#F8FAFC' } }}>
+                                      <TableCell sx={{ fontSize: '12.5px', fontWeight: 500, color: '#1E293B', py: 0.8 }}>
+                                        {matrixLabel}
                                       </TableCell>
-                                    ))}
-                                  </TableRow>
-                                ))}
+                                      {row.values.map((v, vIdx) => (
+                                        <TableCell key={vIdx} align="right" sx={{ fontSize: '12.5px', fontWeight: 600, py: 0.8 }}>
+                                          {v.toLocaleString('es-CL')}
+                                        </TableCell>
+                                      ))}
+                                    </TableRow>
+                                  );
+                                })}
                               </TableBody>
                             </Table>
                           </TableContainer>
@@ -2055,14 +2444,18 @@ export const Reportes = () => {
                                 </TableRow>
                               </TableHead>
                               <TableBody>
-                                {indicatorData.table.map(([label, val], rIdx) => (
-                                  <TableRow key={rIdx} sx={{ '&:nth-of-type(even)': { bgcolor: '#F8FAFC' } }}>
-                                    <TableCell sx={{ fontSize: '12.5px', py: 0.8 }}>{label}</TableCell>
-                                    <TableCell align="right" sx={{ fontSize: '12.5px', fontWeight: 600, py: 0.8 }}>
-                                      {val.toLocaleString('es-CL')}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
+                                {indicatorData.table.map(([label, val], rIdx) => {
+                                  const labelUpper = String(label).trim().toUpperCase();
+                                  const tableLabel = labelUpper === 'F' ? 'Femenino' : labelUpper === 'M' ? 'Masculino' : labelUpper === 'O' ? 'Otros' : label;
+                                  return (
+                                    <TableRow key={rIdx} sx={{ '&:nth-of-type(even)': { bgcolor: '#F8FAFC' } }}>
+                                      <TableCell sx={{ fontSize: '12.5px', py: 0.8 }}>{tableLabel}</TableCell>
+                                      <TableCell align="right" sx={{ fontSize: '12.5px', fontWeight: 600, py: 0.8 }}>
+                                        {val.toLocaleString('es-CL')}
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
                               </TableBody>
                             </Table>
                           </TableContainer>
