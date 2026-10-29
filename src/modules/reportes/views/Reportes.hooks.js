@@ -163,12 +163,25 @@ export const BACKEND_FILTER_CONFIGS = {
 // Mapeo inverso de nombre de filtro visual a clave de parámetro aceptada por el backend
 export const THEMATIC_FILTER_PARAM_MAP = {
   'Tipo de colegio': 'tipoColegio',
+  'Tipo de Colegio': 'tipoColegio',
+  'tipoColegio': 'tipoColegio',
   'Vía de acceso': 'viaAcceso',
+  'Vía de Acceso': 'viaAcceso',
+  'viaAcceso': 'viaAcceso',
   'Nivel socioeconómico (NSE)': 'nivelSocioeconomico',
+  'Nivel socioeconómico': 'nivelSocioeconomico',
+  'Nivel Socioeconómico': 'nivelSocioeconomico',
   'NSE': 'nivelSocioeconomico',
+  'nivelSocioeconomico': 'nivelSocioeconomico',
   'Situación familiar': 'situacionFamiliar',
+  'Situación Familiar': 'situacionFamiliar',
+  'situacionFamiliar': 'situacionFamiliar',
   'Beneficios y becas': 'beneficios',
+  'Beneficios': 'beneficios',
+  'beneficios': 'beneficios',
   'Estado académico': 'estadoAcademico',
+  'Estado Académico': 'estadoAcademico',
+  'estadoAcademico': 'estadoAcademico',
   'Estado asignatura': 'estado',
   'Estado proyecto': 'estado',
   'Fuente de financiamiento': 'fuenteFinanciamiento',
@@ -176,9 +189,13 @@ export const THEMATIC_FILTER_PARAM_MAP = {
   'Sector contraparte': 'sector',
   'Régimen': 'regimen',
   'Área temática': 'area',
+  'area': 'area',
   'Área vinculada': 'areaVinculada',
+  'Área Vinculada': 'areaVinculada',
+  'areaVinculada': 'areaVinculada',
   'Tipo de programa': 'tipo',
   'Tipo de proyecto': 'tipo',
+  'tipo': 'tipo',
 };
 
 // Diccionario estático de respaldo para mapear etiquetas de dimensiones con sus claves técnicas
@@ -564,15 +581,26 @@ export const useReportes = () => {
 
   const getDesagsForIndicator = useCallback((key) => {
     if (!key) return [];
-    if (desagregacionesMap[key]?.length) return desagregacionesMap[key];
-    const normKey = key.replace(/-/g, '_');
-    if (desagregacionesMap[normKey]?.length) return desagregacionesMap[normKey];
-    for (const group of catalogo) {
-      const found = group.items?.find((i) => i.id === key || i.id === normKey);
-      if (found?.desags?.length) return found.desags;
+    let list = [];
+    if (desagregacionesMap[key]?.length) list = desagregacionesMap[key];
+    else {
+      const normKey = key.replace(/-/g, '_');
+      if (desagregacionesMap[normKey]?.length) list = desagregacionesMap[normKey];
+      else {
+        for (const group of catalogo) {
+          const found = group.items?.find((i) => i.id === key || i.id === normKey);
+          if (found?.desags?.length) {
+            list = found.desags;
+            break;
+          }
+        }
+      }
     }
-    return [];
-  }, [desagregacionesMap, catalogo]);
+    return list.filter((x) => {
+      const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return n !== 'edad' && dimensionNameToKey[x] !== 'edad';
+    });
+  }, [desagregacionesMap, catalogo, dimensionNameToKey]);
 
   // Kebab menu state
   const [kebabAnchorEl, setKebabAnchorEl] = useState(null);
@@ -620,11 +648,15 @@ export const useReportes = () => {
   const [progressValue, setProgressValue] = useState(0);
   const [progressText, setProgressText] = useState('Preparando indicadores…');
 
+  // Tabs principales: 'mis' | 'predefinidos' | 'historial'
+  const [mainTab, setMainTab] = useState('mis');
+
   // Historial view state
   const [histReporteFilter, setHistReporteFilter] = useState('todos');
   const [histFechaFilter, setHistFechaFilter] = useState('');
+  const [histEstadoFilter, setHistEstadoFilter] = useState('todos');
   const [histPage, setHistPage] = useState(1);
-  const HIST_PER_PAGE = 5;
+  const HIST_PER_PAGE = 8;
 
   const showToast = useCallback((message, severity = 'success') => {
     setToastMessage(message);
@@ -633,7 +665,7 @@ export const useReportes = () => {
   }, []);
 
   const areaName = useCallback((a) => {
-    if (!a) return 'Institucional';
+    if (!a) return '—';
     if (AREA_KEY_TO_NAME[a]) return AREA_KEY_TO_NAME[a];
     if (a === 'Vinculación') return 'Vinculación con el Medio';
     if (a === 'institucional') return 'Institucional';
@@ -764,12 +796,14 @@ export const useReportes = () => {
                   const labels = detail?.dimensionLabels || {};
                   defaultGroupBy = detail?.groupBy || detail?.defaultGroupBy || (k.key === 'matricula_por_asignatura' ? 'asignatura' : null);
 
-                  // Mantener todas las dimensiones permitidas (incluyendo la base)
-                  desags = allowed.map((dim) => {
-                    const label = labels[dim] || dim;
-                    dynamicKeyMap[label] = dim;
-                    return label;
-                  });
+                  // Mantener todas las dimensiones permitidas (incluyendo la base), excluyendo 'edad' (se prioriza 'rangoEtario')
+                  desags = allowed
+                    .filter((dim) => dim !== 'edad')
+                    .map((dim) => {
+                      const label = labels[dim] || dim;
+                      dynamicKeyMap[label] = dim;
+                      return label;
+                    });
 
                   if (defaultGroupBy && labels[defaultGroupBy]) {
                     dynamicKeyMap[labels[defaultGroupBy]] = defaultGroupBy;
@@ -814,19 +848,29 @@ export const useReportes = () => {
         // Preseleccionar en el builder las primeras desagregaciones devueltas por el backend
         setBuilder((prev) => {
           if (prev.desag.length > 0) return prev;
-          const initialDesags = (prev.inds || [])
-            .map((k) => {
-              const itemInfo = getIndicatorInfo(k);
-              const opts = dynamicDesags[k] || [];
-              if (itemInfo?.defaultGroupBy) {
-                // Preseleccionar la dimensión base
-                const baseLabel = resolveDimensionLabel(itemInfo.defaultGroupBy, dynamicKeyMap);
-                if (baseLabel) return `${k}|${baseLabel}`;
-              }
-              return opts.length > 0 ? `${k}|${opts[0]}` : null;
-            })
-            .filter(Boolean);
-          return { ...prev, desag: initialDesags };
+          const initialDesags = [];
+          (prev.inds || []).forEach((k) => {
+            const itemInfo = getIndicatorInfo(k);
+            const opts = dynamicDesags[k] || [];
+            const anoOpt = opts.find((x) => {
+              const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              return n === 'ano' || dynamicKeyMap[x] === 'year';
+            });
+            if (anoOpt) {
+              initialDesags.push(`${k}|${anoOpt}`);
+            }
+            if (itemInfo?.defaultGroupBy) {
+              const baseLabel = resolveDimensionLabel(itemInfo.defaultGroupBy, dynamicKeyMap);
+              if (baseLabel) initialDesags.push(`${k}|${baseLabel}`);
+            } else {
+              const firstCat = opts.find((x) => {
+                const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                return n !== 'ano' && n !== 'periodo' && dynamicKeyMap[x] !== 'year' && dynamicKeyMap[x] !== 'periodo';
+              });
+              if (firstCat) initialDesags.push(`${k}|${firstCat}`);
+            }
+          });
+          return { ...prev, desag: Array.from(new Set(initialDesags)) };
         });
       }
     } catch (err) {
@@ -904,7 +948,7 @@ export const useReportes = () => {
   const filteredPredefinidos = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return predefinidosList.filter((p) => {
-      if (isDepartmentRestricted && userDept && !isReportFromUserDept(p, userDept)) return false;
+      if (isDepartmentRestricted && userDept && !isReportFromUserDept(p, userDept) && p.areaKey !== 'institucional' && p.area !== 'Institucional') return false;
       if (filtroDepartamento !== 'todas' && p.area !== filtroDepartamento && p.areaKey !== filtroDepartamento) return false;
       if (q && !p.name.toLowerCase().includes(q)) return false;
       if (filtroFormato !== 'todos' && p.formato !== filtroFormato) return false;
@@ -912,65 +956,40 @@ export const useReportes = () => {
     });
   }, [predefinidosList, searchQuery, filtroDepartamento, filtroFormato, isDepartmentRestricted, userDept, isReportFromUserDept]);
 
-  // Carga de historial cuando se abre la vista o cambia de reporte
-  const loadHistorial = useCallback(async (reportId = 'todos') => {
-    try {
-      if (reportId !== 'todos') {
-        const res = await getReporteEjecuciones(reportId);
-        const ejecs = res?.data || [];
-        const reportTarget = allReportes.find((r) => String(r.id) === String(reportId));
-        setHistorialList(
-          ejecs.map((e) => ({
-            id: `ej-${e.id}`,
-            reporteId: reportId,
-            reporteName: reportTarget?.name || `Reporte #${reportId}`,
-            usuario: user?.name || user?.username || 'Usuario',
-            fecha: e.generadoEn ? e.generadoEn.slice(0, 10) : '',
-            formato: e.formato || 'XLSX',
-            estado: e.estado === 'LISTO' ? 'ok' : e.estado === 'FALLIDO' ? 'error' : 'pending',
-          }))
-        );
-      } else {
-        // Cargar ejecuciones combinadas de los reportes existentes
-        const promesas = allReportes.slice(0, 5).map(async (r) => {
-          try {
-            const res = await getReporteEjecuciones(r.id);
-            return (res?.data || []).map((e) => ({
-              id: `ej-${e.id}`,
-              reporteId: r.id,
-              reporteName: r.name,
-              usuario: user?.name || user?.username || 'Usuario',
-              fecha: e.generadoEn ? e.generadoEn.slice(0, 10) : '',
-              formato: e.formato || 'XLSX',
-              estado: e.estado === 'LISTO' ? 'ok' : e.estado === 'FALLIDO' ? 'error' : 'pending',
-            }));
-          } catch {
-            return [];
-          }
-        });
-        const resultados = await Promise.all(promesas);
-        setHistorialList(resultados.flat());
-      }
-    } catch (err) {
-      console.error('Error al cargar historial:', err);
-    }
-  }, [allReportes, user]);
+  // Carga de historial general o por reporte
+  const loadHistorial = useCallback(async () => {
+    // Listo para conectar cuando el endpoint global de historial esté disponible en backend
+    setHistorialList([]);
+  }, []);
+
+  // Re-descarga directa de una ejecución persistida en el servidor
+  const handleDescargarEjecucion = useCallback(async () => {
+    showToast('La descarga desde el historial estará disponible próximamente.', 'info');
+  }, [showToast]);
 
   // Historial filtrado & paginado
   const filteredHistorial = useMemo(() => {
     return historialList.filter((h) => {
       if (histReporteFilter !== 'todos' && String(h.reporteId) !== String(histReporteFilter)) return false;
       if (histFechaFilter && h.fecha !== histFechaFilter) return false;
+      if (histEstadoFilter !== 'todos' && h.estadoRaw !== histEstadoFilter && h.estado !== histEstadoFilter) return false;
       return true;
     });
-  }, [historialList, histReporteFilter, histFechaFilter]);
+  }, [historialList, histReporteFilter, histFechaFilter, histEstadoFilter]);
 
   const paginatedHistorial = useMemo(() => {
     const start = (histPage - 1) * HIST_PER_PAGE;
     return filteredHistorial.slice(start, start + HIST_PER_PAGE);
-  }, [filteredHistorial, histPage]);
+  }, [filteredHistorial, histPage, HIST_PER_PAGE]);
 
   const totalHistPages = Math.max(1, Math.ceil(filteredHistorial.length / HIST_PER_PAGE));
+
+  // Cargar historial automáticamente cuando se abre la pestaña de Historial
+  useEffect(() => {
+    if (mainTab === 'historial') {
+      loadHistorial();
+    }
+  }, [mainTab, loadHistorial]);
 
   // Builder actions
   const handleOpenNewBuilder = () => {
@@ -1014,17 +1033,37 @@ export const useReportes = () => {
 
     const inds = [...(reportOrPredef.inds || reportOrPredef.indicadores || [])];
     let desags = reportOrPredef.desag ? [...reportOrPredef.desag] : [];
-    // Asegurar que cada indicador tenga al menos su dimensión base o primera opción preseleccionada
+    // Asegurar que cada indicador tenga su dimensión base (si aplica) y Año preseleccionados
     inds.forEach((k) => {
       const itemInfo = getIndicatorInfo(k);
       const opts = getDesagsForIndicator(k);
+      const anoOpt = opts.find((x) => {
+        const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return n === 'ano' || dimensionNameToKey[x] === 'year';
+      });
       if (itemInfo?.defaultGroupBy) {
         const baseLabel = resolveDimensionLabel(itemInfo.defaultGroupBy, dimensionNameToKey);
         if (baseLabel && !desags.some((d) => d === `${k}|${baseLabel}`)) {
           desags.push(`${k}|${baseLabel}`);
         }
-      } else if (!desags.some((d) => d.startsWith(`${k}|`))) {
-        if (opts.length > 0) desags.push(`${k}|${opts[0]}`);
+      }
+      if (anoOpt && !desags.some((d) => d === `${k}|${anoOpt}`)) {
+        desags.push(`${k}|${anoOpt}`);
+      }
+      if (!itemInfo?.defaultGroupBy) {
+        const hasCat = desags.some((d) => {
+          if (!d.startsWith(`${k}|`)) return false;
+          const dim = d.split('|')[1];
+          const n = String(dim || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return n !== 'ano' && n !== 'periodo' && dimensionNameToKey[dim] !== 'year' && dimensionNameToKey[dim] !== 'periodo';
+        });
+        if (!hasCat) {
+          const firstCat = opts.find((x) => {
+            const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            return n !== 'ano' && n !== 'periodo' && dimensionNameToKey[x] !== 'year' && dimensionNameToKey[x] !== 'periodo';
+          });
+          if (firstCat) desags.push(`${k}|${firstCat}`);
+        }
       }
     });
 
@@ -1063,17 +1102,37 @@ export const useReportes = () => {
 
     const inds = [...(report.inds || report.indicadores || [])];
     let desags = report.desag ? [...report.desag] : [];
-    // Asegurar que cada indicador tenga al menos su dimensión base o primera opción preseleccionada
+    // Asegurar que cada indicador tenga su dimensión base (si aplica) y Año preseleccionados
     inds.forEach((k) => {
       const itemInfo = getIndicatorInfo(k);
       const opts = getDesagsForIndicator(k);
+      const anoOpt = opts.find((x) => {
+        const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return n === 'ano' || dimensionNameToKey[x] === 'year';
+      });
       if (itemInfo?.defaultGroupBy) {
         const baseLabel = resolveDimensionLabel(itemInfo.defaultGroupBy, dimensionNameToKey);
         if (baseLabel && !desags.some((d) => d === `${k}|${baseLabel}`)) {
           desags.push(`${k}|${baseLabel}`);
         }
-      } else if (!desags.some((d) => d.startsWith(`${k}|`))) {
-        if (opts.length > 0) desags.push(`${k}|${opts[0]}`);
+      }
+      if (anoOpt && !desags.some((d) => d === `${k}|${anoOpt}`)) {
+        desags.push(`${k}|${anoOpt}`);
+      }
+      if (!itemInfo?.defaultGroupBy) {
+        const hasCat = desags.some((d) => {
+          if (!d.startsWith(`${k}|`)) return false;
+          const dim = d.split('|')[1];
+          const n = String(dim || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return n !== 'ano' && n !== 'periodo' && dimensionNameToKey[dim] !== 'year' && dimensionNameToKey[dim] !== 'periodo';
+        });
+        if (!hasCat) {
+          const firstCat = opts.find((x) => {
+            const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            return n !== 'ano' && n !== 'periodo' && dimensionNameToKey[x] !== 'year' && dimensionNameToKey[x] !== 'periodo';
+          });
+          if (firstCat) desags.push(`${k}|${firstCat}`);
+        }
       }
     });
 
@@ -1151,6 +1210,17 @@ export const useReportes = () => {
     }
   };
 
+  const formatSexoLabel = (raw) => {
+    if (!raw) return 'Sin dato';
+    const str = String(raw).trim();
+    const upper = str.toUpperCase();
+    if (upper === 'F' || upper === 'FEMENINO' || upper.endsWith(':F')) return 'Femenino';
+    if (upper === 'M' || upper === 'MASCULINO' || upper.endsWith(':M')) return 'Masculino';
+    if (upper === 'O' || upper === 'OTROS' || upper.endsWith(':O')) return 'Otros';
+    if (upper.endsWith(':NULL') || upper === 'NULL') return 'Sin dato';
+    return raw;
+  };
+
   const mapIndicatorDetailToView = useCallback((rawDetail, fallbackInfo, options = {}) => {
     const { hasYearSelected = false, thematicGroupBy = null } = options;
     if (!rawDetail || !rawDetail.hasData) {
@@ -1182,27 +1252,18 @@ export const useReportes = () => {
 
     // 1. Matriz Bidimensional devuelta por el Backend (splitBy)
     if (rawDetail.isBidimensional && Array.isArray(rawDetail.matrix)) {
-      const formatSexoIfMatch = (v) => {
-        if (!v) return v;
-        const str = String(v).trim().toUpperCase();
-        if (str === 'F') return 'Femenino';
-        if (str === 'M') return 'Masculino';
-        if (str === 'O') return 'Otros';
-        return v;
-      };
-
       const rawColLabels = rawDetail.columnLabels || {};
       const columns = Array.isArray(rawDetail.columns) ? rawDetail.columns : [];
 
       // Mapear etiquetas de columna adaptando sexo ('F' -> 'Femenino', 'M' -> 'Masculino', 'O' -> 'Otros')
       const colLabels = {};
       columns.forEach((colKey) => {
-        colLabels[colKey] = formatSexoIfMatch(rawColLabels[colKey] || colKey);
+        colLabels[colKey] = formatSexoLabel(rawColLabels[colKey] || colKey);
       });
 
       const matrix = rawDetail.matrix.map((row) => ({
         ...row,
-        row: formatSexoIfMatch(row.row),
+        row: formatSexoLabel(row.row),
       }));
 
       if (isCategorical && matrix.length > 0) {
@@ -1225,7 +1286,7 @@ export const useReportes = () => {
       }
 
       return {
-        val: formatSexoIfMatch(val),
+        val: formatSexoLabel(val),
         valSuffix,
         desc,
         table: [],
@@ -1285,22 +1346,32 @@ export const useReportes = () => {
           const values = distinctYears.map((yr) => pointMap.get(yr) ?? 0);
           return { label, values };
         });
+
+        // Calcular categoría con mayor concentración para el desglose matricial
+        if (isCategorical && matrixRows.length > 0) {
+          let maxCat = null;
+          let maxVal = -Infinity;
+          for (const r of matrixRows) {
+            const rowSum = (r.values || []).reduce((a, b) => a + (Number(b) || 0), 0);
+            if (rowSum > maxVal) {
+              maxVal = rowSum;
+              maxCat = r.label;
+            }
+          }
+          if (maxCat && maxVal > 0) {
+            val = maxCat;
+            if (matrixRows.length > 1) {
+              valSuffix = '(mayor concentración)';
+            }
+          }
+        }
       }
     }
 
     // 2. Tabla Plana Convencional (fallback o indicadores no matriciales)
-    const formatSexoIfMatch = (v) => {
-      if (!v) return v;
-      const str = String(v).trim().toUpperCase();
-      if (str === 'F') return 'Femenino';
-      if (str === 'M') return 'Masculino';
-      if (str === 'O') return 'Otros';
-      return v;
-    };
-
     const tableRows = (rawDetail.table || rawDetail.series || []).map((row) => {
       let label = String(row.label ?? row.year ?? row.category ?? row.periodo ?? 'Total');
-      label = formatSexoIfMatch(label);
+      label = formatSexoLabel(label);
       const value = typeof row.value === 'number' ? row.value : Number(row.value) || 0;
       return [label, value];
     });
@@ -1370,17 +1441,35 @@ export const useReportes = () => {
       return;
     }
 
-    // Si el formato es Excel, descargar directamente y permanecer en la lista principal sin abrir preview
-    if (report.formato === 'excel' || report.formato === 'xlsx') {
-      setViewMode('lista');
-      return handleDownloadDoc(report);
-    }
-
     setCurrentPreviewReport(report);
     setViewMode('preview');
     setIsGenerating(true);
-    setProgressValue(15);
-    setProgressText('Consultando indicadores desde la base de datos…');
+    setProgressValue(25);
+    setProgressText(
+      report.formato === 'excel' || report.formato === 'xlsx'
+        ? 'Procesando datos y preparando archivo Excel (.xlsx)…'
+        : 'Consultando indicadores desde la base de datos…'
+    );
+
+    // Si el formato es Excel, procesar y descargar mostrando la pantalla de confirmación
+    if (report.formato === 'excel' || report.formato === 'xlsx') {
+      setTimeout(async () => {
+        setProgressValue(90);
+        setProgressText('Descargando archivo Excel…');
+        try {
+          await descargarReporte(report.id, `${report.name || 'reporte'}.xlsx`);
+          showToast(`Reporte «${report.name || 'reporte'}» descargado con éxito`);
+          await fetchReportes();
+        } catch (err) {
+          console.error('Error al descargar archivo:', err);
+          showToast(err.message || 'Error al descargar archivo Excel', 'error');
+        } finally {
+          setProgressValue(100);
+          setIsGenerating(false);
+        }
+      }, 700);
+      return;
+    }
 
     const inds = report.indicadores || report.inds || [];
     const baseFiltros = report.filtros || {
@@ -1388,8 +1477,26 @@ export const useReportes = () => {
       toYear: report.annoMax,
     };
 
-    // Extraer baseFiltros omitiendo cualquier groupBy general heredado
-    const { groupBy: _ignoredGlobalGroupBy, ...cleanBaseFiltros } = baseFiltros;
+    // Extraer baseFiltros omitiendo cualquier parámetro interno o heredado
+    const cleanBaseFiltros = { ...(report.filtros || {}) };
+    delete cleanBaseFiltros.groupBy;
+    delete cleanBaseFiltros.splitBy;
+    delete cleanBaseFiltros.splitBy2;
+    delete cleanBaseFiltros.desag;
+    delete cleanBaseFiltros.filtrosSeleccionados;
+    delete cleanBaseFiltros.indicatorGroupBys;
+    delete cleanBaseFiltros.fromYear;
+    delete cleanBaseFiltros.toYear;
+    delete cleanBaseFiltros.year;
+
+    const fromYr = Number(report.filtros?.fromYear || report.annoMin || 2023);
+    const toYr = Number(report.filtros?.toYear || report.annoMax || 2026);
+    const startYear = Math.min(fromYr, toYr);
+    const endYear = Math.max(fromYr, toYr);
+    const aniosList = [];
+    for (let y = startYear; y <= endYear; y++) {
+      aniosList.push(y);
+    }
 
     const detailsMap = {};
 
@@ -1397,47 +1504,55 @@ export const useReportes = () => {
       const promises = inds.map(async (key, idx) => {
         try {
           // Determinar qué dimensiones tiene asignadas este indicador (soporta multi-chip: Dimensión + Año)
-          const reportDesags = report.desag || [];
+          const reportDesags = report.desag || report.filtros?.desag || [];
           const activePrefix = `${key}|`;
           const chosenDesagLabels = reportDesags
             .filter((x) => x.startsWith(activePrefix))
             .map((x) => x.split('|')[1]);
 
+          const normDim = (k) => {
+            if (!k) return '';
+            const s = String(k).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            if (s === 'ano' || s === 'anio' || s === 'year') return 'year';
+            if (s === 'periodo') return 'periodo';
+            if (s === 'sexo') return 'sexo';
+            return k;
+          };
+
           const chosenDimKeys = chosenDesagLabels.map((l) => resolveDimensionKey(l, dimensionNameToKey));
-          const hasYearSelected = chosenDimKeys.some(
-            (k) => k === 'year' || k?.toLowerCase() === 'año' || k?.toLowerCase() === 'ano'
-          );
-          const thematicGroupBy = chosenDimKeys.find(
-            (k) => k !== 'year' && k?.toLowerCase() !== 'año' && k?.toLowerCase() !== 'ano'
-          );
+          const normalizedDims = chosenDimKeys.map(normDim);
+          const hasYearSelected = normalizedDims.includes('year');
 
           const itemInfo = getIndicatorInfo(key);
           const indicatorDefaultDim = itemInfo.defaultGroupBy || (key === 'matricula_por_asignatura' ? 'asignatura' : null);
-          const effectiveThematicDim = thematicGroupBy || indicatorDefaultDim || null;
 
-          // Si el indicador tiene dimensión base:
-          // La dimensión base va en groupBy (filas)
-          // Cualquier otra dimensión seleccionada por el usuario (temporal o temática) va en splitBy (columnas)
-          let queryGroupBy = undefined;
-          let querySplitBy = undefined;
+          // Dimensión base / filas principales
+          const otherDims = normalizedDims.filter((d) => d && d !== 'year');
+          const categoria = indicatorDefaultDim || otherDims[0] || null;
+          const extraDims = otherDims.filter((d) => d !== categoria);
 
-          if (indicatorDefaultDim) {
-            queryGroupBy = indicatorDefaultDim;
-            // Buscar si hay otra dimensión seleccionada distinta de la dimensión base
-            const secondaryDimKey = chosenDimKeys.find((k) => k !== indicatorDefaultDim);
-            if (secondaryDimKey) {
-              querySplitBy = secondaryDimKey === 'año' || secondaryDimKey === 'ano' ? 'year' : secondaryDimKey;
-            }
-          } else {
-            // Indicador sin dimensión base fija
-            if (thematicGroupBy && hasYearSelected) {
-              queryGroupBy = thematicGroupBy;
-              querySplitBy = 'year';
-            } else if (chosenDimKeys.length >= 2) {
-              queryGroupBy = chosenDimKeys[0];
-              querySplitBy = chosenDimKeys[1] === 'año' || chosenDimKeys[1] === 'ano' ? 'year' : chosenDimKeys[1];
+          let layoutTipo = 'C';
+          let colDim = null;
+          let depthDim = null;
+
+          if (categoria && hasYearSelected) {
+            if (extraDims.length >= 2) {
+              // 3D: Layout A (Bloques anuales con columnas y subfilas)
+              if (extraDims.includes('periodo')) {
+                colDim = 'periodo';
+                depthDim = extraDims.find((d) => d !== 'periodo');
+              } else {
+                colDim = extraDims[0];
+                depthDim = extraDims[1];
+              }
+              layoutTipo = 'A';
+            } else if (extraDims.length === 1) {
+              // 2D en bloques anuales: Layout B
+              colDim = extraDims[0];
+              layoutTipo = 'B';
             } else {
-              queryGroupBy = thematicGroupBy || (hasYearSelected ? 'year' : undefined);
+              // 2D global: Layout C (Filas de categoría x Años en columnas)
+              layoutTipo = 'C';
             }
           }
 
@@ -1458,31 +1573,255 @@ export const useReportes = () => {
             }
           }
 
-          const queryFiltros = {
-            ...cleanBaseFiltros,
-            fromYear: baseFiltros.fromYear || report.annoMin || 2023,
-            toYear: baseFiltros.toYear || report.annoMax || 2026,
-            ...(queryGroupBy ? { groupBy: queryGroupBy } : {}),
-            ...(querySplitBy ? { splitBy: querySplitBy } : {}),
-            ...parsedSelectedFilters,
-          };
+          if (layoutTipo === 'A') {
+            const bloques = [];
+            let lastRaw = null;
 
-          // Limpiar propiedades internas que no correspondan a parámetros de query
-          delete queryFiltros.desag;
-          delete queryFiltros.filtrosSeleccionados;
-          delete queryFiltros.indicatorGroupBys;
+            for (const anio of aniosList) {
+              try {
+                const res = await getIndicatorDetail(key, {
+                  ...cleanBaseFiltros,
+                  ...parsedSelectedFilters,
+                  year: anio,
+                  groupBy: categoria,
+                  splitBy: colDim,
+                  splitBy2: depthDim,
+                });
+                const raw = res?.data || res;
+                lastRaw = raw;
 
-          const res = await getIndicatorDetail(key, queryFiltros);
-          const raw = res?.data || res;
-          detailsMap[key] = mapIndicatorDetailToView(raw, getIndicatorInfo(key), {
-            hasYearSelected,
-            thematicGroupBy: effectiveThematicDim,
-          });
+                if (raw && raw.isTridimensional && Array.isArray(raw.cube) && raw.cube.length > 0) {
+                  const rawColLabels = raw.columnLabels || {};
+                  const columns = Array.isArray(raw.columns) ? raw.columns : [];
+                  const columnLabels = {};
+                  columns.forEach((cKey) => {
+                    const lbl = rawColLabels[cKey] || cKey;
+                    if (colDim === 'periodo') {
+                      columnLabels[cKey] = String(lbl).replace(/^per[íi]odo\s*/i, '');
+                    } else if (colDim === 'sexo') {
+                      columnLabels[cKey] = formatSexoLabel(lbl);
+                    } else {
+                      columnLabels[cKey] = lbl;
+                    }
+                  });
+
+                  const depths = (raw.depths || []).map((dId) => {
+                    const rawDepthLabel = raw.depthLabels?.[dId] || dId;
+                    return {
+                      id: dId,
+                      label: depthDim === 'sexo' ? formatSexoLabel(rawDepthLabel) : rawDepthLabel,
+                    };
+                  });
+
+                  const rows = raw.cube.map((cRow) => ({
+                    label: categoria === 'sexo' ? formatSexoLabel(cRow.row) : cRow.row,
+                    rowKey: cRow.rowKey,
+                    values: cRow.values || {},
+                    total: cRow.total,
+                  }));
+
+                  bloques.push({
+                    anio,
+                    columns,
+                    columnLabels,
+                    depths,
+                    rows,
+                    totals: raw.totals || {},
+                  });
+                }
+              } catch (err) {
+                console.warn(`Error al consultar cubo para ${key} año ${anio}:`, err.message);
+              }
+            }
+
+            if (bloques.length > 0) {
+              const categoriaLabel = lastRaw?.dimensionLabels?.[categoria] || categoria;
+              const colDimLabel = lastRaw?.dimensionLabels?.[colDim] || colDim;
+              const depthDimLabel = lastRaw?.dimensionLabels?.[depthDim] || depthDim;
+              const unit = lastRaw?.unit ? ` ${lastRaw.unit}` : '';
+              let val = lastRaw?.formattedTotal ? `${lastRaw.formattedTotal}${unit}` : `${lastRaw?.total ?? 0}${unit}`;
+              let valSuffix = null;
+
+              // Si la dimensión base es categórica, calcular la categoría con mayor concentración
+              const isBaseCategorical = categoria && categoria !== 'year' && categoria !== 'periodo';
+              if (isBaseCategorical) {
+                const categoryTotals = new Map();
+                bloques.forEach((b) => {
+                  (b.rows || []).forEach((r) => {
+                    const prev = categoryTotals.get(r.label) || 0;
+                    categoryTotals.set(r.label, prev + (Number(r.total) || 0));
+                  });
+                });
+                let maxCat = null;
+                let maxVal = -Infinity;
+                for (const [cat, sum] of categoryTotals.entries()) {
+                  if (sum > maxVal) {
+                    maxVal = sum;
+                    maxCat = cat;
+                  }
+                }
+                if (maxCat && maxVal > 0) {
+                  val = maxCat;
+                  if (categoryTotals.size > 1) {
+                    valSuffix = '(mayor concentración)';
+                  }
+                }
+              }
+
+              detailsMap[key] = {
+                val,
+                valSuffix,
+                desc: lastRaw?.description || itemInfo.desc,
+                layoutTipo: 'A',
+                categoria,
+                categoriaLabel,
+                colDim,
+                colDimLabel,
+                depthDim,
+                depthDimLabel,
+                bloques,
+                table: [],
+                chart: [],
+                labels: [],
+                disaggregated: true,
+                dimensionName: categoriaLabel,
+              };
+            }
+          }
+
+          if (!detailsMap[key] && layoutTipo === 'B') {
+            const bloques = [];
+            let lastRaw = null;
+            const targetColDim = colDim || 'periodo';
+
+            for (const anio of aniosList) {
+              try {
+                const res = await getIndicatorDetail(key, {
+                  ...cleanBaseFiltros,
+                  ...parsedSelectedFilters,
+                  year: anio,
+                  groupBy: categoria,
+                  splitBy: targetColDim,
+                });
+                const raw = res?.data || res;
+                lastRaw = raw;
+
+                if (raw && raw.isBidimensional && Array.isArray(raw.matrix) && raw.matrix.length > 0) {
+                  const rawColLabels = raw.columnLabels || {};
+                  const columns = Array.isArray(raw.columns) ? raw.columns : [];
+                  const columnLabels = {};
+                  columns.forEach((cKey) => {
+                    const lbl = rawColLabels[cKey] || cKey;
+                    if (targetColDim === 'periodo') {
+                      columnLabels[cKey] = String(lbl).replace(/^per[íi]odo\s*/i, '');
+                    } else if (targetColDim === 'sexo') {
+                      columnLabels[cKey] = formatSexoLabel(lbl);
+                    } else {
+                      columnLabels[cKey] = lbl;
+                    }
+                  });
+
+                  bloques.push({
+                    anio,
+                    columns,
+                    columnLabels,
+                    matrix: raw.matrix.map((r) => ({
+                      ...r,
+                      row: categoria === 'sexo' ? formatSexoLabel(r.row) : r.row,
+                    })),
+                    totals: raw.totals || {},
+                  });
+                }
+              } catch (err) {
+                console.warn(`Error al consultar matriz para ${key} año ${anio}:`, err.message);
+              }
+            }
+
+            if (bloques.length > 0) {
+              const categoriaLabel = lastRaw?.dimensionLabels?.[categoria] || categoria;
+              const colDimLabel = lastRaw?.dimensionLabels?.[targetColDim] || targetColDim;
+              const unit = lastRaw?.unit ? ` ${lastRaw.unit}` : '';
+              let val = lastRaw?.formattedTotal ? `${lastRaw.formattedTotal}${unit}` : `${lastRaw?.total ?? 0}${unit}`;
+              let valSuffix = null;
+
+              // Si la dimensión base es categórica, calcular la categoría con mayor concentración
+              const isBaseCategorical = categoria && categoria !== 'year' && categoria !== 'periodo';
+              if (isBaseCategorical) {
+                const categoryTotals = new Map();
+                bloques.forEach((b) => {
+                  (b.matrix || []).forEach((r) => {
+                    const prev = categoryTotals.get(r.row) || 0;
+                    categoryTotals.set(r.row, prev + (Number(r.total) || 0));
+                  });
+                });
+                let maxCat = null;
+                let maxVal = -Infinity;
+                for (const [cat, sum] of categoryTotals.entries()) {
+                  if (sum > maxVal) {
+                    maxVal = sum;
+                    maxCat = cat;
+                  }
+                }
+                if (maxCat && maxVal > 0) {
+                  val = maxCat;
+                  if (categoryTotals.size > 1) {
+                    valSuffix = '(mayor concentración)';
+                  }
+                }
+              }
+
+              detailsMap[key] = {
+                val,
+                valSuffix,
+                desc: lastRaw?.description || itemInfo.desc,
+                layoutTipo: 'B',
+                categoria,
+                categoriaLabel,
+                colDim: targetColDim,
+                colDimLabel,
+                bloques,
+                table: [],
+                chart: [],
+                labels: [],
+                disaggregated: true,
+                dimensionName: categoriaLabel,
+              };
+            }
+          }
+
+          if (!detailsMap[key]) {
+            let queryGroupBy = categoria || indicatorDefaultDim;
+            let querySplitBy = hasYearSelected ? 'year' : undefined;
+
+            if (queryGroupBy && querySplitBy && queryGroupBy === querySplitBy) {
+              querySplitBy = undefined;
+            }
+
+            const queryFiltros = {
+              ...cleanBaseFiltros,
+              fromYear: startYear,
+              toYear: endYear,
+              ...(queryGroupBy ? { groupBy: queryGroupBy } : {}),
+              ...(querySplitBy ? { splitBy: querySplitBy } : {}),
+              ...parsedSelectedFilters,
+            };
+
+            const res = await getIndicatorDetail(key, queryFiltros);
+            const raw = res?.data || res;
+            detailsMap[key] = {
+              ...mapIndicatorDetailToView(raw, itemInfo, {
+                hasYearSelected,
+                thematicGroupBy: queryGroupBy,
+              }),
+              layoutTipo: 'C',
+            };
+          }
         } catch (err) {
           console.warn(`No se pudo obtener detalle para ${key}:`, err.message);
           detailsMap[key] = {
             val: 'Sin datos',
             desc: getIndicatorInfo(key).desc,
+            layoutTipo: 'C',
             table: [],
             chart: [],
             labels: [],
@@ -1501,22 +1840,11 @@ export const useReportes = () => {
 
       setTimeout(async () => {
         setIsGenerating(false);
-        // Si el formato es Excel, disparar descarga automática
-        if (report.formato === 'excel' || report.formato === 'xlsx') {
-          try {
-            await descargarReporte(report.id, `${report.name || 'reporte'}.xlsx`);
-            showToast(`Reporte «${report.name}» descargado con éxito`);
-          } catch (err) {
-            console.error('Error al descargar archivo:', err);
-            showToast(err.message || 'Error al descargar archivo del reporte', 'error');
-          }
-        }
-        await fetchReportes();
       }, 400);
     } catch (err) {
-      console.error('Error en generación de reporte:', err);
+      console.error('Error al generar vista previa:', err);
+      showToast(err.message || 'Error al generar vista previa del reporte', 'error');
       setIsGenerating(false);
-      showToast('Error al procesar los datos del reporte', 'error');
     }
   };
 
@@ -1593,12 +1921,8 @@ export const useReportes = () => {
         if (!saved.filtrosSeleccionados || saved.filtrosSeleccionados.length === 0) {
           saved.filtrosSeleccionados = builder.filtrosSeleccionados || [];
         }
-        if (saved.formato === 'excel' || saved.formato === 'xlsx') {
-          setViewMode('lista');
-          handleDownloadDoc(saved);
-        } else {
-          handleStartGenerate(saved);
-        }
+        setBuilder((prev) => ({ ...prev, editId: saved.id }));
+        handleStartGenerate(saved);
       } else {
         setViewMode('lista');
       }
@@ -1613,6 +1937,7 @@ export const useReportes = () => {
   const handleOpenHistorial = (reportId = 'todos') => {
     setHistReporteFilter(reportId);
     setHistFechaFilter('');
+    setHistEstadoFilter('todos');
     setHistPage(1);
     setViewMode('historial');
     setKebabAnchorEl(null);
@@ -1631,12 +1956,19 @@ export const useReportes = () => {
       inds.forEach((k) => {
         const itemInfo = getIndicatorInfo(k);
         const opts = getDesagsForIndicator(k);
+        const anoOpt = opts.find((x) => {
+          const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return n === 'ano' || dimensionNameToKey[x] === 'year';
+        });
         if (itemInfo?.defaultGroupBy) {
           const baseLabel = resolveDimensionLabel(itemInfo.defaultGroupBy, dimensionNameToKey);
           if (baseLabel && !desags.some((d) => d === `${k}|${baseLabel}`)) {
             desags.push(`${k}|${baseLabel}`);
           }
-        } else if (!desags.some((d) => d.startsWith(`${k}|`))) {
+        }
+        if (anoOpt && !desags.some((d) => d === `${k}|${anoOpt}`)) {
+          desags.push(`${k}|${anoOpt}`);
+        } else if (!itemInfo?.defaultGroupBy && !desags.some((d) => d.startsWith(`${k}|`))) {
           if (opts.length > 0) desags.push(`${k}|${opts[0]}`);
         }
       });
@@ -1750,10 +2082,17 @@ export const useReportes = () => {
     progressValue,
     progressText,
     handleDownloadDoc,
+    handleDescargarEjecucion,
+    loadHistorial,
+    mainTab,
+    setMainTab,
+    allReportes,
     histReporteFilter,
     setHistReporteFilter,
     histFechaFilter,
     setHistFechaFilter,
+    histEstadoFilter,
+    setHistEstadoFilter,
     histPage,
     setHistPage,
     paginatedHistorial,
