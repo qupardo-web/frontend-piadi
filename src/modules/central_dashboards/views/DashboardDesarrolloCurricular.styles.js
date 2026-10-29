@@ -21,7 +21,6 @@ export const styles = {
     flexDirection: 'column',
     gap: 3,
     minWidth: 0,
-    width: { xs: '100%', md: 'calc(100% - 260px)' },
   },
 
   // Fila superior de 3 Tarjetas KPI en Grid CSS
@@ -30,22 +29,6 @@ export const styles = {
     gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
     gap: 2.5,
     width: '100%',
-  },
-
-  // Contenedor de Gráficos y Panel de Filtros en horizontal
-  dashboardContentLayout: {
-    display: 'flex',
-    gap: 3,
-    alignItems: 'flex-start',
-    width: '100%',
-  },
-
-  chartsColumn: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 2.5,
-    minWidth: 0,
   },
 
   // Estilos de Sección de Gráfico
@@ -64,22 +47,16 @@ export const styles = {
   },
 
   detailButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 0.6,
-    background: 'none',
-    border: 'none',
-    p: '4px 8px',
-    borderRadius: '6px',
-    color: '#1a71f6',
-    fontFamily: "'Inter', sans-serif",
     fontSize: '12px',
     fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'color 150ms ease-out, background-color 150ms ease-out',
+    color: '#1E2875',
+    textTransform: 'none',
+    py: 0.25,
+    px: 1,
+    borderRadius: '6px',
+    fontFamily: "'Inter', sans-serif",
     '&:hover': {
-      color: '#1560d3',
-      bgcolor: 'rgba(26, 113, 246, 0.08)',
+      bgcolor: 'rgba(30, 40, 117, 0.08)',
     },
   },
 
@@ -124,24 +101,49 @@ export const styles = {
   legendRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: 2,
-    fontSize: '11px',
-    color: '#64748B',
-    mb: 1.5,
+    flexWrap: 'wrap',
+    gap: 1.5,
+    mb: 2,
     fontFamily: "'Inter', sans-serif",
   },
 
   legendItem: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 0.8,
+    gap: 1.2,
+    fontSize: '13px',
+    color: '#475569',
   },
+
+  legendBadge: (color = '#DC2626', bg = '#FEF2F2', border = '#FECACA') => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 1.2,
+    px: 1.75,
+    py: 0.75,
+    borderRadius: '8px',
+    bgcolor: bg,
+    border: `1px solid ${border}`,
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#1E293B',
+    lineHeight: 1.2,
+    boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+  }),
 
   legendDot: (color) => ({
     width: 10,
     height: 10,
     borderRadius: '2px',
     bgcolor: color,
+  }),
+
+  legendDashedLine: (color) => ({
+    width: 24,
+    height: 0,
+    borderTop: `2.5px dashed ${color}`,
+    display: 'inline-block',
+    flexShrink: 0,
   }),
 
   // Slider de Años en Filtros
@@ -177,46 +179,68 @@ export const styles = {
     },
   },
 
-  // Filtros Acordeón
+  // Filtros Acordeón (compactos y sin saltos excesivos de margen)
   filterAccordion: {
     border: 'none',
     boxShadow: 'none',
+    bgcolor: 'transparent !important',
+    m: '0 !important',
+    mb: '4px !important',
     '&:before': { display: 'none' },
-    bgcolor: 'transparent',
-    mb: 0.5,
+    '&.Mui-expanded': {
+      m: '0 !important',
+      mb: '6px !important',
+    },
   },
 
   filterAccordionSummary: {
+    p: 0,
     px: 0,
-    minHeight: 38,
+    minHeight: '34px !important',
+    m: '0 !important',
     '& .MuiAccordionSummary-content': {
-      my: 0.8,
+      my: '4px !important',
+      m: '0 !important',
       display: 'flex',
       alignItems: 'center',
       gap: 1,
+    },
+    '&.Mui-expanded': {
+      minHeight: '34px !important',
+      m: '0 !important',
+    },
+    '& .MuiAccordionSummary-content.Mui-expanded': {
+      m: '0 !important',
+      my: '4px !important',
+    },
+    '& .MuiAccordionSummary-expandIconWrapper': {
+      color: '#64748B',
+      p: 0,
     },
   },
 
   filterAccordionTitle: {
     fontSize: '13px',
-    fontWeight: 600,
-    color: '#1E293B',
+    fontWeight: 700,
+    color: '#475569',
     fontFamily: "'Inter', sans-serif",
+    letterSpacing: '0.04em',
   },
 
   filterChipsWrap: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: 0.8,
-    pb: 1.2,
+    gap: '6px',
+    pt: 0.5,
+    pb: 0.75,
   },
 
   filterChip: (isSelected) => ({
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 0.6,
-    px: 1.2,
-    py: 0.4,
+    gap: 0.5,
+    px: '10px',
+    py: '3px',
     fontSize: '11px',
     fontWeight: isSelected ? 600 : 500,
     color: isSelected ? '#FFFFFF' : '#475569',
@@ -233,25 +257,41 @@ export const styles = {
     },
   }),
 
-  // Drawer de Detalle (PIADI-306)
-  drawerPaper: {
-    width: { xs: '100vw', sm: 390 },
+  // Drawer modal lateral de Detalle del indicador (PIADI-306)
+  drawerOverlay: (isOpen) => ({
+    position: 'fixed',
+    inset: 0,
+    bgcolor: 'rgba(0,0,0,0.4)',
+    opacity: isOpen ? 1 : 0,
+    visibility: isOpen ? 'visible' : 'hidden',
+    transition: 'opacity 250ms ease-out, visibility 250ms ease-out',
+    zIndex: 1300,
+  }),
+
+  indicatorDrawer: (isOpen) => ({
+    position: 'fixed',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: { xs: '100vw', sm: 400 },
     maxWidth: '100vw',
     bgcolor: '#FFFFFF',
-    borderLeft: '1px solid #E2E8F0',
-    boxShadow: '-12px 0 28px rgba(0,0,0,0.18)',
+    borderLeft: '1px solid #e5e7eb',
+    boxShadow: '-12px 0 28px rgba(0,0,0,0.22)',
+    transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+    visibility: isOpen ? 'visible' : 'hidden',
+    transition: 'transform 250ms ease-out, visibility 250ms ease-out',
+    zIndex: 1400,
     display: 'flex',
     flexDirection: 'column',
-    height: '100%',
-    zIndex: 1400,
-  },
+  }),
 
   drawerHeader: {
     display: 'flex',
     flexDirection: 'column',
     gap: 1,
-    p: '18px 24px 14px',
-    borderBottom: '1px solid #E2E8F0',
+    p: '16px 24px 12px',
+    borderBottom: '1px solid #e5e7eb',
     flexShrink: 0,
   },
 
@@ -279,39 +319,43 @@ export const styles = {
     p: '20px 24px',
     display: 'flex',
     flexDirection: 'column',
-    gap: 2.2,
+    gap: 2.5,
   },
 
   drawerDescLabel: {
+    fontFamily: "'Inter', sans-serif",
     fontSize: '11px',
     fontWeight: 700,
     letterSpacing: '0.06em',
     textTransform: 'uppercase',
-    color: '#94A3B8',
-    mb: 0.6,
+    color: '#64748B',
+    mb: 0.5,
   },
 
   drawerDesc: {
+    fontFamily: "'Inter', sans-serif",
     fontSize: '13px',
-    lineHeight: 1.6,
     color: '#334155',
+    lineHeight: 1.5,
   },
 
   drawerMetricBox: {
     bgcolor: '#F8FAFC',
-    borderRadius: '10px',
-    p: '16px',
     border: '1px solid #E2E8F0',
+    borderRadius: '10px',
+    p: 2,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0.5,
   },
 
   drawerMetricLabel: {
+    fontFamily: "'Inter', sans-serif",
     fontSize: '11px',
-    fontWeight: 600,
+    fontWeight: 700,
     letterSpacing: '0.06em',
     textTransform: 'uppercase',
     color: '#64748B',
-    display: 'block',
-    mb: 0.5,
   },
 
   drawerMetricValue: {
@@ -321,6 +365,7 @@ export const styles = {
     color: '#1E2875',
     letterSpacing: '-0.02em',
     lineHeight: 1.2,
+    wordBreak: 'break-word',
   },
 
   drawerMetaBadge: (status) => {
@@ -339,28 +384,26 @@ export const styles = {
       display: 'inline-flex',
       alignItems: 'center',
       gap: 0.5,
-      mt: 1,
-      px: 1.2,
-      py: 0.4,
+      px: 1,
+      py: 0.25,
       borderRadius: '6px',
-      fontSize: '12px',
-      fontWeight: 600,
       bgcolor,
       color,
+      border: `1px solid ${isPos ? '#A7F3D0' : isNeg ? '#FECACA' : '#E2E8F0'}`,
     };
   },
 
   drawerTableWrap: {
-    maxHeight: '230px',
+    maxHeight: '240px',
     overflowY: 'auto',
     border: '1px solid #E2E8F0',
     borderRadius: '8px',
-    mt: 0.5,
+    mt: 1,
   },
 
   drawerFooter: {
     p: '14px 24px',
-    borderTop: '1px solid #E2E8F0',
+    borderTop: '1px solid #e5e7eb',
     flexShrink: 0,
     fontSize: '12px',
     color: '#64748B',
@@ -368,7 +411,20 @@ export const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 1,
-    bgcolor: '#FFFFFF',
+  },
+
+  emptyChartBox: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 240,
+    color: '#64748b',
+    fontSize: '13px',
+    fontWeight: 500,
+    border: '1px dashed #E2E8F0',
+    borderRadius: '12px',
+    bgcolor: '#F8FAFC',
+    width: '100%',
   },
 
   // Botón flotante de ayuda institucional
