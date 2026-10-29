@@ -93,7 +93,8 @@ export const getReporteById = (id) => apiFetch(`/api/reportes/${id}`);
 export const createReporte = (body) => apiMutate('/api/reportes', 'POST', body);
 export const updateReporte = (id, body) => apiMutate(`/api/reportes/${id}`, 'PUT', body);
 export const deleteReporte = (id) => apiMutate(`/api/reportes/${id}`, 'DELETE');
-export const getReporteEjecuciones = (id) => apiFetch(`/api/reportes/${id}/ejecuciones`);
+export const getReporteEjecuciones = (id, params) => apiFetch(`/api/reportes/${id}/ejecuciones${buildParams(params)}`);
+export const getReportesEjecuciones = (params) => apiFetch(`/api/reportes/ejecuciones${buildParams(params)}`);
 export const getReporteAreas = () => apiFetch('/api/reportes/areas');
 export const getReporteTipos = () => apiFetch('/api/reportes/tipos');
 export const getReporteFormatos = () => apiFetch('/api/reportes/formatos');
@@ -101,6 +102,45 @@ export const getReporteFormatos = () => apiFetch('/api/reportes/formatos');
 export const descargarReporte = async (id, fallbackName = 'reporte.xlsx') => {
   const token = sessionStorage.getItem('auth_token');
   const res = await fetch(`${API_URL}/api/reportes/${id}/descargar`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+
+  if (!res.ok) {
+    let errMessage = `Error ${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.error?.message) errMessage = errJson.error.message;
+    } catch {
+      // ignore
+    }
+    throw new Error(errMessage);
+  }
+
+  let filename = fallbackName;
+  const disposition = res.headers.get('content-disposition');
+  if (disposition && disposition.indexOf('attachment') !== -1) {
+    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+    const matches = filenameRegex.exec(disposition);
+    if (matches != null && matches[1]) {
+      filename = matches[1].replace(/['"]/g, '');
+    }
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+  return { success: true, filename };
+};
+
+export const descargarEjecucionReporte = async (ejecucionId, fallbackName = 'reporte.xlsx') => {
+  const token = sessionStorage.getItem('auth_token');
+  const res = await fetch(`${API_URL}/api/reportes/ejecuciones/${ejecucionId}/descargar`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
 
