@@ -480,6 +480,23 @@ export const Reportes = () => {
   // Active kebab report
   const selectedKebabReport = misReportes.find((r) => r.id === kebabTargetId);
 
+  // Sincronizar el título del documento con el nombre del reporte para que al descargar/imprimir el PDF tome ese nombre
+  React.useEffect(() => {
+    if (viewMode === 'preview' && currentPreviewReport?.name) {
+      const prevTitle = document.title;
+      document.title = currentPreviewReport.name.trim();
+      return () => {
+        document.title = prevTitle;
+      };
+    }
+  }, [viewMode, currentPreviewReport?.name]);
+
+  const handlePrintPdf = () => {
+    const reportName = currentPreviewReport?.name?.trim() || 'Reporte Institucional';
+    document.title = reportName;
+    window.print();
+  };
+
 
   return (
     <ThemeProvider theme={reportesLightTheme}>
@@ -682,6 +699,7 @@ export const Reportes = () => {
                           <MenuItem value={userDept.name}>{userDept.name}</MenuItem>
                         ) : [
                           <MenuItem key="todas" value="todas">Todos</MenuItem>,
+                          <MenuItem key="Institucional" value="Institucional">Institucional</MenuItem>,
                           <MenuItem key="Admisión" value="Admisión">Admisión</MenuItem>,
                           <MenuItem key="Desarrollo Curricular" value="Desarrollo Curricular">Desarrollo Curricular</MenuItem>,
                           <MenuItem key="Innovación" value="Innovación">Innovación</MenuItem>,
@@ -1203,12 +1221,13 @@ export const Reportes = () => {
                         }}
                         sx={{ bgcolor: isDepartmentRestricted ? '#F8FAFC' : '#FFFFFF', borderRadius: '8px' }}
                       >
-                        <MenuItem value="" disabled sx={{ color: '#94A3B8' }}>
+                        <MenuItem value="" disabled sx={{ display: 'none' }}>
                           Elija una opción
                         </MenuItem>
                         {isDepartmentRestricted && userDept ? (
                           <MenuItem value={userDept.name}>{userDept.name}</MenuItem>
                         ) : [
+                          <MenuItem key="Institucional" value="Institucional">Institucional</MenuItem>,
                           <MenuItem key="Admisión" value="Admisión">Admisión</MenuItem>,
                           <MenuItem key="Desarrollo Curricular" value="Desarrollo Curricular">Desarrollo Curricular</MenuItem>,
                           <MenuItem key="Innovación" value="Innovación">Innovación</MenuItem>,
@@ -1244,7 +1263,7 @@ export const Reportes = () => {
                           }}
                           sx={{ bgcolor: '#FFFFFF', borderRadius: '8px' }}
                         >
-                          <MenuItem value="" disabled sx={{ color: '#94A3B8' }}>
+                          <MenuItem value="" disabled sx={{ display: 'none' }}>
                             Elija una opción
                           </MenuItem>
                           <MenuItem value="PERSONALIZADO">Reporte personalizado (Mis reportes)</MenuItem>
@@ -1354,15 +1373,34 @@ export const Reportes = () => {
                                         const prefix = `${item.id}|`;
                                         if (e.target.checked) {
                                           let defaultOption = [];
+                                          // 1. Siempre incluir Año
+                                          const anoOpt = desags.find((x) => {
+                                            const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                            return n === 'ano' || resolveDimensionKey(x, dimensionNameToKey) === 'year';
+                                          });
+                                          if (anoOpt) {
+                                            defaultOption.push(`${item.id}|${anoOpt}`);
+                                          }
+                                          // 2. Base categórica
                                           if (item.defaultGroupBy) {
                                             const baseLabel = resolveDimensionLabel(item.defaultGroupBy, dimensionNameToKey);
                                             if (baseLabel) {
-                                              defaultOption = [`${item.id}|${baseLabel}`];
+                                              defaultOption.push(`${item.id}|${baseLabel}`);
                                             } else if (desags.length > 0) {
-                                              defaultOption = [`${item.id}|${desags[0]}`];
+                                              const firstCat = desags.find((x) => {
+                                                const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                                const k = resolveDimensionKey(x, dimensionNameToKey);
+                                                return n !== 'ano' && n !== 'periodo' && k !== 'year' && k !== 'periodo';
+                                              });
+                                              if (firstCat) defaultOption.push(`${item.id}|${firstCat}`);
                                             }
                                           } else if (desags.length > 0) {
-                                            defaultOption = [`${item.id}|${desags[0]}`];
+                                            const firstCat = desags.find((x) => {
+                                              const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                              const k = resolveDimensionKey(x, dimensionNameToKey);
+                                              return n !== 'ano' && n !== 'periodo' && k !== 'year' && k !== 'periodo';
+                                            });
+                                            if (firstCat) defaultOption.push(`${item.id}|${firstCat}`);
                                           }
                                           setBuilder({
                                             ...builder,
@@ -1390,15 +1428,34 @@ export const Reportes = () => {
                                           });
                                         } else {
                                           let defaultOption = [];
+                                          // 1. Siempre incluir Año
+                                          const anoOpt = desags.find((x) => {
+                                            const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                            return n === 'ano' || resolveDimensionKey(x, dimensionNameToKey) === 'year';
+                                          });
+                                          if (anoOpt) {
+                                            defaultOption.push(`${item.id}|${anoOpt}`);
+                                          }
+                                          // 2. Base categórica
                                           if (item.defaultGroupBy) {
                                             const baseLabel = resolveDimensionLabel(item.defaultGroupBy, dimensionNameToKey);
                                             if (baseLabel) {
-                                              defaultOption = [`${item.id}|${baseLabel}`];
+                                              defaultOption.push(`${item.id}|${baseLabel}`);
                                             } else if (desags.length > 0) {
-                                              defaultOption = [`${item.id}|${desags[0]}`];
+                                              const firstCat = desags.find((x) => {
+                                                const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                                const k = resolveDimensionKey(x, dimensionNameToKey);
+                                                return n !== 'ano' && n !== 'periodo' && k !== 'year' && k !== 'periodo';
+                                              });
+                                              if (firstCat) defaultOption.push(`${item.id}|${firstCat}`);
                                             }
                                           } else if (desags.length > 0) {
-                                            defaultOption = [`${item.id}|${desags[0]}`];
+                                            const firstCat = desags.find((x) => {
+                                              const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                              const k = resolveDimensionKey(x, dimensionNameToKey);
+                                              return n !== 'ano' && n !== 'periodo' && k !== 'year' && k !== 'periodo';
+                                            });
+                                            if (firstCat) defaultOption.push(`${item.id}|${firstCat}`);
                                           }
                                           setBuilder({
                                             ...builder,
@@ -1432,52 +1489,90 @@ export const Reportes = () => {
                                     const renderChip = (d) => {
                                       const key = `${item.id}|${d}`;
                                       const dimKey = resolveDimensionKey(d, dimensionNameToKey);
-                                      const isBaseDim = Boolean(item.defaultGroupBy && dimKey === item.defaultGroupBy);
-                                      const isSelected = isChecked && (builder.desag.includes(key) || isBaseDim);
+                                      const norm = String(d || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                      const isAno = norm === 'ano' || dimKey === 'year';
+                                      const isPeriodo = norm === 'periodo' || dimKey === 'periodo';
+
+                                      // Determinar la dimensión base categórica
+                                      const baseCatLabel = item.defaultGroupBy
+                                        ? resolveDimensionLabel(item.defaultGroupBy, dimensionNameToKey)
+                                        : (desags.find((x) => {
+                                            const xNorm = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                            const xKey = resolveDimensionKey(x, dimensionNameToKey);
+                                            return xNorm !== 'ano' && xNorm !== 'periodo' && xKey !== 'year' && xKey !== 'periodo';
+                                          }) || null);
+
+                                      const isBaseDim = Boolean(
+                                        (baseCatLabel && d === baseCatLabel) ||
+                                        (item.defaultGroupBy && dimKey === item.defaultGroupBy)
+                                      );
+
+                                      // Año y Base siempre seleccionados si el indicador está marcado
+                                      const isSelected = isChecked && (isAno || isBaseDim || builder.desag.includes(key));
 
                                       return (
                                         <Button
                                           key={d}
                                           size="small"
                                           disabled={!isChecked}
+                                          title={
+                                            isAno
+                                              ? 'Dimensión temporal obligatoria'
+                                              : isBaseDim
+                                              ? 'Dimensión base obligatoria'
+                                              : isPeriodo
+                                              ? 'Desglose temporal por período (opcional)'
+                                              : 'Desglose categórico adicional (máximo 1)'
+                                          }
                                           onClick={() => {
-                                            if (!isChecked || isBaseDim) return;
-                                            if (isSelected) {
+                                            if (!isChecked) return;
+                                            // Año y Dimensión Base son permanentes
+                                            if (isAno || isBaseDim) return;
+
+                                            const prefix = `${item.id}|`;
+
+                                            if (isPeriodo) {
+                                              // Período es opcional y se activa / desactiva libremente
+                                              if (builder.desag.includes(key)) {
+                                                setBuilder({
+                                                  ...builder,
+                                                  desag: builder.desag.filter((x) => x !== key),
+                                                });
+                                              } else {
+                                                setBuilder({
+                                                  ...builder,
+                                                  desag: [...builder.desag, key],
+                                                });
+                                              }
+                                              return;
+                                            }
+
+                                            // Chip categórico adicional (máximo 1 categórico adicional)
+                                            if (builder.desag.includes(key)) {
+                                              // Si ya está activo, se desmarca
                                               setBuilder({
                                                 ...builder,
                                                 desag: builder.desag.filter((x) => x !== key),
                                               });
                                             } else {
-                                              // Regla de máximo 2 dimensiones (1 secundaria adicional):
-                                              // Si el indicador tiene dimensión base, solo puede haber 1 chip adicional
-                                              // Si el indicador no tiene dimensión base, puede tener hasta 2 chips
-                                              const prefix = `${item.id}|`;
-                                              const otherSelectedChipsOfThisItem = builder.desag.filter((x) => {
+                                              // Reemplaza cualquier otro categórico adicional para mantener exactamente 1 extra
+                                              const otherExtraCats = builder.desag.filter((x) => {
                                                 if (!x.startsWith(prefix) || x === key) return false;
                                                 const chipDim = x.split('|')[1];
+                                                const chipNorm = String(chipDim || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                                                 const chipDimKey = resolveDimensionKey(chipDim, dimensionNameToKey);
-                                                return !(item.defaultGroupBy && chipDimKey === item.defaultGroupBy);
+                                                const isChipAno = chipNorm === 'ano' || chipDimKey === 'year';
+                                                const isChipPeriodo = chipNorm === 'periodo' || chipDimKey === 'periodo';
+                                                const isChipBase = (baseCatLabel && chipDim === baseCatLabel) ||
+                                                                   (item.defaultGroupBy && chipDimKey === item.defaultGroupBy);
+                                                return !isChipAno && !isChipPeriodo && !isChipBase;
                                               });
 
-                                              if (item.defaultGroupBy) {
-                                                // Reemplaza cualquier otro chip secundario para mantener Base + 1 elegida
-                                                const cleanedDesags = builder.desag.filter((x) => !otherSelectedChipsOfThisItem.includes(x));
-                                                setBuilder({
-                                                  ...builder,
-                                                  desag: [...cleanedDesags, key],
-                                                });
-                                              } else {
-                                                // Si no tiene dimensión base fija, permitir hasta 2 chips secundarios
-                                                let baseList = builder.desag;
-                                                if (otherSelectedChipsOfThisItem.length >= 2) {
-                                                  const chipToReplace = otherSelectedChipsOfThisItem[otherSelectedChipsOfThisItem.length - 1];
-                                                  baseList = baseList.filter((x) => x !== chipToReplace);
-                                                }
-                                                setBuilder({
-                                                  ...builder,
-                                                  desag: [...baseList, key],
-                                                });
-                                              }
+                                              const cleaned = builder.desag.filter((x) => !otherExtraCats.includes(x));
+                                              setBuilder({
+                                                ...builder,
+                                                desag: [...cleaned, key],
+                                              });
                                             }
                                           }}
                                           sx={{
@@ -1488,22 +1583,23 @@ export const Reportes = () => {
                                             fontSize: '11.5px',
                                             fontWeight: 600,
                                             bgcolor: isSelected
-                                              ? (isBaseDim ? '#94A3B8' : '#1E2875')
+                                              ? ((isAno || isBaseDim) ? 'rgba(30, 40, 117, 0.42)' : '#1E2875')
                                               : '#FFFFFF',
                                             color: isSelected
-                                              ? '#FFFFFF'
+                                              ? ((isAno || isBaseDim) ? 'rgba(255, 255, 255, 0.9)' : '#FFFFFF')
                                               : '#334155',
                                             border: `1px solid ${
                                               isSelected
-                                                ? (isBaseDim ? '#94A3B8' : '#1E2875')
+                                                ? ((isAno || isBaseDim) ? 'rgba(30, 40, 117, 0.15)' : '#1E2875')
                                                 : '#CBD5E1'
                                             }`,
-                                            cursor: isBaseDim ? 'default' : 'pointer',
+                                            cursor: (isAno || isBaseDim) ? 'not-allowed' : (isChecked ? 'pointer' : 'default'),
                                             userSelect: 'none',
+                                            opacity: !isChecked ? 0.4 : ((isAno || isBaseDim) ? 0.72 : 1),
                                             '&:hover': {
-                                              bgcolor: isSelected
-                                                ? (isBaseDim ? '#94A3B8' : '#131a52')
-                                                : '#F1F5F9',
+                                              bgcolor: (isAno || isBaseDim)
+                                                ? 'rgba(30, 40, 117, 0.42)'
+                                                : (isSelected ? '#161e58' : '#F1F5F9'),
                                             },
                                           }}
                                         >
@@ -1641,11 +1737,11 @@ export const Reportes = () => {
 
                     {/* Filtros específicos de área */}
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E2875', mb: 1.5 }}>
-                      Filtros temáticos del área ({areaName(builder.area)})
+                      {builder.area === 'Institucional' ? 'Filtros temáticos institucionales' : `Filtros temáticos del área (${areaName(builder.area)})`}
                     </Typography>
 
                     {(() => {
-                      // Determinar los parámetros de filtro temático que corresponden estrictamente a los indicadores seleccionados
+                      // Determinar los parámetros de filtro temático que corresponden tanto a los indicadores como a los chips de desglose seleccionados
                       const activeFilterParamKeys = new Set();
                       (builder.inds || []).forEach((indId) => {
                         const info = getIndicatorInfo(indId);
@@ -1671,7 +1767,32 @@ export const Reportes = () => {
                         if (indId.includes('tipo')) activeFilterParamKeys.add('tipo');
                       });
 
-                      const areasToRender = [builder.area];
+                      // Incluir también las dimensiones seleccionadas mediante chips en el Paso 2
+                      (builder.desag || []).forEach((item) => {
+                        const parts = String(item).split('|');
+                        if (parts.length >= 2) {
+                          const dimLabel = parts[1];
+                          const dimKey = resolveDimensionKey(dimLabel, dimensionNameToKey);
+                          const paramKey = THEMATIC_FILTER_PARAM_MAP[dimLabel] || dimKey;
+                          if (paramKey && paramKey !== 'year' && paramKey !== 'periodo') {
+                            activeFilterParamKeys.add(paramKey);
+                          }
+                          const norm = dimLabel.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                          if (norm.includes('socioeconomico') || norm.includes('quintil')) activeFilterParamKeys.add('nivelSocioeconomico');
+                          if (norm.includes('colegio')) activeFilterParamKeys.add('tipoColegio');
+                          if (norm.includes('acceso')) activeFilterParamKeys.add('viaAcceso');
+                          if (norm.includes('familiar')) activeFilterParamKeys.add('situacionFamiliar');
+                          if (norm.includes('beneficio') || norm.includes('beca')) activeFilterParamKeys.add('beneficios');
+                          if (norm.includes('sexo')) activeFilterParamKeys.add('sexo');
+                          if (norm.includes('jornada')) activeFilterParamKeys.add('jornada');
+                          if (norm.includes('sede')) activeFilterParamKeys.add('sede');
+                          if (norm.includes('carrera')) activeFilterParamKeys.add('carrera');
+                        }
+                      });
+
+                      const areasToRender = builder.area === 'Institucional'
+                        ? ['Admisión', 'Desarrollo Curricular', 'Innovación', 'Educación Continua', 'Vinculación con el Medio']
+                        : [builder.area];
 
                       const renderedAreas = areasToRender
                         .map((areaKey) => {
@@ -1900,6 +2021,37 @@ export const Reportes = () => {
                         disabled={isNextDisabled}
                         onClick={() => {
                           const nextStep = builder.step + 1;
+                          if (builder.step === 2) {
+                            const ensuredDesags = [...builder.desag];
+                            builder.inds.forEach((k) => {
+                              const itemInfo = getIndicatorInfo(k);
+                              const opts = getDesagsForIndicator(k);
+                              const anoOpt = opts.find((x) => {
+                                const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                return n === 'ano' || resolveDimensionKey(x, dimensionNameToKey) === 'year';
+                              });
+                              if (anoOpt && !ensuredDesags.some((d) => d === `${k}|${anoOpt}`)) {
+                                ensuredDesags.push(`${k}|${anoOpt}`);
+                              }
+                              const baseCatLabel = itemInfo?.defaultGroupBy
+                                ? resolveDimensionLabel(itemInfo.defaultGroupBy, dimensionNameToKey)
+                                : (opts.find((x) => {
+                                    const xNorm = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                    const xKey = resolveDimensionKey(x, dimensionNameToKey);
+                                    return xNorm !== 'ano' && xNorm !== 'periodo' && xKey !== 'year' && xKey !== 'periodo';
+                                  }) || null);
+                              if (baseCatLabel && !ensuredDesags.some((d) => d === `${k}|${baseCatLabel}`)) {
+                                ensuredDesags.push(`${k}|${baseCatLabel}`);
+                              }
+                            });
+                            setBuilder({
+                              ...builder,
+                              desag: Array.from(new Set(ensuredDesags)),
+                              step: nextStep,
+                              maxStep: Math.max(builder.maxStep || 1, nextStep),
+                            });
+                            return;
+                          }
                           setBuilder({
                             ...builder,
                             step: nextStep,
@@ -2131,37 +2283,35 @@ export const Reportes = () => {
                       onClick={handleBackFromPreview}
                       sx={{ color: '#1E2875', borderColor: '#CBD5E1', borderRadius: '8px', textTransform: 'none' }}
                     >
-                      Volver
+                      Regresar
                     </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<PrintIcon />}
-                      onClick={() => window.print()}
-                      sx={{ color: '#1E2875', borderColor: '#CBD5E1', borderRadius: '8px', textTransform: 'none' }}
-                    >
-                      Imprimir
-                    </Button>
-                    <Button
-                      variant="contained"
-                      startIcon={<DownloadIcon />}
-                      onClick={() => {
-                        if (currentPreviewReport?.formato === 'pdf' || !currentPreviewReport?.formato) {
-                          window.print();
-                        } else {
-                          handleDownloadDoc();
-                        }
-                      }}
-                      sx={{
-                        bgcolor: '#1E2875',
-                        color: '#FFFFFF',
-                        borderRadius: '8px',
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        '&:hover': { bgcolor: '#131a52' },
-                      }}
-                    >
-                      Descargar PDF
-                    </Button>
+                    {!(currentPreviewReport?.formato === 'excel' || currentPreviewReport?.formato === 'xlsx') && (
+                      <>
+                        <Button
+                          variant="outlined"
+                          startIcon={<PrintIcon />}
+                          onClick={handlePrintPdf}
+                          sx={{ color: '#1E2875', borderColor: '#CBD5E1', borderRadius: '8px', textTransform: 'none' }}
+                        >
+                          Imprimir
+                        </Button>
+                        <Button
+                          variant="contained"
+                          startIcon={<DownloadIcon />}
+                          onClick={handlePrintPdf}
+                          sx={{
+                            bgcolor: '#1E2875',
+                            color: '#FFFFFF',
+                            borderRadius: '8px',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            '&:hover': { bgcolor: '#131a52' },
+                          }}
+                        >
+                          Descargar PDF
+                        </Button>
+                      </>
+                    )}
                   </Box>
                 }
               />
@@ -2171,7 +2321,9 @@ export const Reportes = () => {
             {isGenerating ? (
               <Card sx={{ p: 6, textAlign: 'center', bgcolor: '#FFFFFF', borderRadius: '12px', my: 4 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E2875', mb: 2 }}>
-                  Generando reporte institucional…
+                  {currentPreviewReport?.formato === 'excel' || currentPreviewReport?.formato === 'xlsx'
+                    ? 'Generando archivo Excel (.xlsx)…'
+                    : 'Generando reporte institucional…'}
                 </Typography>
                 <Box sx={{ width: '100%', maxWidth: 400, mx: 'auto', mb: 2 }}>
                   <LinearProgress
@@ -2182,6 +2334,38 @@ export const Reportes = () => {
                 </Box>
                 <Typography sx={{ color: '#64748B', fontSize: '14px' }}>{progressText}</Typography>
               </Card>
+            ) : (currentPreviewReport?.formato === 'excel' || currentPreviewReport?.formato === 'xlsx') ? (
+              <Box sx={{ py: 6, display: 'flex', justifyContent: 'center' }}>
+                <Card sx={{ maxWidth: 560, width: '100%', p: 5, textAlign: 'center', bgcolor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 10px 25px rgba(15, 23, 42, 0.08)' }}>
+                  <Box sx={{ width: 64, height: 64, borderRadius: '50%', bgcolor: 'rgba(29, 194, 160, 0.12)', color: '#1DC2A0', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2.5 }}>
+                    <DownloadIcon sx={{ fontSize: 32 }} />
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#1E2875', mb: 1 }}>
+                    Su descarga comenzará en breve
+                  </Typography>
+                  <Typography sx={{ color: '#64748B', fontSize: '14.5px', mb: 3 }}>
+                    El archivo Excel ({currentPreviewReport?.name || 'Reporte'}) ha sido procesado con éxito. Si la descarga no inició automáticamente, presione el botón de abajo.
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => handleDownloadDoc(currentPreviewReport)}
+                      sx={{ bgcolor: '#1E2875', color: '#FFFFFF', textTransform: 'none', fontWeight: 600, borderRadius: '8px', '&:hover': { bgcolor: '#131a52' } }}
+                    >
+                      Descargar nuevamente
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<BackIcon />}
+                      onClick={handleBackFromPreview}
+                      sx={{ color: '#1E2875', borderColor: '#CBD5E1', textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
+                    >
+                      Regresar
+                    </Button>
+                  </Box>
+                </Card>
+              </Box>
             ) : (
               /* Hoja A4 de Documento */
               <Box sx={{ py: 2 }}>
@@ -2285,11 +2469,11 @@ export const Reportes = () => {
                       Índice del Reporte
                     </Typography>
                     <Box component="ol" sx={{ pl: 2.5, m: 0, fontSize: '13px', color: '#334155' }}>
-                      {(currentPreviewReport?.inds || []).map((id, idx) => {
+                      {(currentPreviewReport?.inds || []).map((id) => {
                         const info = getIndicatorInfo(id);
                         return (
                           <li key={id} style={{ marginBottom: 4 }}>
-                            {idx + 1}. {info.name}
+                            {info.name}
                           </li>
                         );
                       })}
@@ -2308,41 +2492,296 @@ export const Reportes = () => {
                     };
 
                     return (
-                      <Box key={id} className="print-avoid-break" sx={{ mb: 4, pt: 2.5, borderTop: '1px solid #E2E8F0' }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: '16px', color: '#1E2875', mb: 0.5 }}>
-                          {idx + 1}. {info.name}
-                        </Typography>
-                        <Typography sx={{ fontSize: '12px', color: '#64748B', mb: 1.5 }}>
-                          Departamento de {info.dep}
-                        </Typography>
-
-                        {/* Valor Destacado */}
-                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 1.5, flexWrap: 'wrap' }}>
-                          <Typography sx={{ fontSize: '26px', fontWeight: 800, color: '#1E2875' }}>
-                            {indicatorData.val}
+                      <Box key={id} sx={{ mb: 4, pt: 2.5, borderTop: '1px solid #E2E8F0' }}>
+                        {/* Cabecera del Indicador (evita cortes internos y no se separa del contenido) */}
+                        <Box sx={{ breakInside: 'avoid', breakAfter: 'avoid', mb: 2 }}>
+                          <Typography sx={{ fontWeight: 700, fontSize: '16px', color: '#1E2875', mb: 0.5 }}>
+                            {idx + 1}. {info.name}
                           </Typography>
-                          {indicatorData.valSuffix && (
-                            <Typography sx={{ fontSize: '15px', fontWeight: 600, color: '#64748B' }}>
-                              {indicatorData.valSuffix}
+                          <Typography sx={{ fontSize: '12px', color: '#64748B', mb: 1.5 }}>
+                            Departamento de {info.dep}
+                          </Typography>
+
+                          {/* Valor Destacado */}
+                          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 1.5, flexWrap: 'wrap' }}>
+                            <Typography sx={{ fontSize: '26px', fontWeight: 800, color: '#1E2875' }}>
+                              {indicatorData.val}
                             </Typography>
-                          )}
-                          <Typography sx={{ fontSize: '12.5px', color: '#64748B' }}>
-                            (cierre {currentPreviewReport?.annoMax || '2026'})
+                            {indicatorData.valSuffix && (
+                              <Typography sx={{ fontSize: '15px', fontWeight: 600, color: '#64748B' }}>
+                                {indicatorData.valSuffix}
+                              </Typography>
+                            )}
+                            <Typography sx={{ fontSize: '12.5px', color: '#64748B' }}>
+                              (cierre {currentPreviewReport?.annoMax || '2026'})
+                            </Typography>
+                          </Box>
+
+                          <Typography sx={{ fontSize: '13px', color: '#475569', m: 0 }}>
+                            {indicatorData.desc} Los datos corresponden al seguimiento del período {currentPreviewReport?.annoMin || '2023'} al {currentPreviewReport?.annoMax || '2026'}.
                           </Typography>
                         </Box>
 
-                        <Typography sx={{ fontSize: '13px', color: '#475569', mb: 2 }}>
-                          {indicatorData.desc} Los datos corresponden al seguimiento del período {currentPreviewReport?.annoMin || '2023'} al {currentPreviewReport?.annoMax || '2026'}.
-                        </Typography>
-
                         {/* Tabla de Datos */}
-                        {indicatorData.isBidimensional && indicatorData.bidimensionalData ? (
-                          <TableContainer sx={{ border: '1px solid #E2E8F0', borderRadius: '6px', overflow: 'hidden' }}>
+                        {indicatorData.layoutTipo === 'A' && indicatorData.bloques?.length > 0 ? (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+                            {indicatorData.bloques.map((bloque) => (
+                              <Box key={bloque.anio} className="print-avoid-break" sx={{ border: '1px solid #CBD5E1', borderRadius: '8px', overflow: 'hidden' }}>
+                                <Box sx={{ bgcolor: '#2A3B90', color: '#FFFFFF', px: 2, py: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <Typography sx={{ fontWeight: 700, fontSize: '13px', color: '#FFFFFF' }}>
+                                    Año {bloque.anio}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: '11.5px', fontWeight: 600, color: '#FFFFFF' }}>
+                                    {indicatorData.categoriaLabel || 'Dimensión'} vs. {indicatorData.colDimLabel || 'Período'} ({indicatorData.depthDimLabel || 'Sub-desglose'})
+                                  </Typography>
+                                </Box>
+                                <TableContainer>
+                                  <Table size="small">
+                                    <TableHead>
+                                      <TableRow sx={{ bgcolor: '#F1F5F9' }}>
+                                        <TableCell
+                                          rowSpan={2}
+                                          sx={{
+                                            fontWeight: 700,
+                                            fontSize: '12px',
+                                            color: '#1E2875',
+                                            py: 1,
+                                            borderRight: '1px solid #CBD5E1',
+                                            verticalAlign: 'middle',
+                                            bgcolor: '#F1F5F9',
+                                          }}
+                                        >
+                                          {indicatorData.categoriaLabel || 'Dimensión'} / {indicatorData.depthDimLabel || 'Sub-desglose'}
+                                        </TableCell>
+                                        <TableCell
+                                          colSpan={(bloque.columns || []).length}
+                                          align="center"
+                                          sx={{
+                                            fontWeight: 700,
+                                            fontSize: '12px',
+                                            color: '#1E2875',
+                                            py: 0.75,
+                                            borderBottom: '1px solid #CBD5E1',
+                                            bgcolor: '#E2E8F0',
+                                          }}
+                                        >
+                                          {indicatorData.colDim === 'periodo' || indicatorData.colDimLabel === 'periodo' ? 'Periodos' : (indicatorData.colDimLabel || 'Columnas')}
+                                        </TableCell>
+                                      </TableRow>
+                                      <TableRow sx={{ bgcolor: '#F8FAFC' }}>
+                                        {(bloque.columns || []).map((colKey, cIdx) => (
+                                          <TableCell
+                                            key={colKey}
+                                            align="right"
+                                            sx={{
+                                              fontWeight: 700,
+                                              fontSize: '12px',
+                                              color: '#1E2875',
+                                              py: 0.75,
+                                              width: (indicatorData.colDim === 'periodo' || indicatorData.colDimLabel === 'periodo') ? '160px' : 'auto',
+                                              minWidth: (indicatorData.colDim === 'periodo' || indicatorData.colDimLabel === 'periodo') ? '130px' : '90px',
+                                              borderLeft: cIdx > 0 ? '1px solid #CBD5E1' : 'none',
+                                            }}
+                                          >
+                                            {bloque.columnLabels?.[colKey] || colKey}
+                                          </TableCell>
+                                        ))}
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {(bloque.rows || []).map((row, rIdx) => {
+                                        const effectiveDepths = bloque.depths || [];
+
+                                        return (
+                                          <React.Fragment key={row.rowKey || rIdx}>
+                                            {/* Fila Principal de la Categoría con sus totales consolidados */}
+                                            <TableRow sx={{ bgcolor: '#F1F5F9', borderTop: rIdx > 0 ? '1px solid #CBD5E1' : 'none' }}>
+                                              <TableCell sx={{ fontSize: '12px', fontWeight: 700, color: '#1E293B', py: 0.9, borderRight: '1px solid #CBD5E1' }}>
+                                                {row.label}
+                                              </TableCell>
+                                              {(bloque.columns || []).map((colKey, cIdx) => {
+                                                const colVal = row.values?.[colKey]?.total;
+                                                return (
+                                                  <TableCell
+                                                    key={colKey}
+                                                    align="right"
+                                                    sx={{
+                                                      fontSize: '12px',
+                                                      fontWeight: 700,
+                                                      color: '#1E293B',
+                                                      py: 0.9,
+                                                      borderLeft: cIdx > 0 ? '1px solid #CBD5E1' : 'none',
+                                                    }}
+                                                  >
+                                                    {colVal != null ? colVal.toLocaleString('es-CL') : '0'}
+                                                  </TableCell>
+                                                );
+                                              })}
+                                            </TableRow>
+
+                                            {/* Filas Hijas Indentadas para el sub-desglose */}
+                                            {effectiveDepths.map((depth) => (
+                                              <TableRow key={`${rIdx}-${depth.id}`} sx={{ bgcolor: '#FFFFFF', '&:hover': { bgcolor: '#F8FAFC' } }}>
+                                                <TableCell sx={{ fontSize: '11.5px', color: '#475569', py: 0.65, pl: 3.5, borderRight: '1px solid #CBD5E1' }}>
+                                                  {depth.label}
+                                                </TableCell>
+                                                {(bloque.columns || []).map((colKey, cIdx) => {
+                                                  const cellVal = row.values?.[colKey]?.depthValues?.[depth.id];
+                                                  return (
+                                                    <TableCell
+                                                      key={colKey}
+                                                      align="right"
+                                                      sx={{
+                                                        fontSize: '11.5px',
+                                                        fontWeight: 500,
+                                                        color: '#475569',
+                                                        py: 0.65,
+                                                        borderLeft: cIdx > 0 ? '1px solid #CBD5E1' : 'none',
+                                                      }}
+                                                    >
+                                                      {cellVal != null ? cellVal.toLocaleString('es-CL') : '0'}
+                                                    </TableCell>
+                                                  );
+                                                })}
+                                              </TableRow>
+                                            ))}
+                                          </React.Fragment>
+                                        );
+                                      })}
+                                      {/* Fila de Totales Generales del Año */}
+                                      {bloque.totals && (
+                                        <TableRow sx={{ bgcolor: '#F1F5F9', borderTop: '2px solid #CBD5E1' }}>
+                                          <TableCell sx={{ fontSize: '12px', fontWeight: 800, color: '#1E2875', py: 1, borderRight: '1px solid #CBD5E1' }}>
+                                            Total General {bloque.anio}
+                                          </TableCell>
+                                          {(bloque.columns || []).map((colKey, cIdx) => {
+                                            const colTot = bloque.totals.columns?.[colKey] ?? bloque.totals[colKey];
+                                            return (
+                                              <TableCell
+                                                key={colKey}
+                                                align="right"
+                                                sx={{
+                                                  fontSize: '12px',
+                                                  fontWeight: 800,
+                                                  color: '#1E2875',
+                                                  py: 1,
+                                                  borderLeft: cIdx > 0 ? '1px solid #CBD5E1' : 'none',
+                                                }}
+                                              >
+                                                {colTot != null ? colTot.toLocaleString('es-CL') : '—'}
+                                              </TableCell>
+                                            );
+                                          })}
+                                        </TableRow>
+                                      )}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+                              </Box>
+                            ))}
+                          </Box>
+                        ) : indicatorData.layoutTipo === 'B' && indicatorData.bloques?.length > 0 ? (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+                            {indicatorData.bloques.map((bloque) => (
+                              <Box key={bloque.anio} className="print-avoid-break" sx={{ border: '1px solid #CBD5E1', borderRadius: '8px', overflow: 'hidden' }}>
+                                <Box sx={{ bgcolor: '#2A3B90', color: '#FFFFFF', px: 2, py: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <Typography sx={{ fontWeight: 700, fontSize: '13px', color: '#FFFFFF' }}>
+                                    Año {bloque.anio}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: '11.5px', fontWeight: 600, color: '#FFFFFF' }}>
+                                    {indicatorData.categoriaLabel || 'Dimensión'} vs. {indicatorData.colDimLabel || 'Variable'}
+                                  </Typography>
+                                </Box>
+                                <TableContainer>
+                                  <Table size="small">
+                                    <TableHead sx={{ bgcolor: '#F1F5F9' }}>
+                                      <TableRow>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875', py: 1, borderRight: '1px solid #CBD5E1' }}>
+                                          {indicatorData.categoriaLabel ? `Desglose por ${indicatorData.categoriaLabel.toLowerCase()}` : 'Desglose'}
+                                        </TableCell>
+                                        {(bloque.columns || []).map((colKey, cIdx) => (
+                                          <TableCell
+                                            key={colKey}
+                                            align="right"
+                                            sx={{
+                                              fontWeight: 700,
+                                              fontSize: '12px',
+                                              color: '#1E2875',
+                                              py: 1,
+                                              width: (indicatorData.colDim === 'periodo' || indicatorData.colDimLabel === 'periodo') ? '160px' : 'auto',
+                                              minWidth: (indicatorData.colDim === 'periodo' || indicatorData.colDimLabel === 'periodo') ? '130px' : '90px',
+                                              borderLeft: cIdx > 0 ? '1px solid #CBD5E1' : 'none',
+                                            }}
+                                          >
+                                            {bloque.columnLabels?.[colKey] || colKey}
+                                          </TableCell>
+                                        ))}
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {(bloque.matrix || []).map((row, rIdx) => (
+                                        <TableRow key={rIdx} sx={{ '&:nth-of-type(even)': { bgcolor: '#F8FAFC' } }}>
+                                          <TableCell sx={{ fontSize: '12px', fontWeight: 600, color: '#1E293B', py: 0.8, borderRight: '1px solid #CBD5E1' }}>
+                                            {row.row}
+                                          </TableCell>
+                                          {(bloque.columns || []).map((colKey, cIdx) => {
+                                            const cellVal = row.values?.[colKey];
+                                            return (
+                                              <TableCell
+                                                key={colKey}
+                                                align="right"
+                                                sx={{
+                                                  fontSize: '12px',
+                                                  fontWeight: 500,
+                                                  py: 0.8,
+                                                  borderLeft: cIdx > 0 ? '1px solid #CBD5E1' : 'none',
+                                                }}
+                                              >
+                                                {cellVal != null ? cellVal.toLocaleString('es-CL') : '0'}
+                                              </TableCell>
+                                            );
+                                          })}
+                                        </TableRow>
+                                      ))}
+                                      {/* Fila de Totales del Bloque Anual */}
+                                      {bloque.totals && (
+                                        <TableRow sx={{ bgcolor: '#F1F5F9', borderTop: '2px solid #CBD5E1' }}>
+                                          <TableCell sx={{ fontSize: '12px', fontWeight: 800, color: '#1E2875', py: 1, borderRight: '1px solid #CBD5E1' }}>
+                                            Total General {bloque.anio}
+                                          </TableCell>
+                                          {(bloque.columns || []).map((colKey, cIdx) => {
+                                            const colTot = bloque.totals.columns?.[colKey] ?? bloque.totals[colKey];
+                                            return (
+                                              <TableCell
+                                                key={colKey}
+                                                align="right"
+                                                sx={{
+                                                  fontSize: '12px',
+                                                  fontWeight: 800,
+                                                  color: '#1E2875',
+                                                  py: 1,
+                                                  borderLeft: cIdx > 0 ? '1px solid #CBD5E1' : 'none',
+                                                }}
+                                              >
+                                                {colTot != null ? colTot.toLocaleString('es-CL') : '—'}
+                                              </TableCell>
+                                            );
+                                          })}
+                                        </TableRow>
+                                      )}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+                              </Box>
+                            ))}
+                          </Box>
+                        ) : indicatorData.isBidimensional && indicatorData.bidimensionalData ? (
+                          <TableContainer sx={{ border: '1px solid #CBD5E1', borderRadius: '8px', overflow: 'hidden' }}>
                             <Table size="small">
                               <TableHead sx={{ bgcolor: '#F1F5F9' }}>
                                 <TableRow>
                                   <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875', py: 1 }}>
-                                    {indicatorData.dimensionName ? `Desglose (${indicatorData.dimensionName})` : 'Desglose'}
+                                    {indicatorData.dimensionName ? `Desglose por ${indicatorData.dimensionName.toLowerCase()}` : 'Desglose'}
                                   </TableCell>
                                   {(indicatorData.bidimensionalData.columns || []).map((colKey) => {
                                     const rawColTitle = indicatorData.bidimensionalData.columnLabels?.[colKey] || colKey;
@@ -2368,8 +2807,8 @@ export const Reportes = () => {
                                       {(indicatorData.bidimensionalData.columns || []).map((colKey) => {
                                         const cellVal = row.values?.[colKey];
                                         return (
-                                          <TableCell key={colKey} align="right" sx={{ fontSize: '12.5px', fontWeight: 600, py: 0.8 }}>
-                                            {cellVal != null ? cellVal.toLocaleString('es-CL') : '—'}
+                                          <TableCell key={colKey} align="right" sx={{ fontSize: '12.5px', fontWeight: 500, py: 0.8 }}>
+                                            {cellVal != null ? cellVal.toLocaleString('es-CL') : '0'}
                                           </TableCell>
                                         );
                                       })}
@@ -2380,7 +2819,7 @@ export const Reportes = () => {
                                 {indicatorData.bidimensionalData.totals && (
                                   <TableRow sx={{ bgcolor: '#F1F5F9', borderTop: '2px solid #CBD5E1' }}>
                                     <TableCell sx={{ fontSize: '12.5px', fontWeight: 800, color: '#1E2875', py: 1 }}>
-                                      Total
+                                      Total General
                                     </TableCell>
                                     {(indicatorData.bidimensionalData.columns || []).map((colKey) => {
                                       const colTotal = indicatorData.bidimensionalData.totals.columns?.[colKey] ?? indicatorData.bidimensionalData.totals[colKey];
@@ -2396,12 +2835,12 @@ export const Reportes = () => {
                             </Table>
                           </TableContainer>
                         ) : indicatorData.isMatrix && indicatorData.matrixRows.length > 0 ? (
-                          <TableContainer sx={{ border: '1px solid #E2E8F0', borderRadius: '6px', overflow: 'hidden' }}>
+                          <TableContainer sx={{ border: '1px solid #CBD5E1', borderRadius: '8px', overflow: 'hidden' }}>
                             <Table size="small">
                               <TableHead sx={{ bgcolor: '#F1F5F9' }}>
                                 <TableRow>
                                   <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875', py: 1 }}>
-                                    {indicatorData.dimensionName ? `Desglose (${indicatorData.dimensionName})` : 'Desglose'}
+                                    {indicatorData.dimensionName ? `Desglose por ${indicatorData.dimensionName.toLowerCase()}` : 'Desglose'}
                                   </TableCell>
                                   {indicatorData.matrixYears.map((yr) => (
                                     <TableCell key={yr} align="right" sx={{ fontWeight: 700, fontSize: '12px', color: '#1E2875', py: 1 }}>
@@ -2420,13 +2859,27 @@ export const Reportes = () => {
                                         {matrixLabel}
                                       </TableCell>
                                       {row.values.map((v, vIdx) => (
-                                        <TableCell key={vIdx} align="right" sx={{ fontSize: '12.5px', fontWeight: 600, py: 0.8 }}>
-                                          {v.toLocaleString('es-CL')}
+                                        <TableCell key={vIdx} align="right" sx={{ fontSize: '12.5px', fontWeight: 500, py: 0.8 }}>
+                                          {v != null ? v.toLocaleString('es-CL') : '0'}
                                         </TableCell>
                                       ))}
                                     </TableRow>
                                   );
                                 })}
+                                {/* Fila de Totales Generales */}
+                                <TableRow sx={{ bgcolor: '#F1F5F9', borderTop: '2px solid #CBD5E1' }}>
+                                  <TableCell sx={{ fontSize: '12.5px', fontWeight: 800, color: '#1E2875', py: 1 }}>
+                                    Total General
+                                  </TableCell>
+                                  {indicatorData.matrixYears.map((_, yIdx) => {
+                                    const yrColTotal = indicatorData.matrixRows.reduce((acc, r) => acc + (typeof r.values?.[yIdx] === 'number' ? r.values[yIdx] : Number(r.values?.[yIdx]) || 0), 0);
+                                    return (
+                                      <TableCell key={yIdx} align="right" sx={{ fontSize: '12.5px', fontWeight: 800, color: '#1E2875', py: 1 }}>
+                                        {yrColTotal.toLocaleString('es-CL')}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
                               </TableBody>
                             </Table>
                           </TableContainer>
