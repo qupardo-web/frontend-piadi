@@ -91,6 +91,8 @@ export const LandingPage = () => {
       dashboardPath = '/dashboard-innovacion';
     } else if (currentData.departmentId === 'admision') {
       dashboardPath = '/dashboard-admision';
+    } else if (currentData.departmentId === 'desarrollo_curricular') {
+      dashboardPath = '/dashboard-desarrollo-curricular';
     }
     const hash = targetHash ? `#${targetHash}` : '';
     navigate(`${dashboardPath}${hash}`);
@@ -190,7 +192,7 @@ export const LandingPage = () => {
             const cardStyle = kpi.isBlue 
               ? styles.kpiCardBlue(deptColor, customTextColor) 
               : styles.kpiCardWhite;
-            const isNegative = kpi.trend && kpi.trend.startsWith('-');
+            const isNegative = kpi.trend && (kpi.trend.startsWith('-') || kpi.trend.startsWith('−'));
             const trendColor = kpi.isBlue
               ? (isLight ? (isNegative ? '#B91C1C' : '#059669') : (isNegative ? '#F87171' : '#4ADE80'))
               : (isNegative ? '#EF4444' : '#10B981');

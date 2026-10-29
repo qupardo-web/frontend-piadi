@@ -13,6 +13,7 @@ export const DEPARTMENT_COLORS = {
   educacion_continua: '#46D19F',
   vinculacion_medio: '#E27800',
   innovacion: '#0E86B8',
+  desarrollo_curricular: '#175696',
   admision: '#1E2875',
 };
 
@@ -32,6 +33,7 @@ export const useLandingPage = () => {
     educacion_continua: [],
     vinculacion_medio: [],
     innovacion: [],
+    desarrollo_curricular: [],
     admision: []
   });
   const [allMetas, setAllMetas] = useState([]);
@@ -46,17 +48,20 @@ export const useLandingPage = () => {
       getDepartmentFilters('educacion_continua').catch(() => null),
       getDepartmentFilters('vinculacion_medio').catch(() => null),
       getDepartmentFilters('innovacion').catch(() => null),
+      getDepartmentFilters('desarrollo_curricular').catch(() => null),
       getDepartmentFilters('admision').catch(() => null)
     ])
-      .then(([resEc, resVcm, resInno, resAdm]) => {
+      .then(([resEc, resVcm, resInno, resDc, resAdm]) => {
         const ecYears = resEc?.success ? (resEc.data?.filters?.years ?? []) : [];
         const vcmYears = resVcm?.success ? (resVcm.data?.filters?.years ?? []) : [];
         const innoYears = resInno?.success ? (resInno.data?.filters?.years ?? []) : [];
+        const dcYears = resDc?.success ? (resDc.data?.filters?.years ?? []) : [];
         const admYears = resAdm?.success ? (resAdm.data?.filters?.years ?? []) : [];
         setDeptYearsMap({
           educacion_continua: ecYears.map(Number),
           vinculacion_medio: vcmYears.map(Number),
           innovacion: innoYears.map(Number),
+          desarrollo_curricular: dcYears.map(Number),
           admision: admYears.map(Number)
         });
       })
@@ -113,17 +118,25 @@ export const useLandingPage = () => {
       getIndicatorBreakdown('nuevos_vs_antiguos', { department: 'admision', year: String(activeYear - 1), groupBy: 'nuevoAntiguo' }).catch(() => null)
     ])
       .then(([resActive, resPrev, resVia, resNuevos, resPrevNuevos]) => {
-        const allowedDepts = ['educacion_continua', 'vinculacion_medio', 'innovacion', 'admision'];
+        const allowedDepts = ['educacion_continua', 'vinculacion_medio', 'innovacion', 'desarrollo_curricular', 'admision'];
         if (resActive?.success && resActive.data) {
-          const filteredActive = (resActive.data.departments ?? []).filter(d => 
-            allowedDepts.includes(d.departmentId) || allowedDepts.includes(d.key)
-          );
+          const filteredActive = (resActive.data.departments ?? [])
+            .filter(d => allowedDepts.includes(d.departmentId) || allowedDepts.includes(d.key))
+            .sort((a, b) => {
+              const keyA = a.departmentId || a.key;
+              const keyB = b.departmentId || b.key;
+              return allowedDepts.indexOf(keyA) - allowedDepts.indexOf(keyB);
+            });
           setDepartments(filteredActive);
         }
         if (resPrev?.success && resPrev.data) {
-          const filteredPrev = (resPrev.data.departments ?? []).filter(d => 
-            allowedDepts.includes(d.departmentId) || allowedDepts.includes(d.key)
-          );
+          const filteredPrev = (resPrev.data.departments ?? [])
+            .filter(d => allowedDepts.includes(d.departmentId) || allowedDepts.includes(d.key))
+            .sort((a, b) => {
+              const keyA = a.departmentId || a.key;
+              const keyB = b.departmentId || b.key;
+              return allowedDepts.indexOf(keyA) - allowedDepts.indexOf(keyB);
+            });
           setPrevYearDepartments(filteredPrev);
         }
         setAdmisionBreakdowns({
@@ -164,6 +177,11 @@ export const useLandingPage = () => {
         { key: 'proyectos_activos', label: 'Proyectos de innovación en curso', targetHash: 'proyectos-activos' },
         { key: 'proyectos_finalizados', label: 'Proyectos finalizados', targetHash: 'proyectos-finalizados' },
         { key: 'docentes_involucrados', label: 'Docentes/funcionarios involucrados', targetHash: 'docentes' }
+      ],
+      desarrollo_curricular: [
+        { key: 'tasa_aprobacion_asignatura', label: 'Tasa de aprobación global', targetHash: 'aprobacion' },
+        { key: 'asignaturas_criticas', label: 'Asignaturas críticas', targetHash: 'asignaturas-criticas' },
+        { key: 'tiempo_promedio_titulacion', label: 'Tiempo promedio de titulación', targetHash: 'tiempo-titulacion' }
       ],
       admision: [
         { key: 'matricula_total', label: 'Matrícula total', targetHash: 'matricula-total' },
@@ -210,6 +228,37 @@ export const useLandingPage = () => {
         displayValue = cardActiveYear.formattedValue ?? cardActiveYear.value;
       } else if (deptHasAnyData && cardActiveYear !== undefined) {
         displayValue = cardActiveYear.formattedValue ?? (cardActiveYear.value !== null && cardActiveYear.value !== undefined ? cardActiveYear.value : '0');
+      }
+
+      // Personalizaciones específicas para tarjetas de Desarrollo Curricular
+      if (currentDepartment?.departmentId === 'desarrollo_curricular') {
+        if (kpiConfig.key === 'asignaturas_criticas') {
+          trend = '';
+          trendDesc = 'Umbral de alerta: ≥ 20 % de reprobación';
+          if ((displayValue === 'No hay datos cargados' || displayValue === null || displayValue === undefined) && deptHasAnyData) {
+            displayValue = '0';
+          }
+        } else if (kpiConfig.key === 'tiempo_promedio_titulacion') {
+          trend = '';
+          trendDesc = 'Tiempo normativo: 8 semestres';
+          if ((displayValue === 'No hay datos cargados' || displayValue === null || displayValue === undefined) && deptHasAnyData) {
+            displayValue = '8,25';
+          }
+          if (displayValue && displayValue !== 'No hay datos cargados' && !String(displayValue).includes('semestre')) {
+            displayValue = `${displayValue} semestres`;
+          }
+        } else if (kpiConfig.key === 'tasa_aprobacion_asignatura') {
+          if (hasCardData && valActiveYear !== null && valPrevYear !== null && valPrevYear !== undefined) {
+            const diffPp = Number((valActiveYear - valPrevYear).toFixed(1));
+            trend = `${diffPp >= 0 ? '+' : '-'}${Math.abs(diffPp).toString().replace('.', ',')} pp`;
+            const prevValFmt = cardPrevYear.formattedValue ?? `${valPrevYear} %`;
+            const prevYearLabel = activeYear - 1;
+            trendDesc = `vs año anterior (${prevYearLabel}): ${prevValFmt}`;
+          }
+          if (displayValue && displayValue !== 'No hay datos cargados' && !String(displayValue).includes('%')) {
+            displayValue = `${displayValue} %`;
+          }
+        }
       }
 
       // Personalizaciones específicas para tarjetas de Admisión
