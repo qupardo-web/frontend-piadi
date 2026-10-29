@@ -40,7 +40,7 @@ import { CargaDatos, RepositorioArchivos } from './modules/carga_datos';
 import { Auditoria } from './modules/auditoria';
 import { CentralDashboards, DashboardEducacionContinua, DashboardVcM, DashboardInnovacion, DashboardAdmision, DashboardDesarrolloCurricular } from './modules/central_dashboards';
 import { VisualizacionMetas, MetaForm, MetaEditForm } from './modules/metas';
-import { Reportes } from './modules/reportes';
+import { Reportes, HistorialReportes } from './modules/reportes';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { API_URL } from './services/piadiApi';
 
@@ -607,6 +607,20 @@ function App() {
                 <ProtectedRoute>
                   <Reportes />
                 </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/reportes/historial" 
+              element={
+                <ProtectedRoute>
+                  <HistorialReportes />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/historial-reportes" 
+              element={
+                <Navigate to="/reportes/historial" replace />
               } 
             />
 

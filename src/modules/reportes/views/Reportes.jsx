@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogActions,
   LinearProgress,
+  CircularProgress,
   Menu,
   Tooltip,
   Snackbar,
@@ -482,18 +483,27 @@ export const Reportes = () => {
 
   // Sincronizar el título del documento con el nombre del reporte para que al descargar/imprimir el PDF tome ese nombre
   React.useEffect(() => {
-    if (viewMode === 'preview' && currentPreviewReport?.name) {
+    const reportName = (currentPreviewReport?.name || currentPreviewReport?.nombre || builder?.nombre || '').trim();
+    if (viewMode === 'preview' && reportName) {
       const prevTitle = document.title;
-      document.title = currentPreviewReport.name.trim();
+      document.title = reportName;
       return () => {
         document.title = prevTitle;
       };
     }
-  }, [viewMode, currentPreviewReport?.name]);
+  }, [viewMode, currentPreviewReport?.name, currentPreviewReport?.nombre, builder?.nombre]);
 
   const handlePrintPdf = () => {
-    const reportName = currentPreviewReport?.name?.trim() || 'Reporte Institucional';
+    const reportName = (currentPreviewReport?.name || currentPreviewReport?.nombre || builder?.nombre || 'Reporte Institucional').trim();
     document.title = reportName;
+
+    // Notificación al usuario tras procesar el documento en el diálogo del navegador
+    const handleAfterPrint = () => {
+      showToast('¡Reporte PDF procesado con éxito!', 'success');
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+    window.addEventListener('afterprint', handleAfterPrint, { once: true });
+
     window.print();
   };
 
@@ -598,6 +608,24 @@ export const Reportes = () => {
                       Departamento: {userDept.name}
                     </Box>
                   )}
+                  <Button
+                    variant="outlined"
+                    startIcon={<HistoryIcon />}
+                    onClick={() => navigate('/reportes/historial')}
+                    sx={{
+                      color: '#1E2875',
+                      borderColor: '#CBD5E1',
+                      bgcolor: '#FFFFFF',
+                      borderRadius: '8px',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      px: 2,
+                      height: 38,
+                      '&:hover': { borderColor: '#1E2875', bgcolor: '#F8FAFC' },
+                    }}
+                  >
+                    Historial de ejecuciones
+                  </Button>
                   {canCreateReport ? (
                     <Button
                       variant="contained"
@@ -1024,12 +1052,13 @@ export const Reportes = () => {
               </MenuItem>
               <MenuItem
                 onClick={() => {
-                  if (selectedKebabReport) handleOpenHistorial(selectedKebabReport.id);
+                  setKebabAnchorEl(null);
+                  navigate('/reportes/historial');
                 }}
                 sx={{ fontSize: '13.5px', gap: 1.5, py: 1 }}
               >
                 <HistoryIcon fontSize="small" sx={{ color: '#1E2875' }} />
-                Historial
+                Historial de ejecuciones
               </MenuItem>
               <Divider sx={{ my: 0.5 }} />
               <MenuItem
@@ -1650,22 +1679,31 @@ export const Reportes = () => {
                                         {/* Grupo 2: Caracterización / Categorías */}
                                         {categoricDesags.length > 0 && (
                                           <Box>
-                                            <Typography
-                                              variant="caption"
-                                              sx={{
-                                                fontWeight: 700,
-                                                color: '#64748B',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 0.5,
-                                                mb: 0.8,
-                                                fontSize: '11px',
-                                                textTransform: 'uppercase',
-                                                letterSpacing: '0.04em',
-                                              }}
-                                            >
-                                              {temporalDesags.length > 0 ? 'Categoría / Caracterización' : 'Desagregar por'}
-                                            </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.8 }}>
+                                              <Typography
+                                                variant="caption"
+                                                sx={{
+                                                  fontWeight: 700,
+                                                  color: '#64748B',
+                                                  fontSize: '11px',
+                                                  textTransform: 'uppercase',
+                                                  letterSpacing: '0.04em',
+                                                }}
+                                              >
+                                                {temporalDesags.length > 0 ? 'Categoría / Caracterización' : 'Desagregar por'}
+                                              </Typography>
+                                              <Typography
+                                                variant="caption"
+                                                sx={{
+                                                  fontSize: '11px',
+                                                  color: '#64748B',
+                                                  fontWeight: 500,
+                                                  textTransform: 'none',
+                                                }}
+                                              >
+                                                (máximo 2 opciones)
+                                              </Typography>
+                                            </Box>
                                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                                               {categoricDesags.map(renderChip)}
                                             </Box>
