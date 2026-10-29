@@ -54,7 +54,7 @@ import {
   RAMP_COLORS 
 } from './DashboardAdmision.hooks';
 import { styles } from './DashboardAdmision.styles';
-import { Header, Sidebar, KpiCard, DashboardSection, DashboardFilterSidebar } from '../../../components';
+import { Header, Sidebar, KpiCard, DashboardSection, DashboardFilterSidebar, CentroDeAyuda } from '../../../components';
 
 const dashboardLightTheme = createTheme({
   palette: {
@@ -111,8 +111,6 @@ export const DashboardAdmision = () => {
     handleDrawerToggle,
     mobileFiltersOpen,
     setMobileFiltersOpen,
-    openHelpDialog,
-    setOpenHelpDialog,
     filtersCollapsed,
     setFiltersCollapsed,
     activeTab,
@@ -144,7 +142,6 @@ export const DashboardAdmision = () => {
     drawerError,
     handleOpenIndicator,
     handleCloseDrawer,
-    faqData,
     apiLoading,
     hasRealData,
     isNoData,
@@ -1498,50 +1495,8 @@ export const DashboardAdmision = () => {
           </Box>
         </Box>
 
-        {/* ----------------- BOTÓN FLOTANTE DE AYUDA Y MODAL FAQ ----------------- */}
-        <IconButton
-          sx={styles.floatingHelpButton}
-          onClick={() => setOpenHelpDialog(true)}
-          aria-label="Centro de ayuda"
-        >
-          <HelpIcon sx={{ fontSize: 24 }} />
-        </IconButton>
-
-        <Dialog
-          open={openHelpDialog}
-          onClose={() => setOpenHelpDialog(false)}
-          maxWidth="sm"
-          fullWidth
-          PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
-        >
-          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <AdmisionIcon sx={{ color: '#1E2875' }} />
-              <Typography sx={{ fontSize: '18px', fontWeight: 700, color: '#1E2875' }}>
-                Centro de Ayuda — Admisión
-              </Typography>
-            </Box>
-            <IconButton size="small" onClick={() => setOpenHelpDialog(false)}>
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, py: 2 }}>
-            {faqData.map((faq, idx) => (
-              <Accordion key={idx} sx={{ border: '1px solid #E2E8F0', borderRadius: '8px !important', '&:before': { display: 'none' } }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#1E2875' }} />}>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#1E2875' }}>
-                    {faq.q}
-                  </Typography>
-                </AccordionSummary>
-                <AccordionDetails sx={{ pt: 0 }}>
-                  <Typography sx={{ fontSize: '13px', color: '#475569', lineHeight: 1.6 }}>
-                    {faq.a}
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
-            ))}
-          </DialogContent>
-        </Dialog>
+        {/* Centro de Ayuda contextual unificado */}
+        <CentroDeAyuda modulo="admision" />
       </Box>
     </ThemeProvider>
   );

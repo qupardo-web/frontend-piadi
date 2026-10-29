@@ -97,7 +97,6 @@ export const useDashboardInnovacion = () => {
   // Estados de layout y diálogo
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [openHelpDialog, setOpenHelpDialog] = useState(false);
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
 
   // Estados de filtros
@@ -900,22 +899,6 @@ export const useDashboardInnovacion = () => {
     return drawerPeriod ? `Año: ${drawerPeriod}` : '';
   }, [drawerPeriod]);
 
-  // FAQ Data
-  const faqData = [
-    {
-      q: '¿Qué mide el Dashboard de Innovación?',
-      a: 'Presenta el avance cuantitativo y cualitativo de proyectos de innovación, docentes involucrados, distribución temática y proyectos financiados institucionalmente o por fondos externos.'
-    },
-    {
-      q: '¿Cómo se definen los proyectos en curso vs finalizados?',
-      a: 'Un proyecto en curso se encuentra activo en el período actual y dentro de su ventana de vigencia. Los proyectos finalizados corresponden a iniciativas con cierre formal y resultados validados.'
-    },
-    {
-      q: '¿Cómo interactúo con los gráficos?',
-      a: 'Puedes utilizar los controles del panel lateral de filtros para segmentar los datos por año, estado del proyecto, área temática o fuente de financiamiento.'
-    }
-  ];
-
   return {
     navigate,
     user,
@@ -924,8 +907,6 @@ export const useDashboardInnovacion = () => {
     handleDrawerToggle,
     mobileFiltersOpen,
     setMobileFiltersOpen,
-    openHelpDialog,
-    setOpenHelpDialog,
     filtersCollapsed,
     setFiltersCollapsed,
     yearRange,
@@ -953,7 +934,6 @@ export const useDashboardInnovacion = () => {
     drawerError,
     handleOpenIndicator,
     handleCloseDrawer,
-    faqData,
     apiLoading,
     apiFilters,
     dynamicEstados,

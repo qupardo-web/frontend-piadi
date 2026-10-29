@@ -6,4 +6,5 @@ export { DashboardChartCard } from './DashboardChartCard';
 export { DashboardFilterSidebar } from './DashboardFilterSidebar';
 export { DashboardPersistentFilterSidebar } from './DashboardPersistentFilterSidebar';
 export { Sidebar } from './Sidebar';
+export { CentroDeAyuda } from './CentroDeAyuda';
 

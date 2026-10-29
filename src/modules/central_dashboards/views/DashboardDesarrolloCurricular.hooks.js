@@ -156,7 +156,6 @@ export const useDashboardDesarrolloCurricular = () => {
 
   // Estados de navegación y modal de ayuda
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openHelpDialog, setOpenHelpDialog] = useState(false);
 
   // Estados de colapso de secciones de gráficos
   const [collapsedSections, setCollapsedSections] = useState({});
@@ -767,34 +766,12 @@ export const useDashboardDesarrolloCurricular = () => {
     return currentIndicator?.rows || [];
   }, [currentIndicator]);
 
-  // Preguntas Frecuentes para Centro de Ayuda
-  const faqData = [
-    {
-      q: '¿Qué información entrega el Dashboard de Desarrollo Curricular?',
-      a: 'Reúne las estadísticas institucionales sobre rendimiento académico (tasas de aprobación y reprobación por asignatura y año), monitoreo de asignaturas críticas, progreso en prácticas profesionales y tasas de titulación oportuna por cohorte.',
-    },
-    {
-      q: '¿Cómo se define una Asignatura Crítica?',
-      a: 'Una asignatura es considerada crítica cuando su tasa de reprobación alcanza o supera el umbral de alerta institucional del 20 %, requiriendo seguimiento pedagógico y apoyo docente.',
-    },
-    {
-      q: '¿Qué significa Titulación en tiempo normativo?',
-      a: 'Corresponde a los estudiantes que obtienen su título dentro de la duración establecida en la malla curricular (8 semestres en carreras de pregrado regular). Aquellos que requieren semestres adicionales se contabilizan como "con desfase".',
-    },
-    {
-      q: '¿Cómo interactuar con los filtros y detalles?',
-      a: 'Puedes filtrar por rango de años mediante el control deslizante, o acotar por Cohorte, Estado, Asignatura y Tipo de práctica. Además, al presionar "Ver detalle" en cada gráfico o hacer clic en una tarjeta KPI, se desplegará el panel lateral con la tabla histórica y métricas del indicador.',
-    },
-  ];
-
   return {
     navigate,
     user,
     logout,
     mobileOpen,
     setMobileOpen,
-    openHelpDialog,
-    setOpenHelpDialog,
     collapsedSections,
     handleToggleSection,
     filtersCollapsed,
@@ -838,6 +815,5 @@ export const useDashboardDesarrolloCurricular = () => {
     titulacionCohorte: mockTitulacionCohorte,
     tituladosYear: finalTituladosYear,
     tiempoTitulacion: finalTiempoTitulacion,
-    faqData,
   };
 };

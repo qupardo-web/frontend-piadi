@@ -41,7 +41,7 @@ import {
   Description as ReportIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { Header, Sidebar } from '../../../components';
+import { Header, Sidebar, CentroDeAyuda } from '../../../components';
 import { useHistorialReportes } from './HistorialReportes.hooks';
 import { styles } from './HistorialReportes.styles';
 
@@ -732,6 +732,9 @@ export const HistorialReportes = () => {
             {toast.message}
           </Alert>
         </Snackbar>
+
+        {/* Centro de Ayuda contextual */}
+        <CentroDeAyuda modulo="reportes" />
       </Box>
     </Box>
   </ThemeProvider>

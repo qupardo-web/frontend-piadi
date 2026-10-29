@@ -170,7 +170,6 @@ export const useDashboardAdmision = () => {
   // Estados de layout y diálogo
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [openHelpDialog, setOpenHelpDialog] = useState(false);
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
 
   // Pestaña activa: 'matricula' (Matrícula y Académico) o 'caracterizacion' (Caracterización del Estudiante)
@@ -1347,26 +1346,6 @@ export const useDashboardAdmision = () => {
     ];
   }, [apiFilters]);
 
-  // Preguntas Frecuentes (FAQ) del Centro de Ayuda
-  const faqData = useMemo(() => [
-    {
-      q: '¿Qué mide el Dashboard de Admisión?',
-      a: 'Visualiza la evolución de la matrícula institucional (total, semestral, nuevos y antiguos) y la caracterización integral de los estudiantes de pregrado de la carrera Contador Auditor (nivel socioeconómico, procedencia, tipo de colegio, vía de acceso, edad y sexo).'
-    },
-    {
-      q: '¿Cómo funciona la opción de "Período acumulado"?',
-      a: 'Al habilitar el período acumulado en un rango de varios años, los datos de matrícula y distribución consolidan la suma total de cohortes históricas ingresadas en dicho lapso.'
-    },
-    {
-      q: '¿Cómo puedo ver el detalle numérico de una métrica?',
-      a: 'Puedes hacer clic directamente sobre cualquier tarjeta KPI superior o en el botón "Ver detalle" ubicado en las secciones de gráficos para abrir el panel lateral con datos desglosados y tablas históricas.'
-    },
-    {
-      q: '¿Cómo restablezco los filtros a su estado original?',
-      a: 'Haz clic en el botón "Restablecer filtros" en la parte inferior del panel lateral de filtros para volver al rango de años completo y limpiar todas las selecciones de chips.'
-    }
-  ], []);
-
   return {
     navigate,
     user,
@@ -1375,8 +1354,6 @@ export const useDashboardAdmision = () => {
     handleDrawerToggle,
     mobileFiltersOpen,
     setMobileFiltersOpen,
-    openHelpDialog,
-    setOpenHelpDialog,
     filtersCollapsed,
     setFiltersCollapsed,
     activeTab,
@@ -1409,7 +1386,6 @@ export const useDashboardAdmision = () => {
     drawerError,
     handleOpenIndicator,
     handleCloseDrawer,
-    faqData,
     apiLoading,
     hasRealData,
     isNoData,

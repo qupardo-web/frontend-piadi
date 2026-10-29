@@ -616,9 +616,6 @@ export const useReportes = () => {
   const [toastOpen, setToastOpen] = useState(false);
   const [toastSeverity, setToastSeverity] = useState('success');
 
-  // Help modal
-  const [openHelpDialog, setOpenHelpDialog] = useState(false);
-
   // Builder (Wizard) state
   const [builder, setBuilder] = useState({
     step: 1,
@@ -2059,8 +2056,6 @@ export const useReportes = () => {
     setToastOpen,
     toastSeverity,
     showToast,
-    openHelpDialog,
-    setOpenHelpDialog,
     builder,
     setBuilder,
     indicatorSearch,

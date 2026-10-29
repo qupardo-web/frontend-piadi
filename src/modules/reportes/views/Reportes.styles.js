@@ -206,18 +206,4 @@ export const styles = {
     position: 'relative',
     mx: 'auto',
   },
-  floatingHelpButton: {
-    position: 'fixed',
-    bottom: 24,
-    right: 24,
-    bgcolor: '#1E2875',
-    color: '#ffffff',
-    width: 48,
-    height: 48,
-    boxShadow: '0 4px 12px rgba(30, 40, 117, 0.25)',
-    zIndex: 99,
-    '&:hover': {
-      bgcolor: '#131a52',
-    },
-  },
 };
