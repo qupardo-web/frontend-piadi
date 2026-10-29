@@ -92,7 +92,6 @@ export const useVisualizacionMetas = () => {
   // Navigation and menus
   const [activeMenu, setActiveMenu] = useState('Metas');
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openHelpDialog, setOpenHelpDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [metaToDelete, setMetaToDelete] = useState(null);
 
@@ -217,26 +216,6 @@ export const useVisualizacionMetas = () => {
     return diffDays < 0 ? null : diffDays;
   };
 
-  // FAQ Data for Help Dialog
-  const faqData = [
-    {
-      q: '¿Qué son las metas y cómo se usan?',
-      a: 'Las metas son objetivos específicos que puedes rastrear a lo largo del tiempo. Cada meta tiene un progreso medido en porcentaje, fechas de inicio y término, prioridad (Alta, Media, Baja) y un estado (Completada, En progreso, o Requiere atención). Las barras de progreso muestran visualmente qué tan cerca estás de cumplir cada meta.'
-    },
-    {
-      q: '¿Cómo interpreto los indicadores?',
-      a: 'Los indicadores muestran métricas clave como "Total de cursos dictados" o "Tasa de ejecución". El número principal es el valor actual, y la flecha con porcentaje indica el cambio comparado con el periodo anterior. Una flecha verde hacia arriba significa mejora.'
-    },
-    {
-      q: '¿Cómo navego entre secciones?',
-      a: 'Usa el menú lateral izquierdo para moverte entre Inicio, Dashboards, Metas y otras secciones. La sección activa se muestra con fondo verde azulado y una barra blanca en el borde izquierdo.'
-    },
-    {
-      q: '¿Qué significan los colores en las metas?',
-      a: 'Verde indica meta completada (100% o más), azul indica meta en progreso (menos de 100%), y rojo indica que requiere atención (alerta).'
-    }
-  ];
-
   const handleOpenDeleteDialog = (metaId) => {
     setMetaToDelete(metaId);
     setDeleteDialogOpen(true);
@@ -283,8 +262,6 @@ export const useVisualizacionMetas = () => {
     setActiveMenu,
     mobileOpen,
     setMobileOpen,
-    openHelpDialog,
-    setOpenHelpDialog,
     filtersVisible,
     handleToggleFilters,
     handleResetFilters,
@@ -323,6 +300,5 @@ export const useVisualizacionMetas = () => {
     handleDrawerToggle,
     fmtFecha,
     diasHasta,
-    faqData
   };
 };

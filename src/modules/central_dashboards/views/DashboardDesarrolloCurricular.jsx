@@ -34,7 +34,7 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 import { useDashboardDesarrolloCurricular } from './DashboardDesarrolloCurricular.hooks';
 import { styles } from './DashboardDesarrolloCurricular.styles';
-import { Header, Sidebar, KpiCard, DashboardSection, DashboardFilterSidebar } from '../../../components';
+import { Header, Sidebar, KpiCard, DashboardSection, DashboardFilterSidebar, CentroDeAyuda } from '../../../components';
 
 const dashboardLightTheme = createTheme({
   palette: {
@@ -71,8 +71,6 @@ const dashboardLightTheme = createTheme({
 
 export const DashboardDesarrolloCurricular = () => {
   const {
-    openHelpDialog,
-    setOpenHelpDialog,
     collapsedSections,
     handleToggleSection,
     filtersCollapsed,
@@ -116,7 +114,6 @@ export const DashboardDesarrolloCurricular = () => {
     titulacionCohorte,
     tituladosYear,
     tiempoTitulacion,
-    faqData,
   } = useDashboardDesarrolloCurricular();
 
   return (
@@ -1114,48 +1111,8 @@ export const DashboardDesarrolloCurricular = () => {
           </Box>
         </Box>
 
-        {/* MODAL CENTRO DE AYUDA (FAQ) */}
-        <Dialog
-          open={openHelpDialog}
-          onClose={() => setOpenHelpDialog(false)}
-          maxWidth="sm"
-          fullWidth
-          PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
-        >
-          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E2875', fontSize: '18px' }}>
-              Centro de Ayuda — Desarrollo Curricular
-            </Typography>
-            <IconButton onClick={() => setOpenHelpDialog(false)} size="small">
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ pt: 1 }}>
-            {faqData.map((item, idx) => (
-              <Accordion key={idx} sx={{ mb: 1, border: '1px solid #E2E8F0', borderRadius: '8px !important', '&:before': { display: 'none' } }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: '#1E293B' }}>
-                    {item.q}
-                  </Typography>
-                </AccordionSummary>
-                <AccordionDetails sx={{ pt: 0, pb: 2 }}>
-                  <Typography sx={{ fontSize: '13px', color: '#475569', lineHeight: 1.6 }}>
-                    {item.a}
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
-            ))}
-          </DialogContent>
-        </Dialog>
-
-        {/* BOTÓN FLOTANTE CENTRO DE AYUDA */}
-        <IconButton
-          sx={styles.floatingHelpButton}
-          onClick={() => setOpenHelpDialog(true)}
-          aria-label="Centro de ayuda"
-        >
-          <HelpIcon />
-        </IconButton>
+        {/* Centro de Ayuda contextual unificado */}
+        <CentroDeAyuda modulo="desarrollo_curricular" />
       </Box>
     </ThemeProvider>
   );

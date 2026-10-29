@@ -727,22 +727,6 @@ export const styles = {
     gap: 1,
   },
 
-  // Botón flotante de ayuda
-  floatingHelpButton: {
-    position: 'fixed',
-    bottom: 24,
-    right: 24,
-    bgcolor: '#1E2875',
-    color: '#ffffff',
-    width: 48,
-    height: 48,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    zIndex: 1000,
-    '&:hover': {
-      bgcolor: '#161796',
-    },
-  },
-
   noDataPlaceholder: {
     display: 'flex',
     alignItems: 'center',

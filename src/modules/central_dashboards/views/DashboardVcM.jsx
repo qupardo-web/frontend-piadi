@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { styles } from './DashboardVcM.styles';
-import { Header, Sidebar, KpiCard, DashboardSection, DashboardFilterSidebar } from '../../../components';
+import { Header, Sidebar, KpiCard, DashboardSection, DashboardFilterSidebar, CentroDeAyuda } from '../../../components';
 import {
   Box,
   Typography,
@@ -340,9 +340,6 @@ export const DashboardVcM = () => {
     drawerError,
     handleOpenIndicator,
     handleCloseDrawer,
-    openHelpDialog,
-    setOpenHelpDialog,
-    faqData,
   } = useDashboardVcM();
 
   const sectorsList = hasRealData && apiFilters?.filters?.sectores?.length
@@ -2329,67 +2326,8 @@ export const DashboardVcM = () => {
         </Box>
       </Box>
 
-      {/* BOTÓN FLOTANTE DE CENTRO DE AYUDA (?) */}
-      <IconButton
-        sx={styles.floatingHelpButton}
-        onClick={() => setOpenHelpDialog(true)}
-        aria-label="Centro de ayuda"
-      >
-        <HelpIcon sx={{ fontSize: '26px' }} />
-      </IconButton>
-
-      {/* MODAL DE CENTRO DE AYUDA */}
-      <Dialog
-        open={openHelpDialog}
-        onClose={() => setOpenHelpDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: '16px',
-            p: 1,
-            bgcolor: '#FFFFFF',
-            color: '#212121',
-          },
-        }}
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <HelpIcon sx={{ color: '#E27800' }} />
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E2875' }}>
-              Centro de Ayuda — Vinculación con el Medio
-            </Typography>
-          </Box>
-          <IconButton onClick={() => setOpenHelpDialog(false)} size="small">
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}>
-          {faqData.map((faq, index) => (
-            <Accordion
-              key={index}
-              sx={{
-                boxShadow: 'none',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px !important',
-                '&:before': { display: 'none' },
-              }}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E2875' }}>
-                  {faq.q}
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails sx={{ pt: 0 }}>
-                <Typography variant="body2" sx={{ color: '#4B5563', lineHeight: 1.6 }}>
-                  {faq.a}
-                </Typography>
-              </AccordionDetails>
-            </Accordion>
-          ))}
-        </DialogContent>
-      </Dialog>
+      {/* Centro de Ayuda contextual unificado */}
+      <CentroDeAyuda modulo="vinculacion_medio" />
       </Box>
     </ThemeProvider>
   );

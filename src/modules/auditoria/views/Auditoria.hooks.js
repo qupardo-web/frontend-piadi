@@ -388,7 +388,6 @@ export const useAuditoria = () => {
   const [sortKey, setSortKey] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [openHelpDialog, setOpenHelpDialog] = useState(false); // Estado para abrir el Centro de Ayuda
   const itemsPerPage = 3; // Paginación móvil
 
   const [realCargaLogs, setRealCargaLogs] = useState([]);
@@ -456,34 +455,6 @@ export const useAuditoria = () => {
       setFilterRole(DEFAULT_ROLE_FILTER);
     }
   }, [filterRole, roleOptions]);
-
-  // Datos de las Preguntas Frecuentes (FAQ) del Centro de Ayuda
-  const faqData = [
-    {
-      q: '¿Qué son las metas y cómo se usan?',
-      a: 'Las metas son objetivos específicos que puedes rastrear a lo largo del tiempo. Cada meta tiene un progreso medido en porcentaje, fechas de inicio y término, y un estado (Completada, En curso, o Superada). Las barras de progreso muestran visualmente qué tan cerca estás de cumplir cada meta.'
-    },
-    {
-      q: '¿Cómo interpreto los indicadores?',
-      a: 'Los indicadores muestran métricas clave como "Total de cursos dictados" o "Tasa de ejecución". El número principal es el valor actual, y la flecha con porcentaje indica el cambio comparado con el periodo anterior. Una flecha verde hacia arriba significa mejora.'
-    },
-    {
-      q: '¿Cómo navego entre secciones?',
-      a: 'Usa el menú lateral izquierdo para moverte entre Inicio, Dashboards, Metas, y otras secciones. La sección activa se muestra con fondo verde azulado y una barra blanca en el borde izquierdo.'
-    },
-    {
-      q: '¿Qué significan los colores en las metas?',
-      a: 'Verde indica meta completada (100% o más), amarillo indica meta en progreso (menos de 100%), y rojo indica que se ha superado el límite de una meta negativa (como "tasa de abandono debajo del 30%").'
-    },
-    {
-      q: '¿Cómo puedo ver más detalles?',
-      a: 'Haz clic en el botón "Detalles" junto a cada meta, o en "Ingresar a Dashboard" para ver análisis más profundos con gráficos interactivos.'
-    },
-    {
-      q: '¿Cómo funcionan las métricas?',
-      isRich: true
-    }
-  ];
 
   const activeMenu = 'Auditoría';
 
@@ -639,10 +610,7 @@ export const useAuditoria = () => {
     handleSort,
     currentPage,
     setCurrentPage,
-    openHelpDialog,
-    setOpenHelpDialog,
     itemsPerPage,
-    faqData,
     activeMenu,
     handleDrawerToggle,
     handleTabChange,

@@ -65,7 +65,7 @@ import {
   ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 
-import { Header, Sidebar } from '../../../components';
+import { Header, Sidebar, CentroDeAyuda } from '../../../components';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {
   useReportes,
@@ -437,8 +437,6 @@ export const Reportes = () => {
     setToastOpen,
     toastSeverity,
     showToast,
-    openHelpDialog,
-    setOpenHelpDialog,
     builder,
     setBuilder,
     indicatorSearch,
@@ -3161,68 +3159,8 @@ export const Reportes = () => {
         )}
       </Box>
 
-      {/* Botón Flotante de Ayuda (?) */}
-      <IconButton className="no-print" sx={styles.floatingHelpButton} onClick={() => setOpenHelpDialog(true)}>
-        <HelpIcon />
-      </IconButton>
-
-      {/* Centro de Ayuda (FAQ) Modal */}
-      <Dialog
-        open={openHelpDialog}
-        onClose={() => setOpenHelpDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: '14px', p: 1 } }}
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E2875' }}>
-            Centro de Ayuda — Módulo de Reportes
-          </Typography>
-          <IconButton onClick={() => setOpenHelpDialog(false)} size="small">
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          <Accordion disableGutters elevation={0}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#1E2875' }}>
-                ¿Cómo creo un nuevo reporte?
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2" sx={{ color: '#475569' }}>
-                Haz clic en el botón principal «Crear reporte». Sigue los 4 pasos del asistente: define el nombre y área, selecciona los indicadores que deseas incluir con sus desagregaciones, ajusta el período de años y filtros temáticos, y finalmente escoge el formato de salida (Excel o PDF).
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-
-          <Accordion disableGutters elevation={0}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#1E2875' }}>
-                ¿Qué diferencia hay entre un reporte predefinido y mis reportes?
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2" sx={{ color: '#475569' }}>
-                Los reportes predefinidos son plantillas base institucionales configuradas para cada departamento. Puedes usarlos como punto de partida presionando «Usar como base». «Mis reportes» contiene los reportes personalizados que tú o tu equipo han guardado.
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-
-          <Accordion disableGutters elevation={0}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#1E2875' }}>
-                ¿Dónde puedo ver las descargas anteriores?
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2" sx={{ color: '#475569' }}>
-                Puedes presionar el botón «Historial» en la cabecera principal o en el menú de cada tarjeta para consultar las fechas, estados de generación y volver a descargar el archivo en cualquier momento.
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-        </DialogContent>
-      </Dialog>
+      {/* Centro de Ayuda Contextual */}
+      <CentroDeAyuda modulo="reportes" />
 
         {/* Notificación Toast */}
         <Snackbar

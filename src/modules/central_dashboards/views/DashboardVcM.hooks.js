@@ -1153,7 +1153,6 @@ export const useDashboardVcM = () => {
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerError, setDrawerError] = useState(null);
   const [apiIndicatorDetail, setApiIndicatorDetail] = useState(null);
-  const [openHelpDialog, setOpenHelpDialog] = useState(false);
 
   const availableYears = useMemo(() => {
     return apiFilters?.filters?.years ?? [2023, 2024, 2025, 2026];
@@ -1505,22 +1504,6 @@ export const useDashboardVcM = () => {
     return drawerPeriod ? `Año: ${drawerPeriod}` : '';
   }, [drawerPeriod]);
 
-  // FAQ Data
-  const faqData = [
-    {
-      q: '¿Qué mide el Dashboard de Vinculación con el Medio (VcM)?',
-      a: 'Presenta estadísticas e indicadores de convenios vigentes, nuevas firmas, actividades ejecutadas, participantes internos/externos y articulaciones con la Educación Técnico-Profesional (EMTP).'
-    },
-    {
-      q: '¿Cómo se contabilizan los convenios vigentes vs nuevos?',
-      a: 'Los convenios vigentes consideran todos los acuerdos activos durante el año seleccionado, mientras que los nuevos convenios corresponden a los suscritos formalmente durante dicho año.'
-    },
-    {
-      q: '¿Cómo interactúo con los filtros del panel lateral?',
-      a: 'Puedes filtrar por período (slider de años o período acumulado), sector de la contraparte, línea de acción VcM, modalidad y plataformas de articulación TP.'
-    }
-  ];
-
   return {
     navigate,
     user,
@@ -1624,8 +1607,5 @@ export const useDashboardVcM = () => {
     drawerError,
     handleOpenIndicator,
     handleCloseDrawer,
-    openHelpDialog,
-    setOpenHelpDialog,
-    faqData,
   };
 };

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { styles } from './DashboardEducacionContinua.styles';
-import { Header, Sidebar, KpiCard, DashboardChartCard, DashboardMiniSection, DashboardFilterSidebar, DashboardSection } from '../../../components';
+import { Header, Sidebar, KpiCard, DashboardChartCard, DashboardMiniSection, DashboardFilterSidebar, DashboardSection, CentroDeAyuda } from '../../../components';
 import {
   Box,
   Typography,
@@ -234,13 +234,10 @@ export const DashboardEducacionContinua = () => {
     currentIndicator,
     displayRows,
     drawerPeriodText,
-    openHelpDialog,
-    setOpenHelpDialog,
     handleOpenIndicator,
     handleCloseDrawer,
     handleDrawerPeriodChange,
     setDrawerGroupBy,
-    faqData,
   } = useDashboardEducacionContinua();
 
   const [openTemporalidad, setOpenTemporalidad] = React.useState(true);
@@ -1611,90 +1608,9 @@ export const DashboardEducacionContinua = () => {
         </Box>
       </Box>
 
-      {/* BOTÓN FLOTANTE DE CENTRO DE AYUDA (?) */}
-      <IconButton
-        onClick={() => setOpenHelpDialog(true)}
-        sx={styles.floatingHelpButton}
-        aria-label="Centro de Ayuda"
-      >
-        <HelpOutlineIcon />
-      </IconButton>
-
-      {/* MODAL DE CENTRO DE AYUDA (FAQ) */}
-      <Dialog
-        open={openHelpDialog}
-        onClose={() => setOpenHelpDialog(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: '16px', p: 1 }
-        }}
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <HelpOutlineIcon sx={{ color: '#1E2875', fontSize: 28 }} />
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E2875', fontFamily: "'Inter', sans-serif" }}>
-              Centro de Ayuda — Educación Continua
-            </Typography>
-          </Box>
-          <IconButton onClick={() => setOpenHelpDialog(false)} size="small">
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers sx={{ py: 2 }}>
-          <Typography variant="body2" sx={{ color: '#64748B', mb: 3, fontSize: '14px' }}>
-            Respuestas a las dudas más comunes sobre la interpretación de las métricas, metodologías de cálculo y uso de filtros del panel de Educación Continua.
-          </Typography>
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {faqData.map((faq, index) => (
-              <Accordion 
-                key={index}
-                disableGutters
-                elevation={0}
-                sx={{
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '12px !important',
-                  '&:before': { display: 'none' },
-                  overflow: 'hidden'
-                }}
-              >
-                <AccordionSummary 
-                  expandIcon={<ExpandMoreIcon sx={{ color: '#1E2875' }} />}
-                  sx={{ bgcolor: '#F8FAFC', px: 2, py: 0.5 }}
-                >
-                  <Typography sx={{ fontWeight: 600, color: '#1E2875', fontSize: '14px' }}>
-                    {faq.q}
-                  </Typography>
-                </AccordionSummary>
-                <AccordionDetails sx={{ px: 2, py: 2, bgcolor: '#FFFFFF' }}>
-                  <Typography variant="body2" sx={{ color: '#334155', lineHeight: 1.6, fontSize: '13.5px' }}>
-                    {faq.a}
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
-            ))}
-          </Box>
-
-          <Box sx={{ mt: 3, p: 2, bgcolor: '#F0FDF4', border: '1px solid #1DC2A0', borderRadius: '12px', display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-            <InfoOutlinedIcon sx={{ color: '#1DC2A0', fontSize: 20, mt: 0.2 }} />
-            <Typography variant="caption" sx={{ color: '#065F46', fontSize: '12.5px', lineHeight: 1.5 }}>
-              <strong>Tip de navegación:</strong> Puedes interactuar haciendo clic en el botón "Ver detalles" de cada indicador para visualizar la evolución histórica año a año y el desglose cualitativo.
-            </Typography>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 1.5 }}>
-          <Button 
-            onClick={() => setOpenHelpDialog(false)} 
-            variant="contained" 
-            sx={{ bgcolor: '#1E2875', color: '#FFFFFF', textTransform: 'none', fontWeight: 600, borderRadius: '8px', '&:hover': { bgcolor: '#161796' } }}
-          >
-            Entendido
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      </Box>
-    </ThemeProvider>
-  );
+      {/* Centro de Ayuda contextual unificado */}
+      <CentroDeAyuda modulo="educacion_continua" />
+    </Box>
+  </ThemeProvider>
+);
 };

@@ -810,7 +810,6 @@ export const useDashboardEducacionContinua = () => {
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerError, setDrawerError] = useState(null);
   const [apiIndicatorDetail, setApiIndicatorDetail] = useState(null);
-  const [openHelpDialog, setOpenHelpDialog] = useState(false);
 
   // Drawer handlers
   const handleOpenIndicator = useCallback((key, overrideGroupBy = undefined) => {
@@ -1097,22 +1096,6 @@ export const useDashboardEducacionContinua = () => {
     return drawerPeriod ? `Año: ${drawerPeriod}` : '';
   }, [drawerPeriod]);
 
-  // Preguntas frecuentes del centro de ayuda
-  const faqData = [
-    {
-      q: '¿Qué información presenta el Dashboard de Educación Continua?',
-      a: 'Visualiza estadísticas de oferta académica programada, cursos efectivamente dictados, tasas de ejecución y aprobación, ingresos generados, matrícula de participantes y caracterización demográfica.'
-    },
-    {
-      q: '¿Cómo se calcula la tasa de ejecución y aprobación?',
-      a: 'La tasa de ejecución corresponde a la razón porcentual entre cursos efectivamente dictados y cursos planificados. La tasa de aprobación mide el porcentaje de participantes que completaron y aprobaron los cursos sobre el total de inscritos.'
-    },
-    {
-      q: '¿Cómo filtrar por períodos o características de los programas?',
-      a: 'Usa el panel de filtros laterales para seleccionar el rango de años, semestres, meses de inicio, tipo de programa (diplomados, cursos, etc.), modalidad de impartición y área disciplinar.'
-    }
-  ];
-
   return {
     navigate,
     user,
@@ -1219,12 +1202,9 @@ export const useDashboardEducacionContinua = () => {
     currentIndicator,
     displayRows,
     drawerPeriodText,
-    openHelpDialog,
-    setOpenHelpDialog,
     handleOpenIndicator,
     handleCloseDrawer,
     handleDrawerPeriodChange,
     setDrawerGroupBy,
-    faqData,
   };
 };

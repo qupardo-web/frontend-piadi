@@ -1,7 +1,7 @@
 import React from 'react';
 import { useVisualizacionMetas } from './VisualizacionMetas.hooks';
 import { styles } from './VisualizacionMetas.styles';
-import { Header, Sidebar } from '../../../components';
+import { Header, Sidebar, CentroDeAyuda } from '../../../components';
 import {
   Box,
   Typography,
@@ -42,8 +42,6 @@ export const VisualizacionMetas = () => {
     navigate,
     user,
     canCreateMeta,
-    openHelpDialog,
-    setOpenHelpDialog,
     filtersVisible,
     handleToggleFilters,
     handleResetFilters,
@@ -72,7 +70,6 @@ export const VisualizacionMetas = () => {
     pageSize,
     fmtFecha,
     diasHasta,
-    faqData,
     loading,
     error,
     kpis,
@@ -718,90 +715,8 @@ export const VisualizacionMetas = () => {
         </Box>
       </Box>
 
-      {/* Floating Help Button */}
-      <IconButton
-        onClick={() => setOpenHelpDialog(true)}
-        sx={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
-          bgcolor: '#1E2875',
-          color: '#ffffff',
-          boxShadow: '0 4px 10px rgba(30, 40, 117, 0.3)',
-          '&:hover': {
-            bgcolor: '#1560d3',
-          },
-        }}
-        aria-label="Abrir centro de ayuda"
-      >
-        <HelpIcon />
-      </IconButton>
-
-      {/* Help Dialog Modal */}
-      <Dialog
-        open={openHelpDialog}
-        onClose={() => setOpenHelpDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 4, p: 1, bgcolor: '#ffffff', color: '#111827', border: '1px solid #e5e7eb' },
-        }}
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-          <Typography variant="h6" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#1E2875' }}>
-            Centro de Ayuda - Metas
-          </Typography>
-          <IconButton onClick={() => setOpenHelpDialog(false)}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {faqData.map((faq, index) => (
-              <Accordion 
-                key={index}
-                elevation={0}
-                sx={{
-                  bgcolor: '#f9fafb',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px !important',
-                  mb: 1,
-                  '&::before': { display: 'none' },
-                }}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E2875' }}>
-                    {faq.q}
-                  </Typography>
-                </AccordionSummary>
-                <AccordionDetails sx={{ borderTop: '1px solid #e5e7eb', pt: 2 }}>
-                  <Typography variant="body2" sx={{ color: '#070c12' }}>
-                    {faq.a}
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
-            ))}
-
-            {/* Banner info badge tip */}
-            <Box 
-              sx={{
-                bgcolor: '#F0FDF4',
-                border: '1px solid #1DC2A0',
-                borderRadius: 2,
-                p: 2,
-                mt: 1,
-              }}
-            >
-              <Typography variant="caption" sx={{ color: '#15803d', fontWeight: 600, display: 'block', mb: 0.5 }}>
-                💡 Tip de Gestión:
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#166534', fontSize: '13px' }}>
-                Las metas en estado "Requiere atención" (alerta) tienen un progreso significativamente inferior al esperado para su fecha límite. ¡Revísalas periódicamente!
-              </Typography>
-            </Box>
-          </Box>
-        </DialogContent>
-      </Dialog>
+      {/* Centro de Ayuda contextual unificado */}
+      <CentroDeAyuda modulo="metas" />
 
       {/* Delete Confirmation Dialog */}
       <Dialog 

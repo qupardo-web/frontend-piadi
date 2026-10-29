@@ -176,3 +176,8 @@ export const descargarEjecucionReporte = async (ejecucionId, fallbackName = 'rep
   window.URL.revokeObjectURL(url);
   return { success: true, filename };
 };
+
+// Centro de Ayuda (PIADI-459)
+export const getHelpEntries = (modulo) =>
+  apiFetch(`/api/help?modulo=${encodeURIComponent(modulo)}`);
+
