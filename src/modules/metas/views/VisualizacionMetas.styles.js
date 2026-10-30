@@ -455,6 +455,8 @@ export const styles = {
     let borderLeftColor = '#3b82f6'; // en-curso default
     if (estado === 'completada') borderLeftColor = '#059669';
     if (estado === 'alerta') borderLeftColor = '#dc2626';
+    if (estado === 'borrador') borderLeftColor = '#f59e0b';
+    if (estado === 'cerrada') borderLeftColor = '#64748b';
 
     return {
       position: 'relative',
@@ -538,6 +540,18 @@ export const styles = {
         color: '#b91c1c',
         border: '1px solid #fecaca',
       };
+    } else if (estado === 'borrador') {
+      badgeStyles = {
+        bgcolor: '#fef3c7',
+        color: '#92400e',
+        border: '1px solid #fde68a',
+      };
+    } else if (estado === 'cerrada') {
+      badgeStyles = {
+        bgcolor: '#f1f5f9',
+        color: '#475569',
+        border: '1px solid #cbd5e1',
+      };
     }
     return {
       display: 'inline-flex',
@@ -596,20 +610,40 @@ export const styles = {
     gap: 0.8,
   },
 
-  iconActionBtn: (type) => ({
-    width: 30,
-    height: 30,
-    borderRadius: 2,
-    border: '1px solid transparent',
-    color: '#9ca3af',
-    p: 0,
-    minWidth: 'auto',
-    '&:hover': {
-      bgcolor: type === 'edit' ? '#eff6ff' : '#fef2f2',
-      color: type === 'edit' ? '#1a71f6' : '#dc2626',
-      borderColor: type === 'edit' ? '#bfdbfe' : '#fecaca',
-    },
-  }),
+  iconActionBtn: (type) => {
+    let hoverBg = '#fef2f2';
+    let hoverColor = '#dc2626';
+    let hoverBorder = '#fecaca';
+
+    if (type === 'edit') {
+      hoverBg = '#eff6ff';
+      hoverColor = '#1a71f6';
+      hoverBorder = '#bfdbfe';
+    } else if (type === 'close') {
+      hoverBg = '#f1f5f9';
+      hoverColor = '#475569';
+      hoverBorder = '#cbd5e1';
+    } else if (type === 'view') {
+      hoverBg = '#f3f4f6';
+      hoverColor = '#374151';
+      hoverBorder = '#d1d5db';
+    }
+
+    return {
+      width: 30,
+      height: 30,
+      borderRadius: 2,
+      border: '1px solid transparent',
+      color: '#9ca3af',
+      p: 0,
+      minWidth: 'auto',
+      '&:hover': {
+        bgcolor: hoverBg,
+        color: hoverColor,
+        borderColor: hoverBorder,
+      },
+    };
+  },
 
   // Progreso
   metaProgress: {
@@ -648,6 +682,7 @@ export const styles = {
     let color = '#3b82f6';
     if (estado === 'completada') color = '#059669';
     if (estado === 'alerta') color = '#dc2626';
+    if (estado === 'cerrada') color = '#64748b';
 
     const widthVal = Math.min(progreso, 100);
     return {
@@ -768,7 +803,7 @@ export const styles = {
 
   kpiRow: {
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(auto-fit, minmax(220px, 1fr))' },
     gap: 2,
     mt: 0.5,
     mb: 3,
