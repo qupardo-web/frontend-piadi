@@ -63,6 +63,9 @@ import {
   Apps as AllIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
+  ExpandLess as ExpandLessIcon,
+  TableChart as TableChartIcon,
+  PictureAsPdf as PictureAsPdfIcon,
 } from '@mui/icons-material';
 
 import { Header, Sidebar, CentroDeAyuda } from '../../../components';
@@ -458,6 +461,7 @@ export const Reportes = () => {
     progressValue,
     progressText,
     handleDownloadDoc,
+    handleDescargarEjecucion,
     histReporteFilter,
     setHistReporteFilter,
     histFechaFilter,
@@ -474,6 +478,13 @@ export const Reportes = () => {
     dimensionNameToKey,
     areaName,
     formatDate,
+    expandedReportCards,
+    toggleExpandReport,
+    downloadModalOpen,
+    downloadTargetReport,
+    handleOpenDownloadModal,
+    handleCloseDownloadModal,
+    handleSelectDownloadFormat,
   } = useReportes();
 
   // Active kebab report
@@ -858,15 +869,49 @@ export const Reportes = () => {
                                 <Box sx={styles.reportBadge(color)}>{areaName(p.area)}</Box>
                               </Box>
 
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                                {p.inds.map((indId) => {
-                                  const info = getIndicatorInfo(indId);
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, alignItems: 'center' }}>
+                                {(() => {
+                                  const cardKey = p.id || p.name;
+                                  const isExpanded = Boolean(expandedReportCards[cardKey]);
+                                  const visibleInds = isExpanded || p.inds.length <= 3 ? p.inds : p.inds.slice(0, 3);
+                                  const remainingCount = p.inds.length - 3;
+
                                   return (
-                                    <Box key={indId} sx={styles.chip}>
-                                      {info.name}
-                                    </Box>
+                                    <>
+                                      {visibleInds.map((indId) => {
+                                        const info = getIndicatorInfo(indId);
+                                        return (
+                                          <Box key={indId} sx={styles.chip}>
+                                            {info.name}
+                                          </Box>
+                                        );
+                                      })}
+                                      {p.inds.length > 3 && (
+                                        <Box
+                                          component="button"
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleExpandReport(cardKey);
+                                          }}
+                                          sx={styles.chipExpandBtn(isExpanded)}
+                                        >
+                                          {isExpanded ? (
+                                            <>
+                                              Ver menos
+                                              <ExpandLessIcon sx={{ fontSize: 14 }} />
+                                            </>
+                                          ) : (
+                                            <>
+                                              +{remainingCount} más
+                                              <ExpandMoreIcon sx={{ fontSize: 14 }} />
+                                            </>
+                                          )}
+                                        </Box>
+                                      )}
+                                    </>
                                   );
-                                })}
+                                })()}
                               </Box>
 
                               <Typography sx={{ fontSize: '12.5px', color: '#64748B' }}>
@@ -948,15 +993,48 @@ export const Reportes = () => {
                                 <Box sx={styles.reportBadge(color)}>{areaName(r.area)}</Box>
                               </Box>
 
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                                {r.inds.map((indId) => {
-                                  const info = getIndicatorInfo(indId);
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, alignItems: 'center' }}>
+                                {(() => {
+                                  const isExpanded = Boolean(expandedReportCards[r.id]);
+                                  const visibleInds = isExpanded || r.inds.length <= 3 ? r.inds : r.inds.slice(0, 3);
+                                  const remainingCount = r.inds.length - 3;
+
                                   return (
-                                    <Box key={indId} sx={styles.chip}>
-                                      {info.name}
-                                    </Box>
+                                    <>
+                                      {visibleInds.map((indId) => {
+                                        const info = getIndicatorInfo(indId);
+                                        return (
+                                          <Box key={indId} sx={styles.chip}>
+                                            {info.name}
+                                          </Box>
+                                        );
+                                      })}
+                                      {r.inds.length > 3 && (
+                                        <Box
+                                          component="button"
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleExpandReport(r.id);
+                                          }}
+                                          sx={styles.chipExpandBtn(isExpanded)}
+                                        >
+                                          {isExpanded ? (
+                                            <>
+                                              Ver menos
+                                              <ExpandLessIcon sx={{ fontSize: 14 }} />
+                                            </>
+                                          ) : (
+                                            <>
+                                              +{remainingCount} más
+                                              <ExpandMoreIcon sx={{ fontSize: 14 }} />
+                                            </>
+                                          )}
+                                        </Box>
+                                      )}
+                                    </>
                                   );
-                                })}
+                                })()}
                               </Box>
 
                               <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
@@ -969,13 +1047,7 @@ export const Reportes = () => {
                                 fullWidth
                                 variant="contained"
                                 size="small"
-                                onClick={() => {
-                                  if (r.formato === 'excel' || r.formato === 'xlsx') {
-                                    handleDownloadDoc(r);
-                                  } else {
-                                    handleStartGenerate(r);
-                                  }
-                                }}
+                                onClick={() => handleOpenDownloadModal(r)}
                                 sx={{
                                   bgcolor: '#1E2875',
                                   color: '#FFFFFF',
@@ -1113,6 +1185,91 @@ export const Reportes = () => {
                   }}
                 >
                   Eliminar
+                </Button>
+              </DialogActions>
+            </Dialog>
+
+            {/* Modal: Seleccionar formato de descarga */}
+            <Dialog
+              open={downloadModalOpen}
+              onClose={handleCloseDownloadModal}
+              maxWidth="xs"
+              fullWidth
+              PaperProps={{
+                sx: {
+                  borderRadius: '16px',
+                  p: 2.5,
+                  maxWidth: 440,
+                },
+              }}
+            >
+              <DialogTitle sx={{ p: 0, mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ fontWeight: 700, fontSize: '18px', color: '#1E2875' }}>
+                  Seleccionar formato
+                </Typography>
+                <IconButton size="small" onClick={handleCloseDownloadModal} sx={{ color: '#64748B' }}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </DialogTitle>
+              <DialogContent sx={{ p: 0, my: 1.5 }}>
+                <Typography sx={{ fontSize: '13px', color: '#64748B', mb: 2 }}>
+                  ¿Cómo deseas obtener el reporte <strong>«{downloadTargetReport?.name || 'Reporte'}»</strong>?
+                </Typography>
+
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  {/* Opción 1: Excel */}
+                  <Box
+                    component="button"
+                    type="button"
+                    onClick={() => handleSelectDownloadFormat('xlsx')}
+                    sx={styles.downloadOptionBtn('#10B981')}
+                  >
+                    <Box sx={styles.downloadOptionIcon('#10B981')}>
+                      <TableChartIcon sx={{ fontSize: 26 }} />
+                    </Box>
+                    <Box sx={{ textAlign: 'left', flex: 1 }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '14.5px', color: '#1E2875' }}>
+                        Planilla Excel (.xlsx)
+                      </Typography>
+                      <Typography sx={{ fontSize: '12px', color: '#64748B', mt: 0.3, lineHeight: 1.35 }}>
+                        Tablas de datos, hojas por indicador y filtros listos para análisis.
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Opción 2: PDF */}
+                  <Box
+                    component="button"
+                    type="button"
+                    onClick={() => handleSelectDownloadFormat('pdf')}
+                    sx={styles.downloadOptionBtn('#E11D48')}
+                  >
+                    <Box sx={styles.downloadOptionIcon('#E11D48')}>
+                      <PictureAsPdfIcon sx={{ fontSize: 26 }} />
+                    </Box>
+                    <Box sx={{ textAlign: 'left', flex: 1 }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '14.5px', color: '#1E2875' }}>
+                        Documento PDF institucional
+                      </Typography>
+                      <Typography sx={{ fontSize: '12px', color: '#64748B', mt: 0.3, lineHeight: 1.35 }}>
+                        Formato A4 oficial membretado, listo para previsualizar e imprimir.
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              </DialogContent>
+              <DialogActions sx={{ p: 0, mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  onClick={handleCloseDownloadModal}
+                  sx={{
+                    color: '#64748B',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    borderRadius: '8px',
+                    '&:hover': { bgcolor: '#F1F5F9' },
+                  }}
+                >
+                  Cancelar
                 </Button>
               </DialogActions>
             </Dialog>
@@ -3058,9 +3215,19 @@ export const Reportes = () => {
                     </TableRow>
                   ) : (
                     paginatedHistorial.map((h) => {
-                      let statusBadge = { bg: '#ECFDF5', color: '#047857', label: 'Completado' };
-                      if (h.estado === 'pending') statusBadge = { bg: '#FFF7ED', color: '#C2410C', label: 'En proceso' };
-                      if (h.estado === 'error') statusBadge = { bg: '#FEF2F2', color: '#B91C1C', label: 'Error' };
+                      let statusBadge = { bg: '#ECFDF5', color: '#047857', label: 'Listo' };
+                      const estadoUpper = String(h.estado || '').toUpperCase();
+                      if (estadoUpper === 'PENDIENTE') {
+                        statusBadge = { bg: '#F1F5F9', color: '#475569', label: 'Pendiente' };
+                      } else if (estadoUpper === 'GENERANDO' || estadoUpper === 'PENDING') {
+                        statusBadge = { bg: '#FFF7ED', color: '#C2410C', label: 'Generando' };
+                      } else if (estadoUpper === 'ERROR') {
+                        statusBadge = { bg: '#FEF2F2', color: '#B91C1C', label: 'Error' };
+                      } else if (estadoUpper === 'LISTO' || estadoUpper === 'COMPLETED') {
+                        statusBadge = { bg: '#ECFDF5', color: '#047857', label: 'Listo' };
+                      }
+
+                      const isAvailable = h.archivoDisponible === true;
 
                       return (
                         <TableRow key={h.id} hover>
@@ -3089,22 +3256,31 @@ export const Reportes = () => {
                             </Box>
                           </TableCell>
                           <TableCell align="right">
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              startIcon={<DownloadIcon sx={{ fontSize: '16px !important' }} />}
-                              onClick={() => handleDownloadDoc({ id: h.reporteId, name: h.reporteName })}
-                              sx={{
-                                color: '#1E2875',
-                                borderColor: '#CBD5E1',
-                                borderRadius: '6px',
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                '&:hover': { borderColor: '#1E2875', bgcolor: 'rgba(30, 40, 117, 0.04)' },
-                              }}
-                            >
-                              Descargar
-                            </Button>
+                            <Tooltip title={isAvailable ? "Re-descargar archivo original" : "Archivo no disponible para re-descarga directa"}>
+                              <span>
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  disabled={!isAvailable}
+                                  startIcon={<DownloadIcon sx={{ fontSize: '16px !important' }} />}
+                                  onClick={() => handleDescargarEjecucion(h)}
+                                  sx={{
+                                    color: '#1E2875',
+                                    borderColor: '#CBD5E1',
+                                    borderRadius: '6px',
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    '&:hover': { borderColor: '#1E2875', bgcolor: 'rgba(30, 40, 117, 0.04)' },
+                                    '&.Mui-disabled': {
+                                      color: '#94A3B8',
+                                      borderColor: '#E2E8F0',
+                                    },
+                                  }}
+                                >
+                                  Descargar
+                                </Button>
+                              </span>
+                            </Tooltip>
                           </TableCell>
                         </TableRow>
                       );

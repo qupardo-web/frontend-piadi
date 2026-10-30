@@ -96,6 +96,7 @@ export const updateReporte = (id, body) => apiMutate(`/api/reportes/${id}`, 'PUT
 export const deleteReporte = (id) => apiMutate(`/api/reportes/${id}`, 'DELETE');
 export const getReporteEjecuciones = (id, params) => apiFetch(`/api/reportes/${id}/ejecuciones${buildParams(params)}`);
 export const getReportesEjecuciones = (params) => apiFetch(`/api/reportes/ejecuciones${buildParams(params)}`);
+export const createReporteEjecucion = (id, body = { formato: 'PDF' }) => apiMutate(`/api/reportes/${id}/ejecuciones`, 'POST', body);
 export const getReporteAreas = () => apiFetch('/api/reportes/areas');
 export const getReporteTipos = () => apiFetch('/api/reportes/tipos');
 export const getReporteFormatos = () => apiFetch('/api/reportes/formatos');
