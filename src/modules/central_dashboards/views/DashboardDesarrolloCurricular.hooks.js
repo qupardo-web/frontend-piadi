@@ -732,7 +732,7 @@ export const useDashboardDesarrolloCurricular = () => {
         ? apiDrawerDetail.table.map((r) => [
             r.label || String(r.year || '-'),
             typeof r.value === 'number'
-              ? (apiDrawerDetail.unit === '%' ? `${r.value} %` : String(r.value))
+              ? (apiDrawerDetail.unit === '%' ? `${Number(r.value.toFixed(2)).toLocaleString('es-CL')} %` : String(Number(r.value.toFixed(2)).toLocaleString('es-CL')))
               : String(r.value || '-'),
           ])
         : [];
@@ -742,11 +742,15 @@ export const useDashboardDesarrolloCurricular = () => {
         desc: apiDrawerDetail.description || MOCK_INDICATORS[currentIndicatorKey]?.desc,
         metric: {
           label: `${title || 'Valor'} (${apiDrawerDetail.unit || ''})`,
-          value: apiDrawerDetail.total ?? apiDrawerDetail.formattedTotal ?? '-',
+          value: apiDrawerDetail.total != null
+            ? (apiDrawerDetail.unit === '%' ? `${Number(apiDrawerDetail.total.toFixed(2)).toLocaleString('es-CL')} %` : Number(apiDrawerDetail.total.toFixed(2)).toLocaleString('es-CL'))
+            : (apiDrawerDetail.formattedTotal ?? '-'),
         },
         trend: apiDrawerDetail.comparison
           ? {
-              delta: apiDrawerDetail.comparison.diff,
+              delta: typeof apiDrawerDetail.comparison.diff === 'number'
+                ? Math.round(apiDrawerDetail.comparison.diff * 100) / 100
+                : apiDrawerDetail.comparison.diff,
               baseline: String(apiDrawerDetail.comparison.previousYear),
               isPositive: apiDrawerDetail.comparison.diff >= 0,
             }

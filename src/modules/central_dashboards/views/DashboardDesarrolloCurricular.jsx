@@ -991,7 +991,7 @@ export const DashboardDesarrolloCurricular = () => {
                       <Typography sx={styles.drawerMetricValue}>
                         {currentIndicator.metric.value !== null 
                           ? (typeof currentIndicator.metric.value === 'number' 
-                              ? currentIndicator.metric.value.toLocaleString('es-CL') 
+                              ? currentIndicator.metric.value.toLocaleString('es-CL', { maximumFractionDigits: 2 }) 
                               : currentIndicator.metric.value)
                           : 'Sin datos'}
                       </Typography>
@@ -1005,7 +1005,9 @@ export const DashboardDesarrolloCurricular = () => {
                         >
                           <Typography sx={{ fontSize: '12px', fontWeight: 600 }}>
                             {currentIndicator.trend.delta > 0 ? '▲ +' : '▼ '}
-                            {Math.abs(currentIndicator.trend.delta)} vs {currentIndicator.trend.baseline}
+                            {typeof currentIndicator.trend.delta === 'number'
+                              ? Number(Math.abs(currentIndicator.trend.delta)).toLocaleString('es-CL', { maximumFractionDigits: 2 })
+                              : Math.abs(currentIndicator.trend.delta)} vs {currentIndicator.trend.baseline}
                           </Typography>
                         </Box>
                       )}
@@ -1057,7 +1059,7 @@ export const DashboardDesarrolloCurricular = () => {
                                     fontWeight: cIdx === row.length - 1 ? 600 : 400
                                   }}
                                 >
-                                  {typeof cell === 'number' ? cell.toLocaleString('es-CL') : cell}
+                                  {typeof cell === 'number' ? cell.toLocaleString('es-CL', { maximumFractionDigits: 2 }) : cell}
                                 </td>
                               ))}
                             </tr>
