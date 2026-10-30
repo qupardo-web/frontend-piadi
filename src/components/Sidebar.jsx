@@ -17,12 +17,11 @@ import {
   UploadFile as CargaIcon,
   Shield as AuditoriaIcon,
   ExitToApp as LogoutIcon,
-  MoreVert as MoreVertIcon,
   Menu as MenuIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import logoEcas from '../assets/logo_ECAS_white.svg';
+import logoPiadi from '../assets/logo-piadi-white.svg';
 
 export const Sidebar = ({ activeMenu, mobileRightAction }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -112,8 +111,8 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
         >
           <Box
             component="img"
-            src={logoEcas}
-            alt="Logo ECAS"
+            src={logoPiadi}
+            alt="Logo PIADI"
             sx={{ width: 32, height: 32, objectFit: 'contain' }}
           />
           <Box>
@@ -217,11 +216,10 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
             bgcolor: 'rgba(255, 255, 255, 0.04)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             border: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, minWidth: 0 }}>
             <Avatar
               sx={{
                 width: 36,
@@ -230,13 +228,15 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
                 fontSize: '0.9rem',
                 fontFamily: "'Inter', sans-serif",
                 fontWeight: 600,
+                flexShrink: 0,
               }}
             >
               {getInitials(user?.username)}
             </Avatar>
-            <Box>
+            <Box sx={{ minWidth: 0 }}>
               <Typography
                 variant="body2"
+                noWrap
                 sx={{
                   fontWeight: 600,
                   color: '#ffffff',
@@ -244,24 +244,25 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
                   fontFamily: "'Inter', sans-serif",
                 }}
               >
-                {user?.username || 'Usuario'}
+                {user?.name || user?.username || 'Usuario'}
               </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: 'rgba(255,255,255,0.5)',
-                  cursor: 'pointer',
-                  fontFamily: "'Inter', sans-serif",
-                  '&:hover': { textDecoration: 'underline' },
-                }}
-              >
-                Ver perfil
-              </Typography>
+              {(user?.role?.name || user?.role) && (
+                <Typography
+                  variant="caption"
+                  noWrap
+                  sx={{
+                    color: 'rgba(255,255,255,0.5)',
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: '11px',
+                    display: 'block',
+                    mt: 0.2,
+                  }}
+                >
+                  {typeof user?.role === 'object' ? user?.role?.name : user?.role}
+                </Typography>
+              )}
             </Box>
           </Box>
-          <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-            <MoreVertIcon fontSize="small" />
-          </IconButton>
         </Box>
       </Box>
     </Box>
@@ -320,8 +321,8 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
             >
               <Box
                 component="img"
-                src={logoEcas}
-                alt="Logo ECAS"
+                src={logoPiadi}
+                alt="Logo PIADI"
                 sx={{ width: 24, height: 24, objectFit: 'contain' }}
               />
               <Typography sx={{ fontWeight: 700, fontSize: '16px', color: '#ffffff', letterSpacing: 0.5 }}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCargaDatos, getTemplateColor } from './CargaDatos.hooks';
+import { useCargaDatos, getTemplateColor, isAdmisionTemplate } from './CargaDatos.hooks';
 import { styles } from './CargaDatos.styles';
 import { Header, Sidebar, CentroDeAyuda } from '../../../components';
 import {
@@ -60,7 +60,10 @@ const TABLE_LABELS = {
   ActividadVcm: 'Actividades Realizadas',
   ArticulacionVcm: 'Articulaciones Docentes',
   ProyectoInnovacion: 'Proyectos de Innovación',
-  DocenteInnovacion: 'Docentes Vinculados'
+  DocenteInnovacion: 'Docentes Vinculados',
+  RendimientoAsignatura: 'Rendimiento de Asignaturas',
+  Practica: 'Prácticas Registradas',
+  Titulacion: 'Titulaciones Registradas',
 };
 
 export const CargaDatos = () => {
@@ -71,6 +74,7 @@ export const CargaDatos = () => {
     openUploadDialog,
     setOpenUploadDialog,
     selectedTemplate,
+    templates,
     selectedFile,
     setSelectedFile,
     isDragActive,
@@ -320,9 +324,12 @@ export const CargaDatos = () => {
                 El archivo <strong>{selectedFile?.name}</strong> fue verificado y cargado sin errores en el sistema.
               </Typography>
 
-              {/* Feedback de Carga Completa o Parcial */}
+              {/* Feedback de Carga Completa o Parcial (Exclusivo para Admisión) */}
               {(() => {
                 if (!successSummary) return null;
+                const currentTemplateObj = templates?.find((t) => t.id === selectedTemplate);
+                if (!isAdmisionTemplate(currentTemplateObj)) return null;
+
                 const hasMatricula = Boolean(successSummary.MatriculaPorAsignatura || successSummary.Alumno || successSummary.Asignatura);
                 const hasCaracterizacion = Boolean(successSummary.CaracterizacionEstudiante);
 

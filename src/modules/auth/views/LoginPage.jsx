@@ -18,7 +18,7 @@ import {
   Visibility, 
   VisibilityOff
 } from '@mui/icons-material';
-import logoEcas from '../../../assets/logo_ECAS.svg';
+import logoPiadi from '../../../assets/logo-piadi.svg';
 import loginBg from '../../../assets/fondo_login_ECAS.png';
 
 // Creamos un tema claro local para asegurar que los inputs y textos del panel
@@ -83,11 +83,11 @@ export const LoginPage = () => {
           <Box sx={styles.logoRow}>
             <Box 
               component="img" 
-              src={logoEcas} 
-              alt="Logo ECAS" 
+              src={logoPiadi} 
+              alt="Logo PIADI" 
               sx={{ width: 36, height: 36, objectFit: 'contain' }} 
             />
-            <Typography sx={styles.logoText}>PIADI ECAS</Typography>
+            <Typography sx={styles.logoText}>PIADI</Typography>
           </Box>
 
           {/* Encabezado */}
