@@ -8,6 +8,9 @@ import {
   deleteReporte,
   descargarReporte,
   getReporteEjecuciones,
+  getReportesEjecuciones,
+  descargarEjecucionReporte,
+  createReporteEjecucion,
   getReporteAreas,
   getDepartmentKpis,
   getIndicatorDetail,
@@ -557,6 +560,17 @@ export const useReportes = () => {
   const [filtroHasta, setFiltroHasta] = useState('');
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
 
+  // Estado para expandir/colapsar chips de indicadores en tarjetas (si tienen 4 o más)
+  const [expandedReportCards, setExpandedReportCards] = useState({});
+
+  const toggleExpandReport = useCallback((reportId) => {
+    if (!reportId) return;
+    setExpandedReportCards((prev) => ({
+      ...prev,
+      [reportId]: !prev[reportId],
+    }));
+  }, []);
+
   // Data lists from API
   const [allReportes, setAllReportes] = useState([]);
   const [areasList, setAreasList] = useState([]);
@@ -610,6 +624,10 @@ export const useReportes = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+
+  // Modal para selección de formato de descarga (Excel o PDF)
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [downloadTargetReport, setDownloadTargetReport] = useState(null);
 
   // Toast alert
   const [toastMessage, setToastMessage] = useState('');
@@ -954,14 +972,61 @@ export const useReportes = () => {
   }, [predefinidosList, searchQuery, filtroDepartamento, filtroFormato, isDepartmentRestricted, userDept, isReportFromUserDept]);
 
   // Carga de historial general o por reporte
-  const loadHistorial = useCallback(async () => {
-    // Listo para conectar cuando el endpoint global de historial esté disponible en backend
-    setHistorialList([]);
-  }, []);
+  const loadHistorial = useCallback(async (reportIdFilter = null) => {
+    try {
+      setLoading(true);
+      const targetId = reportIdFilter !== null ? reportIdFilter : histReporteFilter;
+      const params = {};
+      if (targetId && targetId !== 'todos') {
+        params.reporteId = targetId;
+      }
+      if (histFechaFilter) {
+        params.fecha = histFechaFilter;
+      }
+      if (histEstadoFilter && histEstadoFilter !== 'todos') {
+        params.estado = histEstadoFilter;
+      }
+
+      const res = await getReportesEjecuciones(params);
+      const list = res?.data || res || [];
+      const normalized = (Array.isArray(list) ? list : []).map((ejec) => ({
+        id: ejec.id,
+        reporteId: ejec.reporteId || ejec.reporte?.id,
+        reporteName: ejec.reporte?.nombre || ejec.reporte?.name || `Reporte #${ejec.reporteId || ejec.id}`,
+        usuario: ejec.solicitante?.name || ejec.solicitante?.email || 'Sistema',
+        fecha: ejec.generadoEn ? ejec.generadoEn.slice(0, 10) : '',
+        hora: ejec.generadoEn ? ejec.generadoEn.slice(11, 16) : '',
+        generadoEn: ejec.generadoEn,
+        formato: (ejec.formato || 'XLSX').toUpperCase(),
+        estado: ejec.estado, // PENDIENTE | GENERANDO | LISTO | ERROR
+        archivoNombre: ejec.archivoNombre || '',
+        archivoDisponible: ejec.archivoDisponible === true,
+      }));
+      setHistorialList(normalized);
+    } catch (err) {
+      console.error('Error al cargar historial:', err);
+      showToast('No se pudo cargar el historial de ejecuciones.', 'error');
+      setHistorialList([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [histReporteFilter, histFechaFilter, histEstadoFilter, showToast]);
 
   // Re-descarga directa de una ejecución persistida en el servidor
-  const handleDescargarEjecucion = useCallback(async () => {
-    showToast('La descarga desde el historial estará disponible próximamente.', 'info');
+  const handleDescargarEjecucion = useCallback(async (ejecucion) => {
+    if (!ejecucion) return;
+    if (!ejecucion.archivoDisponible) {
+      showToast('El archivo generado anteriormente no se encuentra disponible para re-descarga.', 'warning');
+      return;
+    }
+    try {
+      showToast(`Descargando archivo «${ejecucion.archivoNombre || 'reporte.xlsx'}»...`);
+      await descargarEjecucionReporte(ejecucion.id, ejecucion.archivoNombre || 'reporte.xlsx');
+      showToast('Archivo descargado con éxito.');
+    } catch (err) {
+      console.error('Error al descargar ejecución:', err);
+      showToast(err.message || 'Error al descargar archivo del historial.', 'error');
+    }
   }, [showToast]);
 
   // Historial filtrado & paginado
@@ -981,12 +1046,12 @@ export const useReportes = () => {
 
   const totalHistPages = Math.max(1, Math.ceil(filteredHistorial.length / HIST_PER_PAGE));
 
-  // Cargar historial automáticamente cuando se abre la pestaña de Historial
+  // Cargar historial automáticamente cuando se abre la pestaña de Historial o la vista de historial
   useEffect(() => {
-    if (mainTab === 'historial') {
+    if (mainTab === 'historial' || viewMode === 'historial') {
       loadHistorial();
     }
-  }, [mainTab, loadHistorial]);
+  }, [mainTab, viewMode, histReporteFilter, histFechaFilter, histEstadoFilter, loadHistorial]);
 
   // Builder actions
   const handleOpenNewBuilder = () => {
@@ -1414,6 +1479,29 @@ export const useReportes = () => {
     };
   }, []);
 
+  const handleOpenDownloadModal = (report) => {
+    if (!report) return;
+    setDownloadTargetReport(report);
+    setDownloadModalOpen(true);
+  };
+
+  const handleCloseDownloadModal = () => {
+    setDownloadModalOpen(false);
+    setDownloadTargetReport(null);
+  };
+
+  const handleSelectDownloadFormat = (formato) => {
+    if (!downloadTargetReport) return;
+    const target = downloadTargetReport;
+    handleCloseDownloadModal();
+
+    if (formato === 'xlsx' || formato === 'excel') {
+      handleDownloadDoc(target);
+    } else {
+      handleStartGenerate({ ...target, formato: 'pdf' });
+    }
+  };
+
   const handleDownloadDoc = async (customReport = null) => {
     const target = customReport || currentPreviewReport;
     if (!target) return;
@@ -1835,6 +1923,15 @@ export const useReportes = () => {
       setProgressValue(100);
       setProgressText('¡Documento listo!');
 
+      // Registrar ejecución PDF en el backend (requisito sección 2.1 del handoff)
+      if (report.id && (report.formato === 'pdf' || report.formato === 'PDF')) {
+        try {
+          await createReporteEjecucion(report.id, { formato: 'PDF' });
+        } catch (auditErr) {
+          console.warn('No se pudo registrar la ejecución PDF en auditoría:', auditErr);
+        }
+      }
+
       setTimeout(async () => {
         setIsGenerating(false);
       }, 400);
@@ -2102,5 +2199,12 @@ export const useReportes = () => {
     dimensionNameToKey,
     areaName,
     formatDate,
+    expandedReportCards,
+    toggleExpandReport,
+    downloadModalOpen,
+    downloadTargetReport,
+    handleOpenDownloadModal,
+    handleCloseDownloadModal,
+    handleSelectDownloadFormat,
   };
 };
