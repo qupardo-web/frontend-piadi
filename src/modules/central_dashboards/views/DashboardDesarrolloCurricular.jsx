@@ -111,6 +111,7 @@ export const DashboardDesarrolloCurricular = () => {
     reprobacionAsignaturas,
     asignaturasCriticas,
     practicasYear,
+    practicasPorTipo,
     titulacionCohorte,
     tituladosYear,
     tiempoTitulacion,
@@ -251,7 +252,7 @@ export const DashboardDesarrolloCurricular = () => {
                   <Button
                     size="small"
                     variant="text"
-                    onClick={() => handleOpenIndicator('reprobacion-asignatura')}
+                    onClick={() => handleOpenIndicator('reprobacion')}
                     sx={styles.detailButton}
                   >
                     Ver detalles
@@ -481,34 +482,28 @@ export const DashboardDesarrolloCurricular = () => {
                 </Box>
 
                 {/* Mini tabla desglosada por tipo de práctica */}
-                <Box sx={styles.miniTableWrap}>
-                  <table style={styles.miniTable}>
-                    <thead>
-                      <tr>
-                        <th>Tipo de práctica</th>
-                        <th>Inscritas</th>
-                        <th>Aprobadas</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>Práctica I</td>
-                        <td>6</td>
-                        <td>24</td>
-                      </tr>
-                      <tr>
-                        <td>Práctica II</td>
-                        <td>5</td>
-                        <td>20</td>
-                      </tr>
-                      <tr>
-                        <td>Práctica Profesional</td>
-                        <td>6</td>
-                        <td>16</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </Box>
+                {practicasPorTipo && practicasPorTipo.length > 0 && (
+                  <Box sx={styles.miniTableWrap}>
+                    <table style={styles.miniTable}>
+                      <thead>
+                        <tr>
+                          <th>Tipo de práctica</th>
+                          <th>Inscritas</th>
+                          <th>Aprobadas</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {practicasPorTipo.map((p, idx) => (
+                          <tr key={idx}>
+                            <td>{p.tipo}</td>
+                            <td>{p.inscritas}</td>
+                            <td>{p.aprobadas}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Box>
+                )}
               </DashboardSection>
 
               {/* 6. Tasa de titulación por cohorte */}
@@ -518,7 +513,7 @@ export const DashboardDesarrolloCurricular = () => {
                 iconColor="#175696"
                 isOpen={!collapsedSections['titulacion-cohorte']}
                 onToggle={() => handleToggleSection('titulacion-cohorte')}
-                hasData={hasRealData}
+                hasData={titulacionCohorte?.labels?.length > 0}
                 noDataHeight={240}
               >
                 <Box sx={styles.chartSubtitleRow}>
@@ -534,44 +529,43 @@ export const DashboardDesarrolloCurricular = () => {
                     Ver detalles
                   </Button>
                 </Box>
-                <Box sx={styles.legendRow}>
-                  <Box sx={styles.legendItem}>
-                    <Box sx={styles.legendDot('#0E86B8')} />
-                    En tiempo normativo
-                  </Box>
-                  <Box sx={styles.legendItem}>
-                    <Box sx={styles.legendDot('#3EC9FF')} />
-                    Con desfase
-                  </Box>
-                </Box>
-                <Box sx={{ minHeight: 270, width: '100%' }}>
-                  {titulacionCohorte?.labels?.length > 0 ? (
-                    <BarChart
-                      grid={{ horizontal: true }}
-                      xAxis={[{ scaleType: 'band', data: titulacionCohorte.labels }]}
-                      series={[
-                        {
-                          data: titulacionCohorte.series[0]?.values || [],
-                          label: 'En tiempo normativo',
-                          color: '#0E86B8',
-                        },
-                        {
-                          data: titulacionCohorte.series[1]?.values || [],
-                          label: 'Con desfase',
-                          color: '#3EC9FF',
-                        },
-                      ]}
-                      height={270}
-                      margin={{ top: 25, right: 20, bottom: 35, left: 45 }}
-                      slotProps={{ legend: { hidden: true } }}
-                    />
-                  ) : (
-                    <Box sx={styles.emptyChartBox}>Sin datos disponibles</Box>
-                  )}
-                </Box>
-                <Typography sx={{ fontSize: '12px', color: '#64748B', mt: 1.5 }}>
-                  11 titulados en tiempo normativo (50 %) · 11 con desfase (50 %)
-                </Typography>
+                {titulacionCohorte?.labels?.length > 0 ? (
+                  <>
+                    <Box sx={styles.legendRow}>
+                      <Box sx={styles.legendItem}>
+                        <Box sx={styles.legendDot('#0E86B8')} />
+                        En tiempo normativo
+                      </Box>
+                      <Box sx={styles.legendItem}>
+                        <Box sx={styles.legendDot('#3EC9FF')} />
+                        Con desfase
+                      </Box>
+                    </Box>
+                    <Box sx={{ minHeight: 270, width: '100%' }}>
+                      <BarChart
+                        grid={{ horizontal: true }}
+                        xAxis={[{ scaleType: 'band', data: titulacionCohorte.labels }]}
+                        series={[
+                          {
+                            data: titulacionCohorte.series[0]?.values || [],
+                            label: 'En tiempo normativo',
+                            color: '#0E86B8',
+                          },
+                          {
+                            data: titulacionCohorte.series[1]?.values || [],
+                            label: 'Con desfase',
+                            color: '#3EC9FF',
+                          },
+                        ]}
+                        height={270}
+                        margin={{ top: 25, right: 20, bottom: 35, left: 45 }}
+                        slotProps={{ legend: { hidden: true } }}
+                      />
+                    </Box>
+                  </>
+                ) : (
+                  <Box sx={styles.emptyChartBox}>Sin datos disponibles</Box>
+                )}
               </DashboardSection>
 
               {/* 7. Titulados por año */}
@@ -627,12 +621,14 @@ export const DashboardDesarrolloCurricular = () => {
                 iconColor="#175696"
                 isOpen={!collapsedSections['tiempo-titulacion']}
                 onToggle={() => handleToggleSection('tiempo-titulacion')}
-                hasData={hasRealData}
+                hasData={tiempoTitulacion != null}
                 noDataHeight={240}
               >
                 <Box sx={styles.chartSubtitleRow}>
                   <Typography sx={styles.chartSubtitle}>
-                    8,68 semestres promedio vs. tiempo normativo (8) · desfase +0,68
+                    {tiempoTitulacion != null
+                      ? `${Number(tiempoTitulacion).toFixed(2).replace('.', ',')} semestres promedio vs. tiempo normativo (8)`
+                      : 'Tiempo promedio de titulación por carrera'}
                   </Typography>
                   <Button
                     size="small"
@@ -643,54 +639,56 @@ export const DashboardDesarrolloCurricular = () => {
                     Ver detalles
                   </Button>
                 </Box>
-                <Box sx={styles.legendRow}>
-                  <Box sx={styles.legendBadge('#059669', '#F0FDF4', '#BBF7D0')}>
-                    <Box sx={styles.legendDashedLine('#059669')} />
-                    <span>
-                      Tiempo normativo de titulación: <strong style={{ color: '#059669', fontWeight: 700, fontSize: '13.5px' }}>8 semestres</strong>
-                    </span>
-                  </Box>
-                </Box>
-                <Box sx={{ minHeight: 150, width: '100%' }}>
-                  {tiempoTitulacion != null ? (
-                    <BarChart
-                      layout="horizontal"
-                      grid={{ vertical: true }}
-                      xAxis={[
-                        {
-                          min: 0,
-                          max: Math.max(Number(tiempoTitulacion) || 0, 10) * 1.18,
-                          valueFormatter: (v) => `${v} sem.`,
-                        },
-                      ]}
-                      yAxis={[
-                        {
-                          scaleType: 'band',
-                          data: ['Promedio institucional'],
-                          width: 155,
-                          tickLabelStyle: { fontSize: 11.5, fontWeight: 500 },
-                        },
-                      ]}
-                      series={[
-                        {
-                          data: [Number(tiempoTitulacion) || 0],
-                          label: 'Semestres',
-                          color: '#46D19F',
-                          valueFormatter: (v) => `${v != null ? Number(v).toFixed(2).replace('.', ',') : ''} semestres`,
-                        },
-                      ]}
-                      height={150}
-                      margin={{ top: 25, right: 35, bottom: 35, left: 165 }}
-                    >
-                      <ChartsReferenceLine
-                        x={8}
-                        lineStyle={{ stroke: '#059669', strokeDasharray: '5 5', strokeWidth: 2.5 }}
-                      />
-                    </BarChart>
-                  ) : (
-                    <Box sx={styles.emptyChartBox}>Sin datos disponibles</Box>
-                  )}
-                </Box>
+                {tiempoTitulacion != null ? (
+                  <>
+                    <Box sx={styles.legendRow}>
+                      <Box sx={styles.legendBadge('#059669', '#F0FDF4', '#BBF7D0')}>
+                        <Box sx={styles.legendDashedLine('#059669')} />
+                        <span>
+                          Tiempo normativo de titulación: <strong style={{ color: '#059669', fontWeight: 700, fontSize: '13.5px' }}>8 semestres</strong>
+                        </span>
+                      </Box>
+                    </Box>
+                    <Box sx={{ minHeight: 150, width: '100%' }}>
+                      <BarChart
+                        layout="horizontal"
+                        grid={{ vertical: true }}
+                        xAxis={[
+                          {
+                            min: 0,
+                            max: Math.max(Number(tiempoTitulacion) || 0, 10) * 1.18,
+                            valueFormatter: (v) => `${v} sem.`,
+                          },
+                        ]}
+                        yAxis={[
+                          {
+                            scaleType: 'band',
+                            data: ['Promedio institucional'],
+                            width: 155,
+                            tickLabelStyle: { fontSize: 11.5, fontWeight: 500 },
+                          },
+                        ]}
+                        series={[
+                          {
+                            data: [Number(tiempoTitulacion) || 0],
+                            label: 'Semestres',
+                            color: '#46D19F',
+                            valueFormatter: (v) => `${v != null ? Number(v).toFixed(2).replace('.', ',') : ''} semestres`,
+                          },
+                        ]}
+                        height={150}
+                        margin={{ top: 25, right: 35, bottom: 35, left: 165 }}
+                      >
+                        <ChartsReferenceLine
+                          x={8}
+                          lineStyle={{ stroke: '#059669', strokeDasharray: '5 5', strokeWidth: 2.5 }}
+                        />
+                      </BarChart>
+                    </Box>
+                  </>
+                ) : (
+                  <Box sx={styles.emptyChartBox}>Sin datos disponibles</Box>
+                )}
               </DashboardSection>
         </Box>
 

@@ -26,127 +26,94 @@ export const UI_TO_BACKEND_KEY = {
 
 export const MOCK_INDICATORS = {
   'aprobacion': {
-    title: 'Tasa de aprobación por asignatura',
+    title: 'Tasa de aprobación por año',
     desc: 'Porcentaje de estudiantes que aprueban cada asignatura en el semestre.',
-    metric: { label: 'Tasa de aprobación global (%)', value: 83.8 },
-    trend: { delta: -0.4, baseline: '2023', isPositive: false },
-    rows: [
-      ['2023', '84,2 %'],
-      ['2024', '86,2 %'],
-      ['2025', '82,2 %'],
-      ['2026', '83,1 %'],
-    ],
+    metric: { label: 'Tasa de aprobación global (%)', value: null },
+    trend: null,
+    rows: [],
     colLabels: ['Año', 'Tasa de aprobación (%)'],
-    state: 'data',
+    state: 'empty',
+  },
+  'reprobacion': {
+    title: 'Tasa de reprobación por año',
+    desc: 'Porcentaje de estudiantes que reprueban cada asignatura en el período académico.',
+    metric: { label: 'Tasa de reprobación global (%)', value: null },
+    trend: null,
+    rows: [],
+    colLabels: ['Año', 'Tasa de reprobación (%)'],
+    state: 'empty',
   },
   'reprobacion-asignatura': {
     title: 'Tasa de reprobación por asignatura',
     desc: 'Porcentaje de reprobados por asignatura. Permite identificar asignaturas críticas.',
-    metric: { label: 'Reprobación global 2026 (%)', value: 16.9 },
-    trend: { delta: 1.1, baseline: '2023', isPositive: false, badWhenUp: true },
-    rows: [
-      ['Gestión de Personas', '22,2 %'],
-      ['Auditoría', '18,8 %'],
-      ['Economía', '18,5 %'],
-      ['Finanzas', '17.8 %'],
-      ['Taller de Titulación', '16,2 %'],
-      ['Derecho Tributario', '16,1 %'],
-      ['Contabilidad I', '15,3 %'],
-      ['Contabilidad II', '14,7 %'],
-      ['Estadística', '13,2 %'],
-      ['Costos', '9,8 %'],
-    ],
+    metric: { label: 'Reprobación global (%)', value: null },
+    trend: null,
+    rows: [],
     colLabels: ['Asignatura', 'Tasa de reprobación (%)'],
-    state: 'data',
+    state: 'empty',
   },
   'asignaturas-criticas': {
     title: 'Asignaturas críticas',
     desc: 'Listado de asignaturas con tasa de reprobación superior al umbral definido por la institución.',
-    metric: { label: 'Asignaturas críticas (reprobación ≥ 20 %)', value: 1 },
+    metric: { label: 'Asignaturas críticas (reprobación ≥ 20 %)', value: null },
     trend: null,
-    rows: [
-      ['Gestión de Personas', '22,2 %'],
-    ],
-    colLabels: ['Asignatura', 'Tasa de reprobación'],
-    state: 'data',
+    rows: [],
+    colLabels: ['Asignatura', 'Tasa de reprobación (%)'],
+    state: 'empty',
   },
   'practicas': {
     title: 'Prácticas: inscritas vs. aprobadas',
     desc: 'Número de estudiantes inscritos en práctica profesional por semestre.',
-    metric: { label: 'Inscritas 2026', value: 11 },
-    trend: { delta: 7, baseline: '2025', isPositive: true },
-    rows: [
-      ['2024', 2, 3],
-      ['2025', 4, 23],
-      ['2026', 11, 34],
-    ],
+    metric: { label: 'Inscritas', value: null },
+    trend: null,
+    rows: [],
     colLabels: ['Año', 'Inscritas', 'Aprobadas'],
-    state: 'data',
+    state: 'empty',
   },
   'practicas-tipo': {
     title: 'Prácticas por tipo',
     desc: 'Número de estudiantes que aprueban su práctica profesional.',
-    metric: { label: 'Aprobadas — Práctica Profesional', value: 16 },
+    metric: { label: 'Aprobadas', value: null },
     trend: null,
-    rows: [
-      ['Práctica I', 6, 24],
-      ['Práctica II', 5, 20],
-      ['Práctica Profesional', 6, 16],
-    ],
+    rows: [],
     colLabels: ['Tipo de práctica', 'Inscritas', 'Aprobadas'],
-    state: 'data',
+    state: 'empty',
   },
   'titulacion-cohorte': {
     title: 'Tasa de titulación por cohorte',
     desc: 'Porcentaje de estudiantes de una cohorte que se titulan dentro del tiempo normativo y con desfase.',
-    metric: { label: 'Tasa en tiempo normativo (%)', value: 50 },
+    metric: { label: 'Tasa en tiempo normativo (%)', value: null },
     trend: null,
-    rows: [
-      ['Cohorte 2021', 13, '7 (54 %)', '6 (46 %)'],
-      ['Cohorte 2022', 9, '4 (44 %)', '5 (56 %)'],
-      ['Total', 22, '11 (50 %)', '11 (50 %)'],
-    ],
+    rows: [],
     colLabels: ['Cohorte', 'Titulados', 'En tiempo normativo', 'Con desfase'],
-    state: 'data',
+    state: 'empty',
   },
   'titulacion-tiempo': {
     title: 'Titulados en tiempo normativo',
     desc: 'Porcentaje de estudiantes de una cohorte que se titulan dentro del tiempo normativo y con desfase.',
-    metric: { label: 'Titulados en tiempo normativo (%)', value: 50 },
+    metric: { label: 'Titulados en tiempo normativo (%)', value: null },
     trend: null,
-    rows: [
-      ['Cohorte 2021', 13, '7 (54 %)', '6 (46 %)'],
-      ['Cohorte 2022', 9, '4 (44 %)', '5 (56 %)'],
-      ['Total', 22, '11 (50 %)', '11 (50 %)'],
-    ],
+    rows: [],
     colLabels: ['Cohorte', 'Titulados', 'En tiempo normativo', 'Con desfase'],
-    state: 'data',
+    state: 'empty',
   },
   'titulados-anio': {
     title: 'Titulados por año',
     desc: 'Total de titulados por carrera y año calendario.',
-    metric: { label: 'Titulados 2026', value: 12 },
-    trend: { delta: 2, baseline: '2025', isPositive: true },
-    rows: [
-      ['2023', 0],
-      ['2024', 0],
-      ['2025', 10],
-      ['2026', 12],
-    ],
+    metric: { label: 'Titulados', value: null },
+    trend: null,
+    rows: [],
     colLabels: ['Año', 'Titulados'],
-    state: 'data',
+    state: 'empty',
   },
   'tiempo-titulacion': {
     title: 'Tiempo promedio de titulación',
     desc: 'Promedio de semestres cursados hasta el título, por carrera.',
-    metric: { label: 'Tiempo promedio (semestres)', value: 8.68 },
+    metric: { label: 'Tiempo promedio (semestres)', value: null },
     trend: null,
-    rows: [
-      ['Promedio institucional', 8.68],
-      ['Tiempo normativo', 8],
-    ],
+    rows: [],
     colLabels: ['Indicador', 'Semestres'],
-    state: 'data',
+    state: 'empty',
   },
 };
 
@@ -252,6 +219,8 @@ export const useDashboardDesarrolloCurricular = () => {
   const [apiReprobacionBreakdown, setApiReprobacionBreakdown] = useState(null);
   const [apiPracticasInscritasSeries, setApiPracticasInscritasSeries] = useState(null);
   const [apiPracticasAprobadasSeries, setApiPracticasAprobadasSeries] = useState(null);
+  const [apiPracticasInscritasTipo, setApiPracticasInscritasTipo] = useState(null);
+  const [apiPracticasAprobadasTipo, setApiPracticasAprobadasTipo] = useState(null);
   const [apiTituladosSeries, setApiTituladosSeries] = useState(null);
   const [apiDrawerDetail, setApiDrawerDetail] = useState(null);
 
@@ -315,6 +284,8 @@ export const useDashboardDesarrolloCurricular = () => {
       getIndicatorBreakdown('tasa_reprobacion_asignatura', { ...breakdownParams, groupBy: 'asignatura' }).catch(() => null),
       getIndicatorSeries('practicas_inscritas', seriesParams).catch(() => null),
       getIndicatorSeries('practicas_aprobadas', seriesParams).catch(() => null),
+      getIndicatorBreakdown('practicas_inscritas', { ...breakdownParams, groupBy: 'tipoPractica' }).catch(() => null),
+      getIndicatorBreakdown('practicas_aprobadas', { ...breakdownParams, groupBy: 'tipoPractica' }).catch(() => null),
       getIndicatorSeries('titulados_por_anio', seriesParams).catch(() => null),
     ])
       .then(([
@@ -324,6 +295,8 @@ export const useDashboardDesarrolloCurricular = () => {
         reprobacionBreakdownRes,
         practicasInscritasSeriesRes,
         practicasAprobadasSeriesRes,
+        practicasInscritasTipoRes,
+        practicasAprobadasTipoRes,
         tituladosSeriesRes,
       ]) => {
         if (summaryRes?.success && summaryRes.data) {
@@ -343,6 +316,12 @@ export const useDashboardDesarrolloCurricular = () => {
         }
         if (practicasAprobadasSeriesRes?.success && practicasAprobadasSeriesRes.data?.points) {
           setApiPracticasAprobadasSeries(practicasAprobadasSeriesRes.data.points);
+        }
+        if (practicasInscritasTipoRes?.success && practicasInscritasTipoRes.data?.items) {
+          setApiPracticasInscritasTipo(practicasInscritasTipoRes.data.items);
+        }
+        if (practicasAprobadasTipoRes?.success && practicasAprobadasTipoRes.data?.items) {
+          setApiPracticasAprobadasTipo(practicasAprobadasTipoRes.data.items);
         }
         if (tituladosSeriesRes?.success && tituladosSeriesRes.data?.points) {
           setApiTituladosSeries(tituladosSeriesRes.data.points);
@@ -364,68 +343,29 @@ export const useDashboardDesarrolloCurricular = () => {
     const hasSeries = Boolean(
       (apiAprobacionSeries && apiAprobacionSeries.some((p) => p.value !== null)) ||
       (apiReprobacionSeries && apiReprobacionSeries.some((p) => p.value !== null)) ||
-      (apiTituladosSeries && apiTituladosSeries.some((p) => p.value !== null && p.value > 0))
+      (apiTituladosSeries && apiTituladosSeries.some((p) => p.value !== null && p.value > 0)) ||
+      (apiPracticasInscritasSeries && apiPracticasInscritasSeries.some((p) => p.value !== null && p.value > 0)) ||
+      (apiPracticasAprobadasSeries && apiPracticasAprobadasSeries.some((p) => p.value !== null && p.value > 0))
     );
     const hasBreakdown = Boolean(
-      apiReprobacionBreakdown && apiReprobacionBreakdown.some((i) => i.value !== null)
+      (apiReprobacionBreakdown && apiReprobacionBreakdown.some((i) => i.value !== null)) ||
+      (apiPracticasInscritasTipo && apiPracticasInscritasTipo.some((i) => i.value !== null)) ||
+      (apiPracticasAprobadasTipo && apiPracticasAprobadasTipo.some((i) => i.value !== null))
     );
     return Boolean(hasSummaryData || hasSeries || hasBreakdown);
-  }, [apiSummary, apiAprobacionSeries, apiReprobacionSeries, apiTituladosSeries, apiReprobacionBreakdown]);
+  }, [
+    apiSummary,
+    apiAprobacionSeries,
+    apiReprobacionSeries,
+    apiTituladosSeries,
+    apiPracticasInscritasSeries,
+    apiPracticasAprobadasSeries,
+    apiReprobacionBreakdown,
+    apiPracticasInscritasTipo,
+    apiPracticasAprobadasTipo,
+  ]);
 
-  // 4. Datos base de fallback (Mock)
-  const mockAprobacionYear = [
-    { year: '2023', value: 84.2 },
-    { year: '2024', value: 86.2 },
-    { year: '2025', value: 82.2 },
-    { year: '2026', value: 83.1 },
-  ];
-
-  const mockReprobacionYear = [
-    { year: '2023', value: 15.8 },
-    { year: '2024', value: 13.8 },
-    { year: '2025', value: 17.8 },
-    { year: '2026', value: 16.9 },
-  ];
-
-  const mockReprobacionAsignaturas = [
-    { label: 'Gestión de Personas', value: 22.2 },
-    { label: 'Auditoría', value: 18.8 },
-    { label: 'Economía', value: 18.5 },
-    { label: 'Finanzas', value: 17.8 },
-    { label: 'Taller de Titulación', value: 16.2 },
-    { label: 'Derecho Tributario', value: 16.1 },
-    { label: 'Contabilidad I', value: 15.3 },
-    { label: 'Contabilidad II', value: 14.7 },
-    { label: 'Estadística', value: 13.2 },
-    { label: 'Costos', value: 9.8 },
-  ];
-
-  const mockPracticasYear = {
-    labels: ['2024', '2025', '2026'],
-    series: [
-      { label: 'Inscritas', values: [2, 4, 11] },
-      { label: 'Aprobadas', values: [3, 23, 34] },
-    ],
-  };
-
-  const mockTitulacionCohorte = {
-    labels: ['Cohorte 2021', 'Cohorte 2022'],
-    series: [
-      { label: 'En tiempo normativo', values: [7, 4] },
-      { label: 'Con desfase', values: [6, 5] },
-    ],
-  };
-
-  const mockTituladosYear = [
-    { year: '2023', value: 0 },
-    { year: '2024', value: 0 },
-    { year: '2025', value: 10 },
-    { year: '2026', value: 12 },
-  ];
-
-  const mockTiempoTitulacion = 8.68;
-
-  // 5. KPIs superiores dinámicos calculados desde el Summary y Series
+  // 5. KPIs superiores dinámicos calculados desde el Summary y Series (100% datos reales)
   const kpiCards = useMemo(() => {
     const dept = apiSummary?.departments?.find((d) => d.departmentId === 'desarrollo_curricular');
     const cards = dept?.cards || [];
@@ -435,7 +375,7 @@ export const useDashboardDesarrolloCurricular = () => {
     const cardCriticas = getCard('asignaturas_criticas');
     const cardTiempo = getCard('tiempo_promedio_titulacion');
 
-    // --- CÁLCULO DINÁMICO EXCLUSIVO PARA TASA DE APROBACIÓN GLOBAL (interactivo con período acumulado y año base) ---
+    // --- CÁLCULO DINÁMICO PARA TASA DE APROBACIÓN GLOBAL ---
     const yDesde = yearRange[0];
     const yHasta = yearRange[1];
     const isSingleYear = yDesde === yHasta;
@@ -444,103 +384,121 @@ export const useDashboardDesarrolloCurricular = () => {
     const isBaseline = isSingleYear && yDesde === minAvailableYear;
 
     const getValForYear = (yr) => {
-      if (hasRealData && apiAprobacionSeries && apiAprobacionSeries.length > 0) {
+      if (apiAprobacionSeries && apiAprobacionSeries.length > 0) {
         const found = apiAprobacionSeries.find((p) => Number(p.year) === Number(yr));
         return found && found.value != null ? Number(found.value) : null;
       }
-      const foundMock = mockAprobacionYear.find((d) => Number(d.year) === Number(yr));
-      return foundMock != null ? Number(foundMock.value) : null;
+      return null;
     };
 
-    let aprobacionValNumber;
-    let aprobacionFormattedValue;
+    let aprobacionValNumber = null;
+    let aprobacionFormattedValue = null;
     let compareText = undefined;
     let evolution = undefined;
     let isPositive = true;
+    let hasAprobacionData = Boolean(cardAprobacion?.hasData && cardAprobacion?.value != null);
 
-    if (isAccumulated) {
-      // Período acumulado: promedio de las tasas del período seleccionado
-      const inRangeVals = [];
-      for (let y = yDesde; y <= yHasta; y++) {
-        const val = getValForYear(y);
-        if (val !== null && !isNaN(val)) inRangeVals.push(val);
-      }
-      const avg = inRangeVals.length > 0
-        ? inRangeVals.reduce((acc, v) => acc + v, 0) / inRangeVals.length
-        : (cardAprobacion?.value ?? 83.8);
+    if (apiAprobacionSeries && apiAprobacionSeries.length > 0) {
+      if (isAccumulated) {
+        const inRangeVals = [];
+        for (let y = yDesde; y <= yHasta; y++) {
+          const val = getValForYear(y);
+          if (val !== null && !isNaN(val)) inRangeVals.push(val);
+        }
+        if (inRangeVals.length > 0) {
+          const avg = inRangeVals.reduce((acc, v) => acc + v, 0) / inRangeVals.length;
+          aprobacionValNumber = avg;
+          aprobacionFormattedValue = `${avg.toFixed(1).replace('.', ',')} %`;
+          hasAprobacionData = true;
 
-      aprobacionValNumber = avg;
-      aprobacionFormattedValue = `${avg.toFixed(1).replace('.', ',')} %`;
-
-      // Comparación con el año base (yDesde)
-      const baseVal = getValForYear(yDesde);
-      if (baseVal != null) {
-        const diff = Number((avg - baseVal).toFixed(1));
-        evolution = `${diff >= 0 ? '+' : '−'}${Math.abs(diff).toFixed(1).replace('.', ',')} pp`;
-        isPositive = diff >= 0;
-        compareText = `vs Año base (${yDesde}): ${baseVal.toFixed(1).replace('.', ',')} %`;
+          const baseVal = getValForYear(yDesde);
+          if (baseVal != null) {
+            const diff = Number((avg - baseVal).toFixed(1));
+            evolution = `${diff >= 0 ? '+' : '−'}${Math.abs(diff).toFixed(1).replace('.', ',')} pp`;
+            isPositive = diff >= 0;
+            compareText = `vs Año base (${yDesde}): ${baseVal.toFixed(1).replace('.', ',')} %`;
+          } else {
+            compareText = `Acumulado período ${yDesde} — ${yHasta}`;
+          }
+        }
       } else {
-        compareText = `Acumulado período ${yDesde} — ${yHasta}`;
-      }
-    } else {
-      // Período individual o rango estándar: muestra el año más reciente (yHasta)
-      const valHasta = getValForYear(yHasta);
-      const activeVal = valHasta ?? (cardAprobacion?.value ?? 83.8);
-      aprobacionValNumber = activeVal;
-      aprobacionFormattedValue = `${activeVal.toFixed(1).replace('.', ',')} %`;
+        const valHasta = getValForYear(yHasta);
+        if (valHasta != null) {
+          aprobacionValNumber = valHasta;
+          aprobacionFormattedValue = `${valHasta.toFixed(1).replace('.', ',')} %`;
+          hasAprobacionData = true;
 
-      if (isBaseline) {
-        compareText = `Año ${yDesde} es la línea base`;
-        evolution = null;
-        isPositive = true;
-      } else {
-        const compareYear = isSingleYear ? yDesde - 1 : yDesde;
-        const baseVal = getValForYear(compareYear);
-        if (baseVal != null) {
-          const diff = Number((activeVal - baseVal).toFixed(1));
-          evolution = `${diff >= 0 ? '+' : '−'}${Math.abs(diff).toFixed(1).replace('.', ',')} pp`;
-          isPositive = diff >= 0;
-          compareText = isSingleYear
-            ? `vs año anterior (${compareYear}): ${baseVal.toFixed(1).replace('.', ',')} %`
-            : `vs Año base (${compareYear}): ${baseVal.toFixed(1).replace('.', ',')} %`;
-        } else {
-          compareText = `Tasa global de aprobación en ${yHasta}`;
+          if (isBaseline) {
+            compareText = `Año ${yDesde} es la línea base`;
+            evolution = null;
+            isPositive = true;
+          } else {
+            const compareYear = isSingleYear ? yDesde - 1 : yDesde;
+            const baseVal = getValForYear(compareYear);
+            if (baseVal != null) {
+              const diff = Number((valHasta - baseVal).toFixed(1));
+              evolution = `${diff >= 0 ? '+' : '−'}${Math.abs(diff).toFixed(1).replace('.', ',')} pp`;
+              isPositive = diff >= 0;
+              compareText = isSingleYear
+                ? `vs año anterior (${compareYear}): ${baseVal.toFixed(1).replace('.', ',')} %`
+                : `vs Año base (${compareYear}): ${baseVal.toFixed(1).replace('.', ',')} %`;
+            } else {
+              compareText = `Tasa global de aprobación en ${yHasta}`;
+            }
+          }
         }
       }
     }
 
+    if (!hasAprobacionData && cardAprobacion) {
+      hasAprobacionData = Boolean(cardAprobacion.hasData && cardAprobacion.value != null);
+      if (hasAprobacionData) {
+        aprobacionFormattedValue = cardAprobacion.formattedValue || `${cardAprobacion.value} %`;
+        aprobacionValNumber = cardAprobacion.value;
+      }
+    }
+
+    const hasCriticasData = Boolean(cardCriticas?.hasData && cardCriticas?.value != null);
+    const criticasValue = hasCriticasData
+      ? (cardCriticas.formattedValue || String(cardCriticas.value))
+      : null;
+
+    const hasTiempoData = Boolean(cardTiempo?.hasData && cardTiempo?.value != null);
+    const tiempoValue = hasTiempoData
+      ? (cardTiempo.formattedValue || Number(cardTiempo.value).toLocaleString('es-CL', { maximumFractionDigits: 2 }))
+      : null;
+
     return {
       aprobacion: {
         value: aprobacionFormattedValue,
-        hasData: cardAprobacion?.hasData ?? (hasRealData ? Boolean(aprobacionValNumber) : true),
+        hasData: hasAprobacionData,
         raw: aprobacionValNumber,
-        compareText,
-        evolution,
+        compareText: hasAprobacionData ? compareText : undefined,
+        evolution: hasAprobacionData ? evolution : undefined,
         isPositive,
       },
       criticas: {
-        value: cardCriticas?.formattedValue || (cardCriticas?.value != null ? String(cardCriticas.value) : '1'),
-        hasData: hasRealData ? (cardCriticas?.hasData ?? true) : true,
-        raw: cardCriticas?.value ?? 1,
+        value: criticasValue,
+        hasData: hasCriticasData,
+        raw: cardCriticas?.value ?? null,
       },
       tiempo: {
-        value: cardTiempo?.formattedValue || (cardTiempo?.value != null ? `${cardTiempo.value}` : '8,68'),
-        hasData: hasRealData ? (cardTiempo?.hasData ?? true) : true,
-        raw: cardTiempo?.value ?? 8.68,
+        value: tiempoValue,
+        hasData: hasTiempoData,
+        raw: cardTiempo?.value ?? null,
       },
     };
   }, [
     apiSummary,
-    hasRealData,
     apiAprobacionSeries,
     yearRange,
     periodoAcumulado,
     availableYears,
   ]);
 
-  // 6. Asignación de datos finales para gráficos (API real con fallback a Mock)
+  // 6. Asignación de datos finales para gráficos (100% API real sin mockups)
   const finalAprobacionYear = useMemo(() => {
-    if (hasRealData && apiAprobacionSeries && apiAprobacionSeries.length > 0) {
+    if (apiAprobacionSeries && apiAprobacionSeries.length > 0) {
       return apiAprobacionSeries
         .filter((p) => p.year >= yearRange[0] && p.year <= yearRange[1])
         .map((p) => ({
@@ -548,14 +506,11 @@ export const useDashboardDesarrolloCurricular = () => {
           value: p.value != null ? Number(p.value.toFixed(1)) : 0,
         }));
     }
-    return mockAprobacionYear.filter((d) => {
-      const y = parseInt(d.year, 10);
-      return y >= yearRange[0] && y <= yearRange[1];
-    });
-  }, [hasRealData, apiAprobacionSeries, yearRange]);
+    return [];
+  }, [apiAprobacionSeries, yearRange]);
 
   const finalReprobacionYear = useMemo(() => {
-    if (hasRealData && apiReprobacionSeries && apiReprobacionSeries.length > 0) {
+    if (apiReprobacionSeries && apiReprobacionSeries.length > 0) {
       return apiReprobacionSeries
         .filter((p) => p.year >= yearRange[0] && p.year <= yearRange[1])
         .map((p) => ({
@@ -563,35 +518,34 @@ export const useDashboardDesarrolloCurricular = () => {
           value: p.value != null ? Number(p.value.toFixed(1)) : 0,
         }));
     }
-    return mockReprobacionYear.filter((d) => {
-      const y = parseInt(d.year, 10);
-      return y >= yearRange[0] && y <= yearRange[1];
-    });
-  }, [hasRealData, apiReprobacionSeries, yearRange]);
+    return [];
+  }, [apiReprobacionSeries, yearRange]);
 
   const finalReprobacionAsignaturas = useMemo(() => {
-    if (hasRealData && apiReprobacionBreakdown && apiReprobacionBreakdown.length > 0) {
+    if (apiReprobacionBreakdown && apiReprobacionBreakdown.length > 0) {
       return apiReprobacionBreakdown.map((i) => ({
         label: i.label,
         value: Number(Number(i.value || 0).toFixed(1)),
       }));
     }
-    return mockReprobacionAsignaturas;
-  }, [hasRealData, apiReprobacionBreakdown]);
+    return [];
+  }, [apiReprobacionBreakdown]);
 
   const finalAsignaturasCriticas = useMemo(() => {
     return finalReprobacionAsignaturas.filter((d) => d.value >= 20);
   }, [finalReprobacionAsignaturas]);
 
   const finalPracticasYear = useMemo(() => {
-    if (hasRealData && apiPracticasInscritasSeries?.length && apiPracticasAprobadasSeries?.length) {
+    if (apiPracticasInscritasSeries?.length || apiPracticasAprobadasSeries?.length) {
       const allYears = [...new Set([
-        ...apiPracticasInscritasSeries.map((p) => p.year),
-        ...apiPracticasAprobadasSeries.map((p) => p.year),
+        ...(apiPracticasInscritasSeries || []).map((p) => p.year),
+        ...(apiPracticasAprobadasSeries || []).map((p) => p.year),
       ])].sort((a, b) => a - b).filter((y) => y >= yearRange[0] && y <= yearRange[1]);
 
-      const inscritasMap = Object.fromEntries(apiPracticasInscritasSeries.map((p) => [p.year, p.value || 0]));
-      const aprobadasMap = Object.fromEntries(apiPracticasAprobadasSeries.map((p) => [p.year, p.value || 0]));
+      if (allYears.length === 0) return { labels: [], series: [] };
+
+      const inscritasMap = Object.fromEntries((apiPracticasInscritasSeries || []).map((p) => [p.year, p.value || 0]));
+      const aprobadasMap = Object.fromEntries((apiPracticasAprobadasSeries || []).map((p) => [p.year, p.value || 0]));
 
       return {
         labels: allYears.map(String),
@@ -601,11 +555,26 @@ export const useDashboardDesarrolloCurricular = () => {
         ],
       };
     }
-    return mockPracticasYear;
-  }, [hasRealData, apiPracticasInscritasSeries, apiPracticasAprobadasSeries, yearRange]);
+    return { labels: [], series: [] };
+  }, [apiPracticasInscritasSeries, apiPracticasAprobadasSeries, yearRange]);
+
+  const practicasPorTipo = useMemo(() => {
+    if (!apiPracticasInscritasTipo?.length && !apiPracticasAprobadasTipo?.length) return [];
+    const tipos = [...new Set([
+      ...(apiPracticasInscritasTipo || []).map((i) => i.label),
+      ...(apiPracticasAprobadasTipo || []).map((i) => i.label),
+    ])].filter(Boolean);
+    const inscritasMap = Object.fromEntries((apiPracticasInscritasTipo || []).map((i) => [i.label, i.value || 0]));
+    const aprobadasMap = Object.fromEntries((apiPracticasAprobadasTipo || []).map((i) => [i.label, i.value || 0]));
+    return tipos.map((tipo) => ({
+      tipo,
+      inscritas: inscritasMap[tipo] ?? 0,
+      aprobadas: aprobadasMap[tipo] ?? 0,
+    }));
+  }, [apiPracticasInscritasTipo, apiPracticasAprobadasTipo]);
 
   const finalTituladosYear = useMemo(() => {
-    if (hasRealData && apiTituladosSeries && apiTituladosSeries.length > 0) {
+    if (apiTituladosSeries && apiTituladosSeries.length > 0) {
       return apiTituladosSeries
         .filter((p) => p.year >= yearRange[0] && p.year <= yearRange[1])
         .map((p) => ({
@@ -613,18 +582,15 @@ export const useDashboardDesarrolloCurricular = () => {
           value: p.value != null ? Number(p.value) : 0,
         }));
     }
-    return mockTituladosYear.filter((d) => {
-      const y = parseInt(d.year, 10);
-      return y >= yearRange[0] && y <= yearRange[1];
-    });
-  }, [hasRealData, apiTituladosSeries, yearRange]);
+    return [];
+  }, [apiTituladosSeries, yearRange]);
 
   const finalTiempoTitulacion = useMemo(() => {
-    if (hasRealData && kpiCards.tiempo.raw != null) {
+    if (kpiCards.tiempo.hasData && kpiCards.tiempo.raw != null) {
       return Number(kpiCards.tiempo.raw);
     }
-    return mockTiempoTitulacion;
-  }, [hasRealData, kpiCards.tiempo.raw]);
+    return null;
+  }, [kpiCards.tiempo]);
 
   // 7. Opciones de filtros dinámicas
   const filterOptions = useMemo(() => {
@@ -666,6 +632,9 @@ export const useDashboardDesarrolloCurricular = () => {
       department: 'desarrollo_curricular',
       year: defaultYear,
     };
+    if (key === 'aprobacion' || key === 'reprobacion') {
+      params.groupBy = 'year';
+    }
 
     getIndicatorDetail(backendKey, params)
       .then((res) => {
@@ -694,7 +663,7 @@ export const useDashboardDesarrolloCurricular = () => {
   useEffect(() => {
     if (window.location.hash) {
       const hashKey = window.location.hash.replace('#', '');
-      if (['aprobacion', 'asignaturas-criticas', 'tiempo-titulacion', 'reprobacion-asignatura', 'practicas', 'practicas-tipo', 'titulacion-cohorte'].includes(hashKey)) {
+      if (['aprobacion', 'reprobacion', 'asignaturas-criticas', 'tiempo-titulacion', 'reprobacion-asignatura', 'practicas', 'practicas-tipo', 'titulacion-cohorte'].includes(hashKey)) {
         handleOpenIndicator(hashKey);
       }
     }
@@ -704,7 +673,11 @@ export const useDashboardDesarrolloCurricular = () => {
     setDrawerPeriod(val);
     setDrawerLoading(true);
     const backendKey = UI_TO_BACKEND_KEY[currentIndicatorKey] || currentIndicatorKey;
-    getIndicatorDetail(backendKey, { department: 'desarrollo_curricular', year: parseInt(val, 10) })
+    const params = { department: 'desarrollo_curricular', year: parseInt(val, 10) };
+    if (currentIndicatorKey === 'aprobacion' || currentIndicatorKey === 'reprobacion') {
+      params.groupBy = 'year';
+    }
+    getIndicatorDetail(backendKey, params)
       .then((res) => {
         const detail = res?.data || res;
         if (detail && (detail.name || detail.title || detail.indicatorKey)) {
@@ -727,6 +700,7 @@ export const useDashboardDesarrolloCurricular = () => {
   }, [drawerPeriod]);
 
   const currentIndicator = useMemo(() => {
+    const meta = MOCK_INDICATORS[currentIndicatorKey] || MOCK_INDICATORS['aprobacion'];
     if (apiDrawerDetail) {
       const rows = Array.isArray(apiDrawerDetail.table)
         ? apiDrawerDetail.table.map((r) => [
@@ -736,12 +710,17 @@ export const useDashboardDesarrolloCurricular = () => {
               : String(r.value || '-'),
           ])
         : [];
-      const title = apiDrawerDetail.name || apiDrawerDetail.title || MOCK_INDICATORS[currentIndicatorKey]?.title;
+      const customTitles = {
+        'aprobacion': 'Tasa de aprobación por año',
+        'reprobacion': 'Tasa de reprobación por año',
+        'reprobacion-asignatura': 'Tasa de reprobación por asignatura',
+      };
+      const title = customTitles[currentIndicatorKey] || apiDrawerDetail.name || apiDrawerDetail.title || meta?.title || 'Indicador';
       return {
         title,
-        desc: apiDrawerDetail.description || MOCK_INDICATORS[currentIndicatorKey]?.desc,
+        desc: apiDrawerDetail.description || meta?.desc || '',
         metric: {
-          label: `${title || 'Valor'} (${apiDrawerDetail.unit || ''})`,
+          label: `${title} (${apiDrawerDetail.unit || ''})`,
           value: apiDrawerDetail.total != null
             ? (apiDrawerDetail.unit === '%' ? `${Number(apiDrawerDetail.total.toFixed(2)).toLocaleString('es-CL')} %` : Number(apiDrawerDetail.total.toFixed(2)).toLocaleString('es-CL'))
             : (apiDrawerDetail.formattedTotal ?? '-'),
@@ -755,15 +734,26 @@ export const useDashboardDesarrolloCurricular = () => {
               isPositive: apiDrawerDetail.comparison.diff >= 0,
             }
           : null,
-        rows: rows.length > 0 ? rows : (MOCK_INDICATORS[currentIndicatorKey]?.rows || []),
+        rows: rows,
         colLabels: [
-          apiDrawerDetail.dimensionLabels?.[apiDrawerDetail.groupBy] || 'Categoría',
+          apiDrawerDetail.dimensionLabels?.[apiDrawerDetail.groupBy] || (apiDrawerDetail.groupBy === 'year' ? 'Año' : 'Categoría'),
           apiDrawerDetail.unit ? `Valor (${apiDrawerDetail.unit})` : 'Valor',
         ],
-        state: 'data',
+        state: rows.length > 0 ? 'data' : 'empty',
       };
     }
-    return MOCK_INDICATORS[currentIndicatorKey] || MOCK_INDICATORS['aprobacion'];
+    return {
+      title: meta?.title || 'Indicador',
+      desc: meta?.desc || '',
+      metric: {
+        label: meta?.title || 'Valor',
+        value: '-',
+      },
+      trend: null,
+      rows: [],
+      colLabels: meta?.colLabels || ['Categoría', 'Valor'],
+      state: 'empty',
+    };
   }, [apiDrawerDetail, currentIndicatorKey]);
 
   const displayRows = useMemo(() => {
@@ -816,7 +806,8 @@ export const useDashboardDesarrolloCurricular = () => {
     reprobacionAsignaturas: finalReprobacionAsignaturas,
     asignaturasCriticas: finalAsignaturasCriticas,
     practicasYear: finalPracticasYear,
-    titulacionCohorte: mockTitulacionCohorte,
+    practicasPorTipo,
+    titulacionCohorte: { labels: [], series: [] },
     tituladosYear: finalTituladosYear,
     tiempoTitulacion: finalTiempoTitulacion,
   };
