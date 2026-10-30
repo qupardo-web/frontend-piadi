@@ -234,6 +234,7 @@ export const Auditoria = () => {
               <Tab value="carga" label="Carga de datos" />
               <Tab value="session" label="Inicios de sesión" />
               <Tab value="metas" label="Metas" />
+              <Tab value="reportes" label="Reportes" />
               <Tab value="ayuda" label="Ayuda" />
             </Tabs>
           </Box>
@@ -295,9 +296,11 @@ export const Auditoria = () => {
                             ? 'No hay registros de sesión disponibles.'
                             : activeTab === 'metas'
                               ? 'No hay registros de Metas disponibles.'
-                              : activeTab === 'ayuda'
-                                ? 'No hay registros de Ayuda disponibles.'
-                              : 'No hay registros disponibles.'}
+                              : activeTab === 'reportes'
+                                ? 'No hay registros de Reportes disponibles.'
+                                : activeTab === 'ayuda'
+                                  ? 'No hay registros de Ayuda disponibles.'
+                                  : 'No hay registros disponibles.'}
                     </TableCell>
                   </TableRow>
                 )}
@@ -333,7 +336,9 @@ export const Auditoria = () => {
                     <TableCell sx={styles.tableBodyCell}>
                       <Box>
                         <Typography sx={styles.entidadBold}>{log.entidad}</Typography>
-                        <Typography sx={styles.entidadSub}>{log.registros} registros</Typography>
+                        <Typography sx={styles.entidadSub}>
+                          {activeTab === 'reportes' ? 'Evento de reporte' : `${log.registros} registros`}
+                        </Typography>
                       </Box>
                     </TableCell>
 
@@ -373,9 +378,11 @@ export const Auditoria = () => {
                       ? 'No hay registros de sesión disponibles.'
                       : activeTab === 'metas'
                         ? 'No hay registros de Metas disponibles.'
-                        : activeTab === 'ayuda'
-                          ? 'No hay registros de Ayuda disponibles.'
-                        : 'No hay registros disponibles.'}
+                        : activeTab === 'reportes'
+                          ? 'No hay registros de Reportes disponibles.'
+                          : activeTab === 'ayuda'
+                            ? 'No hay registros de Ayuda disponibles.'
+                            : 'No hay registros disponibles.'}
               </Typography>
             )}
             {paginatedLogs.map((log, index) => (
@@ -423,7 +430,7 @@ export const Auditoria = () => {
                       <Box sx={styles.metadataItem}>
                         <DescriptionIcon sx={{ fontSize: 16, color: '#6B7280' }} />
                         <Typography variant="body2" sx={{ fontSize: '12px', color: '#475569' }}>
-                          {log.entidad} | {log.registros} registros
+                          {activeTab === 'reportes' ? log.entidad : `${log.entidad} | ${log.registros} registros`}
                         </Typography>
                       </Box>
                     )}
