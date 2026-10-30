@@ -77,6 +77,7 @@ export const Auditoria = () => {
     if (action === 'Edición') return styles.badgeEdicion;
     if (action === 'Modificación departamental por Rectoría') return styles.badgeEdicion;
     if (action === 'Eliminación') return styles.badgeEliminacion;
+    if (action === 'Desactivación') return styles.badgeEliminacion;
     if (action === 'Inicio sesión' || action === 'Inicio de sesión exitoso') return styles.badgeInicioSesion;
     if (
       action === 'Inicio fallido' ||
@@ -226,11 +227,14 @@ export const Auditoria = () => {
             <Tabs 
               value={activeTab} 
               onChange={handleTabChange} 
+              variant="scrollable"
+              scrollButtons="auto"
               sx={styles.tabsList}
             >
               <Tab value="carga" label="Carga de datos" />
               <Tab value="session" label="Inicios de sesión" />
               <Tab value="metas" label="Metas" />
+              <Tab value="ayuda" label="Ayuda" />
             </Tabs>
           </Box>
 
@@ -291,6 +295,8 @@ export const Auditoria = () => {
                             ? 'No hay registros de sesión disponibles.'
                             : activeTab === 'metas'
                               ? 'No hay registros de Metas disponibles.'
+                              : activeTab === 'ayuda'
+                                ? 'No hay registros de Ayuda disponibles.'
                               : 'No hay registros disponibles.'}
                     </TableCell>
                   </TableRow>
@@ -367,6 +373,8 @@ export const Auditoria = () => {
                       ? 'No hay registros de sesión disponibles.'
                       : activeTab === 'metas'
                         ? 'No hay registros de Metas disponibles.'
+                        : activeTab === 'ayuda'
+                          ? 'No hay registros de Ayuda disponibles.'
                         : 'No hay registros disponibles.'}
               </Typography>
             )}
