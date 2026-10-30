@@ -62,6 +62,7 @@ const getRawAction = (item) =>
 const META_ACTIONS = new Set([
   'META_CREATED', 'META_UPDATED', 'META_DELETED', 'UPDATE_DEPARTMENTAL_META'
 ]);
+const HELP_ACTIONS = new Set(['AYUDA_CREAR', 'AYUDA_EDITAR', 'AYUDA_DESACTIVAR']);
 
 const META_FIELD_LABELS = {
   departmentId: 'Departamento',
@@ -189,6 +190,9 @@ const resolveAction = (item, type) => {
     META_UPDATED: 'Edición',
     META_DELETED: 'Eliminación',
     UPDATE_DEPARTMENTAL_META: 'Modificación departamental por Rectoría',
+    AYUDA_CREAR: 'Creación',
+    AYUDA_EDITAR: 'Edición',
+    AYUDA_DESACTIVAR: 'Desactivación',
   };
   if (rawAction === '-' && type === 'carga') return 'Carga de plantilla';
   return labels[rawAction] || toText(rawAction);
@@ -233,6 +237,11 @@ const cleanPlainDetail = (value) => {
 const resolveDetail = (item, type) => {
   if (type === 'metas' && META_ACTIONS.has(getRawAction(item))) {
     return resolveMetaDetail(item);
+  }
+  if (type === 'ayuda') {
+    const parsed = getParsedDetails(item) || {};
+    const fields = Array.isArray(parsed.changedFields) ? parsed.changedFields.join(', ') : '';
+    return `Módulo: ${toText(parsed.module)}${fields ? `. Campos: ${fields}` : ''}.`;
   }
   const detail = item?.detail || {};
   const parsed = getParsedDetails(item);
@@ -299,6 +308,8 @@ const mapAuditLog = (item, type, index) => {
     accion: resolveAction(item, type),
     entidad: isMeta
       ? resolveMetaName(parsed)
+      : type === 'ayuda'
+        ? `Entrada de ayuda #${toText(parsed?.entryId)}`
       : resolveEntity(item, type === 'session' ? 'Sistema' : '-'),
     registros: resolveRecords(item),
     plantilla: type === 'carga' ? resolveTemplate(item) : '-',
@@ -393,8 +404,9 @@ export const useAuditoria = () => {
   const [realCargaLogs, setRealCargaLogs] = useState([]);
   const [realSessionLogs, setRealSessionLogs] = useState([]);
   const [realMetaLogs, setRealMetaLogs] = useState([]);
-  const [loadingTabs, setLoadingTabs] = useState({ carga: true, session: true, metas: true });
-  const [errorTabs, setErrorTabs] = useState({ carga: false, session: false, metas: false });
+  const [realHelpLogs, setRealHelpLogs] = useState([]);
+  const [loadingTabs, setLoadingTabs] = useState({ carga: true, session: true, metas: true, ayuda: true });
+  const [errorTabs, setErrorTabs] = useState({ carga: false, session: false, metas: false, ayuda: false });
   const [apiRoleOptions, setApiRoleOptions] = useState([]);
 
   useEffect(() => {
@@ -410,7 +422,10 @@ export const useAuditoria = () => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         const items = json?.data?.items || [];
-        setter(items.map((item, index) => mapAuditLog(item, displayType, index)));
+        const visibleItems = displayType === 'ayuda'
+          ? items.filter((item) => HELP_ACTIONS.has(getRawAction(item)))
+          : items;
+        setter(visibleItems.map((item, index) => mapAuditLog(item, displayType, index)));
         setErrorTabs((current) => ({ ...current, [displayType]: false }));
       } catch {
         setter([]);
@@ -423,6 +438,7 @@ export const useAuditoria = () => {
     fetchLogs('carga', 'carga', null, setRealCargaLogs);
     fetchLogs('session', 'session', 'Sesión', setRealSessionLogs);
     fetchLogs('session', 'metas', 'Meta', setRealMetaLogs);
+    fetchLogs('session', 'ayuda', 'EntradaAyuda', setRealHelpLogs);
   }, []);
 
   useEffect(() => {
@@ -442,11 +458,11 @@ export const useAuditoria = () => {
   }, []);
 
   const logRoleOptions = useMemo(() => {
-    const roles = [...realCargaLogs, ...realSessionLogs, ...realMetaLogs]
+    const roles = [...realCargaLogs, ...realSessionLogs, ...realMetaLogs, ...realHelpLogs]
       .map((log) => log.rol)
       .filter((role) => !isEmptyValue(role));
     return [...new Set(roles)].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
-  }, [realCargaLogs, realSessionLogs, realMetaLogs]);
+  }, [realCargaLogs, realSessionLogs, realMetaLogs, realHelpLogs]);
 
   const roleOptions = apiRoleOptions.length > 0 ? apiRoleOptions : logRoleOptions;
 
@@ -484,6 +500,7 @@ export const useAuditoria = () => {
       case 'carga': return realCargaLogs;
       case 'session': return realSessionLogs;
       case 'metas': return realMetaLogs;
+      case 'ayuda': return realHelpLogs;
       default: return [];
     }
   };
@@ -579,12 +596,22 @@ export const useAuditoria = () => {
         { label: 'Meta', value: (row) => row.entidad },
         { label: 'Detalle', value: (row) => row.detalle },
       ],
+      ayuda: [
+        { label: 'Fecha', value: (row) => row.fecha },
+        { label: 'Usuario', value: (row) => row.usuario },
+        { label: 'Rol', value: (row) => row.rol },
+        { label: 'Acción', value: (row) => row.accion },
+        { label: 'Entrada', value: (row) => row.entidad },
+        { label: 'Detalle', value: (row) => row.detalle },
+      ],
     };
 
     const filename = activeTab === 'carga'
       ? 'auditoria-carga-datos.csv'
       : activeTab === 'metas'
         ? 'auditoria-metas.csv'
+        : activeTab === 'ayuda'
+          ? 'auditoria-ayuda.csv'
         : 'auditoria-inicios-sesion.csv';
     downloadCsv(filename, buildCsv(rows, columnsByTab[activeTab] || columnsByTab.carga));
   };
