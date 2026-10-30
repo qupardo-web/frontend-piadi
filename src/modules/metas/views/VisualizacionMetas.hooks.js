@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
-import { getMetas, deleteMeta, getDepartments } from '../../../services/piadiApi';
+import { getMetas, deleteMeta, getDepartments, closeMeta } from '../../../services/piadiApi';
 import { canCreateMeta as userCanCreateMeta } from '../metaAccess';
 
 const PRIORIDAD_RANK = { alta: 0, media: 1, baja: 2 };
@@ -33,12 +33,21 @@ export const useVisualizacionMetas = () => {
         };
 
         const mapped = res.data.map(m => {
+          const lifecycleStatus = m.lifecycleStatus || 'ACTIVA';
           // Map backend status to frontend state
           let estado = 'en-curso';
-          if (m.status === 'cumplida') estado = 'completada';
-          else if (m.status === 'en_riesgo' || m.status === 'no_cumplida') estado = 'alerta';
+          if (lifecycleStatus === 'BORRADOR') {
+            estado = 'borrador';
+          } else if (lifecycleStatus === 'CERRADA') {
+            estado = 'cerrada';
+          } else {
+            if (m.status === 'cumplida') estado = 'completada';
+            else if (m.status === 'en_riesgo' || m.status === 'no_cumplida') estado = 'alerta';
+          }
 
-          const firstMetric = m.metrics?.[0] || {};
+          const firstMetric = (lifecycleStatus === 'BORRADOR' && Array.isArray(m.draftMetrics) && m.draftMetrics.length > 0)
+            ? m.draftMetrics[0]
+            : (m.metrics?.[0] || {});
           const actual = firstMetric.currentValue !== undefined && firstMetric.currentValue !== null ? Number(firstMetric.currentValue) : 0;
           const objetivo = Number(m.valorMeta || firstMetric.targetValue || 0);
 
@@ -50,6 +59,10 @@ export const useVisualizacionMetas = () => {
             area: deptName,
             departamento: deptName,
             departmentId: m.departmentId,
+            lifecycleStatus: lifecycleStatus,
+            isDraft: lifecycleStatus === 'BORRADOR',
+            isClosed: lifecycleStatus === 'CERRADA',
+            closedAt: m.closedAt || null,
             estado: estado,
             actual: actual,
             objetivo: objetivo,
@@ -164,7 +177,12 @@ export const useVisualizacionMetas = () => {
     const filtered = metas.filter(m => {
       if (q && !m.nombre.toLowerCase().includes(q) && !m.area.toLowerCase().includes(q)) return false;
       if (filtroDepartamento !== 'todas' && m.departmentId !== filtroDepartamento) return false;
-      if (filtroEstado !== 'todos' && m.estado !== filtroEstado) return false;
+      if (filtroEstado !== 'todos') {
+        if (filtroEstado === 'borrador' && m.lifecycleStatus !== 'BORRADOR') return false;
+        if (filtroEstado === 'cerrada' && m.lifecycleStatus !== 'CERRADA') return false;
+        if (filtroEstado === 'activa' && m.lifecycleStatus !== 'ACTIVA') return false;
+        if (['completada', 'en-curso', 'alerta'].includes(filtroEstado) && m.estado !== filtroEstado) return false;
+      }
       if (filtroDesde && m.fechaLimite < filtroDesde) return false;
       if (filtroHasta && m.fechaLimite > filtroHasta) return false;
       return true;
@@ -239,16 +257,46 @@ export const useVisualizacionMetas = () => {
     }
   };
 
-  const kpis = useMemo(() => {
-    const total = metas.length;
-    if (total === 0) {
-      return { total: 0, cumplimiento: 0, riesgo: 0 };
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [metaToClose, setMetaToClose] = useState(null);
+  const [isClosingMeta, setIsClosingMeta] = useState(false);
+
+  const handleOpenCloseDialog = (metaId) => {
+    setMetaToClose(metaId);
+    setCloseDialogOpen(true);
+  };
+
+  const handleCloseCloseDialog = () => {
+    setMetaToClose(null);
+    setCloseDialogOpen(false);
+  };
+
+  const handleConfirmClose = async () => {
+    if (!metaToClose) return;
+    try {
+      setIsClosingMeta(true);
+      await closeMeta(metaToClose);
+      await fetchBackendMetas();
+    } catch (err) {
+      console.error('Error closing meta:', err);
+      alert('Hubo un error al cerrar la meta.');
+    } finally {
+      setIsClosingMeta(false);
+      handleCloseCloseDialog();
     }
-    const sumProgress = metas.reduce((sum, m) => sum + Number(m.progreso || 0), 0);
-    const cumplimiento = Math.round((metas.filter(m => m.estado === 'completada').length / total) * 100);
-    const riesgo = metas.filter(m => m.estado === 'alerta').length;
+  };
+
+  const kpis = useMemo(() => {
+    const activeAndClosed = metas.filter(m => m.lifecycleStatus !== 'BORRADOR');
+    const total = activeAndClosed.length;
+    const totalBorradores = metas.filter(m => m.lifecycleStatus === 'BORRADOR').length;
+    if (total === 0) {
+      return { total: metas.length, cumplimiento: 0, riesgo: 0, borradores: totalBorradores };
+    }
+    const cumplimiento = Math.round((activeAndClosed.filter(m => m.estado === 'completada').length / total) * 100);
+    const riesgo = activeAndClosed.filter(m => m.estado === 'alerta').length;
     
-    return { total, cumplimiento, riesgo };
+    return { total: metas.length, cumplimiento, riesgo, borradores: totalBorradores };
   }, [metas]);
 
   const canCreateMeta = useMemo(() => userCanCreateMeta(user), [user]);
@@ -297,6 +345,12 @@ export const useVisualizacionMetas = () => {
     handleOpenDeleteDialog,
     handleCloseDeleteDialog,
     handleConfirmDelete,
+    closeDialogOpen,
+    metaToClose,
+    isClosingMeta,
+    handleOpenCloseDialog,
+    handleCloseCloseDialog,
+    handleConfirmClose,
     handleDrawerToggle,
     fmtFecha,
     diasHasta,

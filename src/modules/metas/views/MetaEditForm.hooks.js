@@ -5,7 +5,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth';
-import { getDepartments, getDepartmentKpis, updateMeta, getMetaById } from '../../../services/piadiApi';
+import { getDepartments, getDepartmentKpis, updateMeta, getMetaById, closeMeta } from '../../../services/piadiApi';
 import { isRectoria } from '../metaAccess';
 import { deriveAnio, derivePeriodo } from '../metaDateUtils';
 
@@ -16,6 +16,12 @@ export const useMetaEditForm = () => {
 
   // Mode is always 'editar'
   const modo = 'editar';
+
+  // Lifecycle status & read-only state
+  const [lifecycleStatus, setLifecycleStatus] = useState('ACTIVA');
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   // Sidebar controls
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -119,10 +125,16 @@ export const useMetaEditForm = () => {
         const res = await getMetaById(id);
         if (res.success && res.data) {
           const m = res.data;
-          if (m.permissions?.canEdit !== true) {
+          const status = m.lifecycleStatus || 'ACTIVA';
+          setLifecycleStatus(status);
+
+          const isClosed = status === 'CERRADA';
+          if (!isClosed && m.permissions?.canEdit !== true) {
             navigate('/metas', { replace: true });
             return;
           }
+          setIsReadOnly(isClosed);
+
           setNombre(m.nombre || '');
           setDepartamento(m.departmentId || '');
           setComportamiento(m.comportamiento || 'no-debe-superar');
@@ -135,20 +147,22 @@ export const useMetaEditForm = () => {
           setPrioridad(m.prioridad || 'media');
           setCreadaPor(user?.username || 'Jane Doe');
           
-          if (Array.isArray(m.metrics)) {
-            const mappedMetrics = m.metrics.map((metric, index) => ({
-              id: metric.id || index,
-              nombre: metric.indicatorKey, // resolved dynamically in render using kpisList
-              key: metric.indicatorKey,
-              aporte: Number(metric.weight || 0),
-              comportamiento: metric.behavior,
-              valor: Number(metric.targetValue || 0),
-              tipoValor: metric.valueType === 'percentage' ? 'porcentaje' : 'numerico',
-              lowerLimit: metric.lowerLimit !== undefined && metric.lowerLimit !== null ? Number(metric.lowerLimit) : null,
-              upperLimit: metric.upperLimit !== undefined && metric.upperLimit !== null ? Number(metric.upperLimit) : null
-            }));
-            setMetricas(mappedMetrics);
-          }
+          const rawMetrics = (status === 'BORRADOR' && Array.isArray(m.draftMetrics) && m.draftMetrics.length > 0)
+            ? m.draftMetrics
+            : (Array.isArray(m.metrics) ? m.metrics : []);
+
+          const mappedMetrics = rawMetrics.map((metric, index) => ({
+            id: metric.id || index,
+            nombre: metric.indicatorKey, // resolved dynamically in render using kpisList
+            key: metric.indicatorKey,
+            aporte: metric.weight !== undefined && metric.weight !== null ? Number(metric.weight) : '',
+            comportamiento: metric.behavior || 'no-debe-superar',
+            valor: metric.targetValue !== undefined && metric.targetValue !== null ? Number(metric.targetValue) : '',
+            tipoValor: metric.valueType === 'percentage' ? 'porcentaje' : 'numerico',
+            lowerLimit: metric.lowerLimit !== undefined && metric.lowerLimit !== null ? Number(metric.lowerLimit) : null,
+            upperLimit: metric.upperLimit !== undefined && metric.upperLimit !== null ? Number(metric.upperLimit) : null
+          }));
+          setMetricas(mappedMetrics);
         }
       } catch (err) {
         console.error('Error fetching meta from backend:', err);
@@ -296,6 +310,65 @@ export const useMetaEditForm = () => {
   };
 
   // Form Actions
+  const validateDraftForm = () => {
+    const isDateInvalid = inicio && limite && new Date(limite) < new Date(inicio);
+    const nextErrors = {
+      nombre: !nombre.trim(),
+      departamento: !departamento,
+      inicio: !inicio,
+      limite: !limite || isDateInvalid,
+    };
+    setErrors(nextErrors);
+    const hasFieldErrors = Object.values(nextErrors).some(Boolean);
+    if (hasFieldErrors) {
+      setShowSaveAlert(true);
+      return false;
+    }
+    setShowSaveAlert(false);
+    return true;
+  };
+
+  const handleSaveDraft = async () => {
+    if (isReadOnly) return;
+    if (!validateDraftForm()) return;
+    try {
+      const derivedAnio = deriveAnio(inicio);
+      const derivedPeriodo = derivePeriodo(inicio, limite);
+
+      const payload = {
+        lifecycleStatus: 'BORRADOR',
+        departmentId: departamento || null,
+        anio: derivedAnio,
+        periodo: derivedPeriodo,
+        nombre: nombre,
+        inicio: inicio || null,
+        limite: limite || null,
+        fechaInicio: inicio || null,
+        fechaLimite: limite || null,
+        prioridad: prioridad || null,
+        comportamiento: comportamiento || null,
+        draftMetrics: metricas.map((m) => ({
+          indicatorKey: m.key || null,
+          weight: m.aporte !== '' && m.aporte !== null && m.aporte !== undefined ? Number(m.aporte) : null,
+          behavior: m.comportamiento || null,
+          targetValue: m.valor !== '' && m.valor !== null && m.valor !== undefined ? Number(m.valor) : null,
+          valueType: m.tipoValor === 'numerico' ? 'number' : (m.tipoValor === 'porcentaje' ? 'percentage' : (m.tipoValor || null)),
+          lowerLimit: m.lowerLimit !== undefined && m.lowerLimit !== null && m.lowerLimit !== '' ? Number(m.lowerLimit) : null,
+          upperLimit: m.upperLimit !== undefined && m.upperLimit !== null && m.upperLimit !== '' ? Number(m.upperLimit) : null
+        }))
+      };
+
+      await updateMeta(id, payload);
+
+      setSuccessMsg('Borrador actualizado con éxito');
+      setSuccessDesc('Los cambios en el borrador se han guardado correctamente.');
+      setShowSuccessAlert(true);
+    } catch (err) {
+      console.error('Error updating draft meta:', err);
+      alert(err.message || 'Hubo un error al guardar el borrador.');
+    }
+  };
+
   const validateForm = () => {
     const isDateInvalid = inicio && limite && new Date(limite) < new Date(inicio);
     const nextErrors = {
@@ -316,19 +389,68 @@ export const useMetaEditForm = () => {
     return true;
   };
 
-  const handleSaveMeta = async () => {
+  const handlePublishMeta = async () => {
+    if (isReadOnly) return;
     if (!validateForm()) return;
     try {
       const derivedAnio = deriveAnio(inicio);
       const derivedPeriodo = derivePeriodo(inicio, limite);
 
       const payload = {
+        lifecycleStatus: 'ACTIVA',
         departmentId: departamento || null,
         anio: derivedAnio,
         periodo: derivedPeriodo,
         nombre: nombre,
         inicio: inicio || null,
         limite: limite || null,
+        fechaInicio: inicio || null,
+        fechaLimite: limite || null,
+        prioridad: prioridad || null,
+        comportamiento: comportamiento || null,
+        metrics: metricas.map((m) => ({
+          indicatorKey: m.key,
+          weight: Number(m.aporte),
+          behavior: m.comportamiento,
+          targetValue: Number(m.valor),
+          valueType: m.tipoValor === 'numerico' ? 'number' : (m.tipoValor === 'porcentaje' ? 'percentage' : m.tipoValor),
+          lowerLimit: m.lowerLimit !== undefined && m.lowerLimit !== null ? Number(m.lowerLimit) : null,
+          upperLimit: m.upperLimit !== undefined && m.upperLimit !== null ? Number(m.upperLimit) : null
+        }))
+      };
+
+      await updateMeta(id, payload);
+      setLifecycleStatus('ACTIVA');
+
+      setSuccessMsg('Meta publicada con éxito');
+      setSuccessDesc('La meta se ha publicado correctamente. Ya se encuentra activa.');
+      setShowSuccessAlert(true);
+    } catch (err) {
+      console.error('Error publishing meta:', err);
+      alert(err.message || 'Hubo un error al publicar la meta.');
+    }
+  };
+
+  const handleSaveMeta = async () => {
+    if (isReadOnly) return;
+    if (lifecycleStatus === 'BORRADOR') {
+      return handlePublishMeta();
+    }
+    if (!validateForm()) return;
+    try {
+      const derivedAnio = deriveAnio(inicio);
+      const derivedPeriodo = derivePeriodo(inicio, limite);
+
+      const payload = {
+        lifecycleStatus: 'ACTIVA',
+        departmentId: departamento || null,
+        anio: derivedAnio,
+        periodo: derivedPeriodo,
+        nombre: nombre,
+        inicio: inicio || null,
+        limite: limite || null,
+        fechaInicio: inicio || null,
+        fechaLimite: limite || null,
         prioridad: prioridad || null,
         comportamiento: comportamiento || null,
         metrics: metricas.map((m) => ({
@@ -349,7 +471,25 @@ export const useMetaEditForm = () => {
       setShowSuccessAlert(true);
     } catch (err) {
       console.error('Error saving meta:', err);
-      alert('Hubo un error al guardar la meta.');
+      alert(err.message || 'Hubo un error al guardar la meta.');
+    }
+  };
+
+  const handleCloseMeta = async () => {
+    try {
+      setIsClosing(true);
+      await closeMeta(id);
+      setLifecycleStatus('CERRADA');
+      setIsReadOnly(true);
+      setCloseConfirmOpen(false);
+      setSuccessMsg('Meta cerrada definitivamente');
+      setSuccessDesc('La meta se ha cerrado y sus resultados finales han quedado congelados de forma inmutable.');
+      setShowSuccessAlert(true);
+    } catch (err) {
+      console.error('Error closing meta:', err);
+      alert(err.message || 'Hubo un error al cerrar la meta.');
+    } finally {
+      setIsClosing(false);
     }
   };
 
@@ -430,7 +570,15 @@ export const useMetaEditForm = () => {
     handleOpenEditMetric,
     handleSaveMetric,
     handleDeleteMetric,
+    handleSaveDraft,
+    handlePublishMeta,
     handleSaveMeta,
+    handleCloseMeta,
+    closeConfirmOpen,
+    setCloseConfirmOpen,
+    isClosing,
+    lifecycleStatus,
+    isReadOnly,
     handleOpenPreview
   };
 };

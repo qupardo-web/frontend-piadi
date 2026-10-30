@@ -32,6 +32,8 @@ import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   SwapHoriz as RangeIcon,
+  Drafts as DraftsIcon,
+  Send as SendIcon,
 } from '@mui/icons-material';
 
 export const MetaForm = () => {
@@ -88,6 +90,7 @@ export const MetaForm = () => {
     handleOpenEditMetric,
     handleSaveMetric,
     handleDeleteMetric,
+    handleSaveDraft,
     handleSaveMeta,
     handleOpenPreview,
     departmentsList,
@@ -623,6 +626,14 @@ export const MetaForm = () => {
             </Box>
             <Box 
               component="button" 
+              onClick={handleSaveDraft}
+              sx={styles.btnBorrador}
+            >
+              <DraftsIcon sx={{ fontSize: 16 }} />
+              Guardar borrador
+            </Box>
+            <Box 
+              component="button" 
               onClick={handleOpenPreview}
               sx={styles.btnPreview}
             >
@@ -634,8 +645,8 @@ export const MetaForm = () => {
               onClick={handleSaveMeta}
               sx={styles.btnGuardar}
             >
-              <SaveIcon sx={{ fontSize: 16 }} />
-              Guardar meta
+              <SendIcon sx={{ fontSize: 16 }} />
+              Publicar meta
             </Box>
           </Box>
         </Box>
