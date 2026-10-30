@@ -144,6 +144,27 @@ const resolveMetaDetail = (item) => {
   return '';
 };
 
+const resolveReporteName = (item) => {
+  const parsed = getParsedDetails(item) || {};
+  const name = parsed.nombre ?? parsed.reportName ?? parsed.reference?.nombre;
+  if (!isEmptyValue(name)) return String(name);
+  return parsed.reporteId !== null && parsed.reporteId !== undefined
+    ? `Reporte #${parsed.reporteId}`
+    : 'Reporte';
+};
+
+const resolveReporteDetail = (item) => {
+  const parsed = getParsedDetails(item) || {};
+  const action = getRawAction(item);
+  const reporte = resolveReporteName(item);
+  const department = DEPARTMENT_LABELS[parsed.departmentId] || parsed.departmentId;
+  const context = department ? ` de ${department}` : '';
+
+  if (action === 'REPORTE_CREATED') return `${reporte} creado${context}.`;
+  if (action === 'REPORTE_DELETED') return `${reporte} eliminado${context}.`;
+  return '';
+};
+
 const resolveUser = (item) => {
   const parsed = getParsedDetails(item);
   const value =
@@ -193,6 +214,8 @@ const resolveAction = (item, type) => {
     AYUDA_CREAR: 'Creación',
     AYUDA_EDITAR: 'Edición',
     AYUDA_DESACTIVAR: 'Desactivación',
+    REPORTE_CREATED: 'Creación',
+    REPORTE_DELETED: 'Eliminación',
   };
   if (rawAction === '-' && type === 'carga') return 'Carga de plantilla';
   return labels[rawAction] || toText(rawAction);
@@ -235,6 +258,9 @@ const cleanPlainDetail = (value) => {
 };
 
 const resolveDetail = (item, type) => {
+  if (type === 'reportes') {
+    return resolveReporteDetail(item);
+  }
   if (type === 'metas' && META_ACTIONS.has(getRawAction(item))) {
     return resolveMetaDetail(item);
   }
@@ -299,6 +325,7 @@ const resolveDetail = (item, type) => {
 const mapAuditLog = (item, type, index) => {
   const parsed = getParsedDetails(item);
   const isMeta = type === 'metas';
+  const isReporte = type === 'reportes';
   return {
     id: item?.id ?? `${type}-${item?.createdAt || index}`,
     fecha: formatDate(item?.createdAt),
@@ -308,9 +335,11 @@ const mapAuditLog = (item, type, index) => {
     accion: resolveAction(item, type),
     entidad: isMeta
       ? resolveMetaName(parsed)
-      : type === 'ayuda'
-        ? `Entrada de ayuda #${toText(parsed?.entryId)}`
-      : resolveEntity(item, type === 'session' ? 'Sistema' : '-'),
+      : isReporte
+        ? resolveReporteName(item)
+        : type === 'ayuda'
+          ? `Entrada de ayuda #${toText(parsed?.entryId)}`
+          : resolveEntity(item, type === 'session' ? 'Sistema' : '-'),
     registros: resolveRecords(item),
     plantilla: type === 'carga' ? resolveTemplate(item) : '-',
     archivo: type === 'carga' ? resolveFile(item) : '-',
@@ -405,23 +434,29 @@ export const useAuditoria = () => {
   const [realSessionLogs, setRealSessionLogs] = useState([]);
   const [realMetaLogs, setRealMetaLogs] = useState([]);
   const [realHelpLogs, setRealHelpLogs] = useState([]);
-  const [loadingTabs, setLoadingTabs] = useState({ carga: true, session: true, metas: true, ayuda: true });
-  const [errorTabs, setErrorTabs] = useState({ carga: false, session: false, metas: false, ayuda: false });
+  const [realReporteLogs, setRealReporteLogs] = useState([]);
+  const [loadingTabs, setLoadingTabs] = useState({ carga: true, session: true, metas: true, ayuda: true, reportes: true });
+  const [errorTabs, setErrorTabs] = useState({ carga: false, session: false, metas: false, ayuda: false, reportes: false });
   const [apiRoleOptions, setApiRoleOptions] = useState([]);
 
   useEffect(() => {
     const token = sessionStorage.getItem('auth_token');
 
-    const fetchLogs = async (apiType, displayType, module, setter) => {
+    const fetchAuditItems = async ({ apiType = 'session', module, action } = {}) => {
+      const params = new URLSearchParams({ type: apiType, limit: '100' });
+      if (module) params.set('module', module);
+      if (action) params.set('action', action);
+      const res = await fetch(`${API_URL}/api/audit-logs?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      return json?.data?.items || [];
+    };
+
+    const fetchLogs = async (apiType, displayType, module, setter, action = null) => {
       try {
-        const params = new URLSearchParams({ type: apiType, limit: '100' });
-        if (module) params.set('module', module);
-        const res = await fetch(`${API_URL}/api/audit-logs?${params.toString()}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        const items = json?.data?.items || [];
+        const items = await fetchAuditItems({ apiType, module, action });
         const visibleItems = displayType === 'ayuda'
           ? items.filter((item) => HELP_ACTIONS.has(getRawAction(item)))
           : items;
@@ -435,10 +470,29 @@ export const useAuditoria = () => {
       }
     };
 
+    const fetchReporteLogs = async () => {
+      try {
+        const [creados, eliminados] = await Promise.all([
+          fetchAuditItems({ module: 'Reporte', action: 'REPORTE_CREATED' }),
+          fetchAuditItems({ module: 'Reporte', action: 'REPORTE_DELETED' }),
+        ]);
+        const items = [...creados, ...eliminados].sort((a, b) =>
+          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setRealReporteLogs(items.map((item, index) => mapAuditLog(item, 'reportes', index)));
+        setErrorTabs((current) => ({ ...current, reportes: false }));
+      } catch {
+        setRealReporteLogs([]);
+        setErrorTabs((current) => ({ ...current, reportes: true }));
+      } finally {
+        setLoadingTabs((current) => ({ ...current, reportes: false }));
+      }
+    };
+
     fetchLogs('carga', 'carga', null, setRealCargaLogs);
     fetchLogs('session', 'session', 'Sesión', setRealSessionLogs);
     fetchLogs('session', 'metas', 'Meta', setRealMetaLogs);
     fetchLogs('session', 'ayuda', 'EntradaAyuda', setRealHelpLogs);
+    fetchReporteLogs();
   }, []);
 
   useEffect(() => {
@@ -458,11 +512,11 @@ export const useAuditoria = () => {
   }, []);
 
   const logRoleOptions = useMemo(() => {
-    const roles = [...realCargaLogs, ...realSessionLogs, ...realMetaLogs, ...realHelpLogs]
+    const roles = [...realCargaLogs, ...realSessionLogs, ...realMetaLogs, ...realHelpLogs, ...realReporteLogs]
       .map((log) => log.rol)
       .filter((role) => !isEmptyValue(role));
     return [...new Set(roles)].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
-  }, [realCargaLogs, realSessionLogs, realMetaLogs, realHelpLogs]);
+  }, [realCargaLogs, realSessionLogs, realMetaLogs, realHelpLogs, realReporteLogs]);
 
   const roleOptions = apiRoleOptions.length > 0 ? apiRoleOptions : logRoleOptions;
 
@@ -501,6 +555,7 @@ export const useAuditoria = () => {
       case 'session': return realSessionLogs;
       case 'metas': return realMetaLogs;
       case 'ayuda': return realHelpLogs;
+      case 'reportes': return realReporteLogs;
       default: return [];
     }
   };
@@ -604,6 +659,14 @@ export const useAuditoria = () => {
         { label: 'Entrada', value: (row) => row.entidad },
         { label: 'Detalle', value: (row) => row.detalle },
       ],
+      reportes: [
+        { label: 'Fecha', value: (row) => row.fecha },
+        { label: 'Usuario', value: (row) => row.usuario },
+        { label: 'Rol', value: (row) => row.rol },
+        { label: 'Acción', value: (row) => row.accion },
+        { label: 'Reporte', value: (row) => row.entidad },
+        { label: 'Detalle', value: (row) => row.detalle },
+      ],
     };
 
     const filename = activeTab === 'carga'
@@ -612,7 +675,9 @@ export const useAuditoria = () => {
         ? 'auditoria-metas.csv'
         : activeTab === 'ayuda'
           ? 'auditoria-ayuda.csv'
-        : 'auditoria-inicios-sesion.csv';
+          : activeTab === 'reportes'
+            ? 'auditoria-reportes.csv'
+            : 'auditoria-inicios-sesion.csv';
     downloadCsv(filename, buildCsv(rows, columnsByTab[activeTab] || columnsByTab.carga));
   };
 
