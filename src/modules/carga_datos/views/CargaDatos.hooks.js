@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth';
 import { API_URL, getPlantillaById } from '../../../services/piadiApi';
@@ -10,15 +10,83 @@ const toPublicText = (value) => (
   typeof value === 'string' || typeof value === 'number' ? String(value) : ''
 );
 
-export const normalizeUploadErrorDetail = (detail = {}) => ({
-  message: toPublicText(detail.message) || 'El registro contiene un dato inválido.',
-  hoja: toPublicText(detail.hoja ?? detail.sheet) || 'General',
-  fila: toPublicText(detail.fila ?? detail.row),
-  columna: toPublicText(detail.columna ?? detail.column),
-  celda: toPublicText(detail.celda ?? detail.cell),
-  valor: toPublicText(detail.valor ?? detail.value),
-  esperado: toPublicText(detail.esperado ?? detail.expected)
-});
+export const getErrorCategory = (detail = {}) => {
+  const esperado = String(detail.esperado || '').toLowerCase();
+  const message = String(detail.message || '').toLowerCase();
+  const columna = String(detail.columna || '').toLowerCase();
+
+  // 1. RUT
+  if (
+    columna.includes('rut') ||
+    columna.includes('run') ||
+    message.includes('rut') ||
+    message.includes('run') ||
+    esperado.includes('rut')
+  ) {
+    return { id: 'RUT', label: 'RUT inválido' };
+  }
+
+  // 2. Campo obligatorio / Celda vacía
+  if (
+    esperado.includes('obligatorio') ||
+    esperado.includes('requerido') ||
+    message.includes('obligatorio') ||
+    message.includes('vací') ||
+    message.includes('vacia') ||
+    message.includes('requerido')
+  ) {
+    return { id: 'REQUIRED', label: 'Campos obligatorios' };
+  }
+
+  // 3. Formato de Fechas
+  if (esperado.includes('fecha') || message.includes('fecha')) {
+    return { id: 'DATE_FORMAT', label: 'Formato de fecha' };
+  }
+
+  // 4. Formato Numérico / Booleano / Tipos de Datos
+  if (
+    esperado.includes('número') ||
+    esperado.includes('numero') ||
+    esperado.includes('entero') ||
+    esperado.includes('decimal') ||
+    esperado.includes('booleano') ||
+    message.includes('numérico') ||
+    message.includes('numero') ||
+    message.includes('tipo')
+  ) {
+    return { id: 'DATA_TYPE', label: 'Tipo de dato' };
+  }
+
+  // 5. Estructura de plantilla (columna u hoja faltante)
+  if (
+    esperado.includes('columna') ||
+    esperado.includes('hoja') ||
+    esperado.includes('plantilla') ||
+    message.includes('columna') ||
+    message.includes('hoja')
+  ) {
+    return { id: 'STRUCTURE', label: 'Estructura / Columnas' };
+  }
+
+  // 6. Otros
+  return { id: 'OTHER', label: 'Otros errores' };
+};
+
+export const normalizeUploadErrorDetail = (detail = {}) => {
+  const normalized = {
+    message: toPublicText(detail.message) || 'El registro contiene un dato inválido.',
+    hoja: toPublicText(detail.hoja ?? detail.sheet) || 'General',
+    fila: toPublicText(detail.fila ?? detail.row),
+    columna: toPublicText(detail.columna ?? detail.column),
+    celda: toPublicText(detail.celda ?? detail.cell),
+    valor: toPublicText(detail.valor ?? detail.value),
+    esperado: toPublicText(detail.esperado ?? detail.expected),
+  };
+  const category = getErrorCategory(normalized);
+  normalized.categoryId = category.id;
+  normalized.categoryLabel = category.label;
+  return normalized;
+};
 
 const normalizeName = (value) => String(value || '').trim().toLocaleLowerCase('es');
 
@@ -89,9 +157,45 @@ export const useCargaDatos = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [uploadErrorDetails, setUploadErrorDetails] = useState([]);
+  const [selectedErrorType, setSelectedErrorType] = useState('ALL');
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [successSummary, setSuccessSummary] = useState(null);
   const [templateRequirements, setTemplateRequirements] = useState({});
+
+  // Categorías dinámicas de errores y listado filtrado
+  const errorCategories = useMemo(() => {
+    if (!uploadErrorDetails || !uploadErrorDetails.length) return [];
+    
+    const counts = {};
+    const labels = {};
+    
+    uploadErrorDetails.forEach((err) => {
+      const catId = err.categoryId || 'OTHER';
+      counts[catId] = (counts[catId] || 0) + 1;
+      labels[catId] = err.categoryLabel || 'Otros errores';
+    });
+
+    const categories = [
+      { id: 'ALL', label: 'Todos', count: uploadErrorDetails.length },
+    ];
+
+    Object.keys(counts).forEach((catId) => {
+      categories.push({
+        id: catId,
+        label: labels[catId],
+        count: counts[catId],
+      });
+    });
+
+    return categories;
+  }, [uploadErrorDetails]);
+
+  const filteredErrorDetails = useMemo(() => {
+    if (selectedErrorType === 'ALL') {
+      return uploadErrorDetails;
+    }
+    return uploadErrorDetails.filter((err) => err.categoryId === selectedErrorType);
+  }, [uploadErrorDetails, selectedErrorType]);
 
   // Estado para la selección de hojas opcionales de Admisión
   const [admisionSheets, setAdmisionSheets] = useState({
@@ -275,6 +379,7 @@ export const useCargaDatos = () => {
     setSelectedFile(null);
     setUploadError('');
     setUploadErrorDetails([]);
+    setSelectedErrorType('ALL');
     setAdmisionSheets({ matricula: true, caracterizacion: true });
   };
 
@@ -291,6 +396,7 @@ export const useCargaDatos = () => {
     setSelectedFile(null);
     setUploadError('');
     setUploadErrorDetails([]);
+    setSelectedErrorType('ALL');
     const inputElement = document.getElementById('dialog-file-input');
     if (inputElement) {
       inputElement.value = '';
@@ -367,6 +473,7 @@ export const useCargaDatos = () => {
     setSelectedFile(null);
     setUploadError('');
     setUploadErrorDetails([]);
+    setSelectedErrorType('ALL');
     setUploading(false);
     setUploadSuccess(false);
     setSuccessSummary(null);
@@ -378,6 +485,7 @@ export const useCargaDatos = () => {
       setUploading(true);
       setUploadError('');
       setUploadErrorDetails([]);
+      setSelectedErrorType('ALL');
       setUploadSuccess(false);
       setSuccessSummary(null);
 
@@ -446,6 +554,7 @@ export const useCargaDatos = () => {
     setSelectedFile(null);
     setUploadError('');
     setUploadErrorDetails([]);
+    setSelectedErrorType('ALL');
     setUploading(false);
   };
 
@@ -502,6 +611,10 @@ export const useCargaDatos = () => {
     uploading,
     uploadError,
     uploadErrorDetails,
+    selectedErrorType,
+    setSelectedErrorType,
+    errorCategories,
+    filteredErrorDetails,
     uploadSuccess,
     successSummary,
     filteredTemplates,

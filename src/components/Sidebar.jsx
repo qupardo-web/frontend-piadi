@@ -115,20 +115,12 @@ export const Sidebar = ({ activeMenu, mobileRightAction }) => {
             alt="Logo PIADI"
             sx={{ width: 32, height: 32, objectFit: 'contain' }}
           />
-          <Box>
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: 700, fontSize: '20px', letterSpacing: 0.5, lineHeight: 1.1 }}
-            >
-              PIADI
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ opacity: 0.7, fontWeight: 600, fontSize: '12px', letterSpacing: 1 }}
-            >
-              ECAS
-            </Typography>
-          </Box>
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 700, fontSize: '20px', letterSpacing: 0.5, lineHeight: 1 }}
+          >
+            PIADI
+          </Typography>
         </Box>
 
         <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', mb: 2 }} />
