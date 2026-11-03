@@ -83,6 +83,10 @@ export const CargaDatos = () => {
     uploading,
     uploadError,
     uploadErrorDetails,
+    selectedErrorType,
+    setSelectedErrorType,
+    errorCategories,
+    filteredErrorDetails,
     uploadSuccess,
     successSummary,
     filteredTemplates,
@@ -655,26 +659,77 @@ export const CargaDatos = () => {
                     }}
                   >
                     {uploadErrorDetails.length > 0 ? (
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-                        {uploadErrorDetails.map((detail, idx) => (
-                          <Typography 
-                            key={idx} 
-                            sx={{ 
-                              fontSize: '13px', 
-                              color: '#991B1B', 
-                              fontFamily: "'Inter', sans-serif",
-                              lineHeight: 1.4
-                            }}
-                          >
-                            <strong>Hoja:</strong> {detail.hoja}
-                            {detail.fila && <> | <strong>Fila:</strong> {detail.fila}</>}
-                            {detail.columna && <> | <strong>Columna:</strong> {detail.columna}</>}
-                            {detail.celda && <> | <strong>Celda:</strong> {detail.celda}</>}
-                            {detail.valor && <> | <strong>Valor recibido:</strong> {detail.valor}</>}
-                            {detail.esperado && <> | <strong>Formato esperado:</strong> {detail.esperado}</>}
-                            {' '}| <strong>Fallo:</strong> {detail.message}
-                          </Typography>
-                        ))}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {/* Selector de Filtros por tipo de error (Chips) */}
+                        {errorCategories.length > 1 && (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, pb: 1, borderBottom: '1px solid #FECACA' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#991B1B' }}>
+                                Filtrar por tipo de error:
+                              </Typography>
+                              <Typography sx={{ fontSize: '12px', color: '#B91C1C', fontWeight: 500 }}>
+                                Mostrando {filteredErrorDetails.length} de {uploadErrorDetails.length} errores
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                              {errorCategories.map((cat) => {
+                                const isSelected = selectedErrorType === cat.id;
+                                return (
+                                  <Chip
+                                    key={cat.id}
+                                    label={`${cat.label} (${cat.count})`}
+                                    size="small"
+                                    onClick={() => setSelectedErrorType(cat.id)}
+                                    clickable
+                                    sx={{
+                                      fontSize: '12px',
+                                      fontWeight: isSelected ? 700 : 500,
+                                      bgcolor: isSelected ? '#991B1B' : '#FFFFFF',
+                                      color: isSelected ? '#FFFFFF' : '#991B1B',
+                                      border: `1px solid ${isSelected ? '#991B1B' : '#FCA5A5'}`,
+                                      transition: 'all 0.15s ease',
+                                      '&:hover': {
+                                        bgcolor: isSelected ? '#7F1D1D' : '#FEE2E2',
+                                      },
+                                    }}
+                                  />
+                                );
+                              })}
+                            </Box>
+                          </Box>
+                        )}
+
+                        {/* Listado de errores con scroll acotado, manteniendo el diseño exacto de cada fila */}
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          gap: 0.75, 
+                          maxHeight: '260px', 
+                          overflowY: 'auto',
+                          pr: 0.5,
+                          '&::-webkit-scrollbar': { width: '6px' },
+                          '&::-webkit-scrollbar-thumb': { bgcolor: '#FCA5A5', borderRadius: '4px' }
+                        }}>
+                          {filteredErrorDetails.map((detail, idx) => (
+                            <Typography 
+                              key={idx} 
+                              sx={{ 
+                                fontSize: '13px', 
+                                color: '#991B1B', 
+                                fontFamily: "'Inter', sans-serif",
+                                lineHeight: 1.4
+                              }}
+                            >
+                              <strong>Hoja:</strong> {detail.hoja}
+                              {detail.fila && <> | <strong>Fila:</strong> {detail.fila}</>}
+                              {detail.columna && <> | <strong>Columna:</strong> {detail.columna}</>}
+                              {detail.celda && <> | <strong>Celda:</strong> {detail.celda}</>}
+                              {detail.valor && <> | <strong>Valor recibido:</strong> {detail.valor}</>}
+                              {detail.esperado && <> | <strong>Formato esperado:</strong> {detail.esperado}</>}
+                              {' '}| <strong>Fallo:</strong> {detail.message}
+                            </Typography>
+                          ))}
+                        </Box>
                       </Box>
                     ) : (
                       <Typography sx={{ fontWeight: 600, fontSize: '15px', color: '#991B1B' }}>

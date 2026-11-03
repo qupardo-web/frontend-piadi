@@ -516,6 +516,76 @@ export const Reportes = () => {
     window.print();
   };
 
+  const handleGoToStep = (targetStep) => {
+    if (targetStep === builder.step) return;
+
+    // Permitir retroceder a cualquier paso previo sin restricciones
+    if (targetStep < builder.step) {
+      setBuilder((prev) => ({
+        ...prev,
+        step: targetStep,
+      }));
+      return;
+    }
+
+    // Si avanza hacia adelante, verificar que el paso esté desbloqueado
+    if (targetStep > (builder.maxStep || 1)) return;
+
+    // Validar pasos intermedios antes de permitir avanzar
+    if (targetStep > 1) {
+      if (!builder.nombre || !builder.nombre.trim()) return;
+      if (!builder.area || !builder.area.trim()) return;
+      if (isRector && (!builder.tipo || !builder.tipo.trim())) return;
+    }
+    if (targetStep > 2) {
+      if (!builder.inds || builder.inds.length === 0) return;
+    }
+    if (targetStep > 3) {
+      if (!builder.annoMin || !builder.annoMax) return;
+      if (Number(builder.annoMin) > Number(builder.annoMax)) return;
+    }
+
+    // Si avanza hacia el paso 3 o 4 habiendo pasado por el paso 2, asegurar desagregaciones por defecto
+    if (targetStep >= 3) {
+      const ensuredDesags = [...(builder.desag || [])];
+      (builder.inds || []).forEach((k) => {
+        const itemInfo = getIndicatorInfo(k);
+        const opts = getDesagsForIndicator(k);
+        const anoOpt = opts.find((x) => {
+          const n = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return n === 'ano' || resolveDimensionKey(x, dimensionNameToKey) === 'year';
+        });
+        if (anoOpt && !ensuredDesags.some((d) => d === `${k}|${anoOpt}`)) {
+          ensuredDesags.push(`${k}|${anoOpt}`);
+        }
+        const baseCatLabel = itemInfo?.defaultGroupBy
+          ? resolveDimensionLabel(itemInfo.defaultGroupBy, dimensionNameToKey)
+          : (opts.find((x) => {
+              const xNorm = String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              const xKey = resolveDimensionKey(x, dimensionNameToKey);
+              return xNorm !== 'ano' && xNorm !== 'periodo' && xKey !== 'year' && xKey !== 'periodo';
+            }) || null);
+        if (baseCatLabel && !ensuredDesags.some((d) => d === `${k}|${baseCatLabel}`)) {
+          ensuredDesags.push(`${k}|${baseCatLabel}`);
+        }
+      });
+
+      setBuilder((prev) => ({
+        ...prev,
+        desag: Array.from(new Set(ensuredDesags)),
+        step: targetStep,
+        maxStep: Math.max(prev.maxStep || 1, targetStep),
+      }));
+      return;
+    }
+
+    setBuilder((prev) => ({
+      ...prev,
+      step: targetStep,
+      maxStep: Math.max(prev.maxStep || 1, targetStep),
+    }));
+  };
+
 
   return (
     <ThemeProvider theme={reportesLightTheme}>
@@ -1288,8 +1358,18 @@ export const Reportes = () => {
               iconColor="#FFFFFF"
               breadcrumbs={[
                 { label: 'Inicio', path: '/' },
-                { label: 'Reportes', path: '/reportes', onClick: handleBackToList },
-                { label: builder.editId ? 'Editar reporte' : 'Crear un reporte', path: null },
+                { label: 'Reportes', onClick: handleBackToList },
+                ...[
+                  { num: 1, label: 'Paso 1: Datos' },
+                  { num: 2, label: 'Paso 2: Indicadores' },
+                  { num: 3, label: 'Paso 3: Período y filtros' },
+                  { num: 4, label: 'Paso 4: Formato' },
+                ]
+                  .filter((s) => s.num <= builder.step)
+                  .map((s) => ({
+                    label: s.label,
+                    onClick: s.num < builder.step ? () => handleGoToStep(s.num) : null,
+                  })),
               ]}
               rightAction={
                 <Button
@@ -1322,9 +1402,21 @@ export const Reportes = () => {
                   ].map((s, idx) => {
                     const isDone = s.num < builder.step;
                     const isActive = s.num === builder.step;
+                    const isAccessible = s.num <= (builder.maxStep || 1);
                     return (
                       <React.Fragment key={s.num}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          onClick={() => isAccessible && handleGoToStep(s.num)}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            cursor: isAccessible ? 'pointer' : 'default',
+                            opacity: isAccessible ? 1 : 0.6,
+                            transition: 'opacity 0.2s ease',
+                            '&:hover': isAccessible && !isActive ? { opacity: 0.8 } : undefined,
+                          }}
+                        >
                           <Box sx={styles.stepCircle(isActive, isDone)}>
                             {isDone ? <CheckIcon sx={{ fontSize: 16 }} /> : s.num}
                           </Box>

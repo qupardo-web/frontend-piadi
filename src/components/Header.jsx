@@ -78,6 +78,15 @@ export const Header = ({
         >
         {breadcrumbsList.map((item, index) => {
           const isLast = index === breadcrumbsList.length - 1;
+          const isClickable = !isLast && (Boolean(item.path) || Boolean(item.onClick));
+          const handleClick = () => {
+            if (isLast) return;
+            if (item.onClick) {
+              item.onClick();
+            } else if (item.path) {
+              navigate(item.path);
+            }
+          };
           return (
             <React.Fragment key={index}>
               {index > 0 && (
@@ -85,14 +94,14 @@ export const Header = ({
               )}
               <Typography
                 variant="body1"
-                onClick={() => item.path && navigate(item.path)}
+                onClick={handleClick}
                 sx={{
                   fontSize: '16px',
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: isLast ? 600 : 500,
                   color: isLast ? '#1E2875' : '#6B7280',
-                  cursor: item.path ? 'pointer' : 'default',
-                  '&:hover': item.path ? { textDecoration: 'underline' } : undefined,
+                  cursor: isClickable ? 'pointer' : 'default',
+                  '&:hover': isClickable ? { textDecoration: 'underline' } : undefined,
                 }}
               >
                 {item.label}
